@@ -22,6 +22,13 @@ export class ApiService {
       .pipe(map((res) => this.unwrap(res)));
   }
 
+  /** GET `path` and unwrap Data. */
+  get<T>(path: string): Observable<T> {
+    return this.http
+      .get<ApiResponse<T>>(`${this.baseUrl}/${path}`)
+      .pipe(map((res) => this.unwrap(res)));
+  }
+
   /** POST returning the full envelope (when the Message matters to the caller). */
   postRaw<T>(path: string, body: unknown = {}): Observable<ApiResponse<T>> {
     return this.http.post<ApiResponse<T>>(`${this.baseUrl}/${path}`, body);

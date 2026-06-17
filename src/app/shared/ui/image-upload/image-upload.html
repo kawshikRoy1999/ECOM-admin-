@@ -1,0 +1,60 @@
+<div class="flex flex-col gap-1.5">
+  <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">{{ label() }}</label>
+
+  <div class="flex items-center gap-4">
+    <!-- Preview / drop zone -->
+    <div 
+      class="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-xl transition-all"
+      [class.border-dashed]="!value() && !uploading()"
+      [class.border-slate-300]="!value() && !uploading()"
+      [class.bg-slate-50]="!value() && !uploading()"
+      [class.border-solid]="value() || uploading()"
+      [class.border-slate-200]="value() || uploading()"
+      [class.border]="value() || uploading()"
+      [class.shadow-sm]="value() || uploading()"
+    >
+      @if (uploading()) {
+        <div class="flex flex-col items-center gap-1">
+          <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <span class="text-[10px] font-bold text-slate-400">{{ progress() }}%</span>
+        </div>
+      } @else if (value()) {
+        <!-- Inner image container to enforce rounded corners without cropping the overflow remove button -->
+        <div class="h-full w-full rounded-xl overflow-hidden">
+          <img [src]="value()" alt="Preview" class="h-full w-full object-cover" />
+        </div>
+        
+        <!-- Overflowing red remove badge -->
+        <button
+          type="button"
+          (click)="clear()"
+          class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white shadow-md border border-white transition-all scale-100 hover:scale-110 cursor-pointer z-10"
+          title="Remove Image"
+        >
+          <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      } @else {
+        <svg class="h-7 w-7 text-slate-350" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5l4.5-4.5a2 2 0 012.83 0L15 16.5m-3-3l1.5-1.5a2 2 0 012.83 0L21 15M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      }
+    </div>
+
+    <!-- Actions -->
+    <div class="flex flex-col gap-1 justify-center">
+      <label class="btn-secondary h-8 cursor-pointer px-3 text-[12px] font-bold inline-flex items-center gap-1.5 hover:border-brand-500 hover:text-brand-700 transition-colors shadow-2xs">
+        <svg class="h-4 w-4 text-slate-500 group-hover:text-brand-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        {{ value() ? 'Replace' : 'Upload' }}
+        <input type="file" [accept]="accept()" (change)="onFileSelected($event)" class="hidden" [disabled]="uploading()" />
+      </label>
+      <span class="text-[10px] text-slate-400 font-medium mt-0.5">PNG, JPG, or SVG.</span>
+    </div>
+  </div>
+</div>
