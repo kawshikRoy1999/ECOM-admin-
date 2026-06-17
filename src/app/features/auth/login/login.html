@@ -1,0 +1,155 @@
+<div class="min-h-screen w-full lg:grid lg:grid-cols-2">
+  <!-- Left: brand / marketing panel -->
+  <section
+    class="relative hidden overflow-hidden bg-brand-700 lg:flex lg:flex-col lg:justify-between lg:p-12 lg:text-white"
+  >
+    <div
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,theme(colors.brand.500),transparent_55%),radial-gradient(circle_at_bottom_right,theme(colors.brand.900),transparent_45%)]"
+    ></div>
+
+    <div class="relative z-10 flex items-center gap-3">
+      <span
+        class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-lg font-bold backdrop-blur"
+        >E</span
+      >
+      <span class="text-lg font-semibold tracking-tight">ECOM Admin</span>
+    </div>
+
+    <div class="relative z-10 max-w-md">
+      <h1 class="text-4xl font-bold leading-tight tracking-tight">
+        Run your store with confidence.
+      </h1>
+      <p class="mt-4 text-base leading-relaxed text-white/80">
+        Manage products, orders, customers and analytics — all from one modern dashboard.
+      </p>
+
+      <ul class="mt-8 space-y-3 text-sm text-white/80">
+        <li class="flex items-center gap-3">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white/15">✓</span>
+          Real-time orders &amp; inventory
+        </li>
+        <li class="flex items-center gap-3">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white/15">✓</span>
+          Customer &amp; sales insights
+        </li>
+        <li class="flex items-center gap-3">
+          <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white/15">✓</span>
+          Secure role-based access
+        </li>
+      </ul>
+    </div>
+
+    <p class="relative z-10 text-xs text-white/50">
+      © {{ 2026 }} ECOM Admin. All rights reserved.
+    </p>
+  </section>
+
+  <!-- Right: login form -->
+  <section class="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-12 lg:min-h-0">
+    <div class="w-full max-w-md">
+      <!-- Mobile brand mark -->
+      <div class="mb-8 flex items-center gap-3 lg:hidden">
+        <span
+          class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-lg font-bold text-white"
+          >E</span
+        >
+        <span class="text-lg font-semibold tracking-tight text-slate-900">ECOM Admin</span>
+      </div>
+
+      <h2 class="text-2xl font-bold tracking-tight text-slate-900">Sign in to your account</h2>
+      <p class="mt-2 text-sm text-slate-500">Enter your credentials to access the dashboard.</p>
+
+      @if (errorMessage()) {
+        <div
+          class="mt-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
+          <span class="mt-0.5">⚠</span>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="mt-8 space-y-5" novalidate>
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="you@company.com"
+            class="mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            [class.border-red-400]="form.controls.email.touched && form.controls.email.invalid"
+          />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <p class="mt-1.5 text-xs text-red-600">Please enter a valid email address.</p>
+          }
+        </div>
+
+        <!-- Password -->
+        <div>
+          <div class="flex items-center justify-between">
+            <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+            <a href="#" class="text-xs font-medium text-brand-600 hover:text-brand-700"
+              >Forgot password?</a
+            >
+          </div>
+          <div class="relative mt-1.5">
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 pr-11 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+              [class.border-red-400]="form.controls.password.touched && form.controls.password.invalid"
+            />
+            <button
+              type="button"
+              (click)="togglePassword()"
+              class="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-medium text-slate-500 hover:text-slate-700"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              {{ showPassword() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+          @if (form.controls.password.touched && form.controls.password.invalid) {
+            <p class="mt-1.5 text-xs text-red-600">Password is required.</p>
+          }
+        </div>
+
+        <!-- Remember -->
+        <div class="flex items-center">
+          <input
+            id="remember"
+            type="checkbox"
+            formControlName="remember"
+            class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/40"
+          />
+          <label for="remember" class="ml-2 text-sm text-slate-600">Keep me signed in</label>
+        </div>
+
+        <!-- Submit -->
+        <button
+          type="submit"
+          [disabled]="submitting()"
+          class="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (submitting()) {
+            <span
+              class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+            ></span>
+            Signing in…
+          } @else {
+            Sign in
+          }
+        </button>
+      </form>
+
+      <p class="mt-8 text-center text-xs text-slate-400">
+        Protected admin area. Unauthorized access is prohibited.
+      </p>
+    </div>
+  </section>
+</div>
