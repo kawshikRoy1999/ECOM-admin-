@@ -36,6 +36,13 @@ export const routes: Routes = [
             (m) => m.InvoiceTemplatePage,
           ),
       },
+      {
+        path: 'settings/order-template',
+        loadComponent: () =>
+          import('./features/settings/order-template/order-template.page').then(
+            (m) => m.OrderTemplatePage,
+          ),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

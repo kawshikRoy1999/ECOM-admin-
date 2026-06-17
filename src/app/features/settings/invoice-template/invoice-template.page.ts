@@ -5,12 +5,14 @@ import { Modal } from '../../../shared/ui/modal/modal';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { TemplateEditor } from './template-editor';
+import { TEMPLATE_PROVIDER } from './template-provider';
 import { InvoiceTemplateService } from './invoice-template.service';
 import { InvoiceField, TemplateDocType, TemplateMaster } from './invoice-template.models';
 
 @Component({
   selector: 'app-invoice-template-page',
   imports: [TemplateEditor, Modal],
+  providers: [{ provide: TEMPLATE_PROVIDER, useExisting: InvoiceTemplateService }],
   templateUrl: './invoice-template.page.html',
 })
 export class InvoiceTemplatePage {

@@ -221,7 +221,7 @@
               title="Insert dynamic placeholder"
             >
               <option value="" disabled selected>+ Insert Placeholder</option>
-              @for (p of placeholders; track p.tag) {
+              @for (p of placeholders(); track p.tag) {
                 <option [value]="p.tag">{{ p.name }} ({{ '{{' + p.tag + '}}' }})</option>
               }
             </select>

@@ -58,7 +58,10 @@ export class AdminLayout {
     },
     {
       group: 'Settings',
-      items: [{ label: 'Invoice Template', path: '/settings/invoice-template', icon: '▤' }],
+      items: [
+        { label: 'Invoice Template', path: '/settings/invoice-template', icon: '▤' },
+        { label: 'Order Template', path: '/settings/order-template', icon: '▥' },
+      ],
     },
   ];
 

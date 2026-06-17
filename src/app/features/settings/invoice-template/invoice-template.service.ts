@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { InvoiceField, TemplateDoc, TemplateDocType, TemplateMaster } from './invoice-template.models';
+import { TemplateProvider } from './template-provider';
 
 @Injectable({ providedIn: 'root' })
-export class InvoiceTemplateService {
+export class InvoiceTemplateService implements TemplateProvider {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
 
