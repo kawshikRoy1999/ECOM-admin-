@@ -1,72 +1,97 @@
-<div class="fluent-card overflow-hidden">
+<div class="fluent-card overflow-hidden bg-white border border-slate-200/80 rounded-xl shadow-xs">
+  <!-- Search Input Header -->
   @if (searchable()) {
-    <div class="border-b border-slate-100 bg-white px-3 py-2">
-      <div class="relative max-w-xs">
+    <div class="border-b border-slate-100 bg-white px-4 py-3">
+      <div class="relative max-w-xs flex items-center">
+        <span class="absolute left-3.5 text-slate-400">
+          <!-- Search Icon -->
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
         <input
           type="text"
           [value]="query()"
           (input)="query.set($any($event.target).value)"
           [placeholder]="searchPlaceholder()"
-          class="w-full h-8"
+          class="w-full !pl-10 !pr-4 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13px] h-9"
         />
-        <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none opacity-40">
-           <svg class="h-3.5 w-3.5 fill-current text-slate-900" viewBox="0 0 20 20">
-             <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-           </svg>
-        </div>
       </div>
     </div>
   }
 
+  <!-- Viewport Grid Table -->
   <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-slate-200 text-[13px]">
-      <thead class="bg-slate-50">
+    <table class="min-w-full divide-y divide-slate-100 text-[13px]">
+      <!-- Table Header -->
+      <thead class="bg-slate-50/60">
         <tr>
           @for (col of columns(); track col.key) {
             <th
-              class="px-4 py-2.5 text-left text-[11px] font-bold tracking-widest text-slate-500 uppercase"
+              class="px-5 py-3 text-left text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none"
               [class]="alignClass(col)"
             >
               {{ col.header }}
             </th>
           }
           @if (actions()) {
-            <th class="px-4 py-2.5 text-right text-[11px] font-bold tracking-widest text-slate-500 uppercase">
+            <th class="px-5 py-3 text-right text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none">
               Actions
             </th>
           }
         </tr>
       </thead>
+
+      <!-- Table Body -->
       <tbody class="divide-y divide-slate-100 bg-white">
         @if (loading()) {
           <tr>
-            <td [attr.colspan]="columns().length + (actions() ? 1 : 0)" class="px-4 py-12 text-center text-slate-500">
+            <td [attr.colspan]="columns().length + (actions() ? 1 : 0)" class="px-5 py-14 text-center text-slate-500">
               <div class="flex items-center justify-center gap-2">
-                <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span class="text-sm font-medium">Loading data...</span>
+                <span class="text-sm font-semibold text-slate-500">Loading data...</span>
               </div>
             </td>
           </tr>
         } @else if (filtered().length === 0) {
           <tr>
-            <td [attr.colspan]="columns().length + (actions() ? 1 : 0)" class="px-4 py-12 text-center text-slate-400 italic text-sm">
+            <td [attr.colspan]="columns().length + (actions() ? 1 : 0)" class="px-5 py-14 text-center text-slate-400 font-medium text-[13px]">
               {{ emptyText() }}
             </td>
           </tr>
         } @else {
           @for (row of filtered(); track $index) {
-            <tr class="transition-colors hover:bg-slate-50/80 group">
+            <tr class="transition-colors hover:bg-slate-50/50 group">
               @for (col of columns(); track col.key) {
-                <td class="px-4 py-2 text-slate-700 font-medium" [class]="alignClass(col)">
-                  {{ cell(row, col) }}
+                <td class="px-5 py-3 text-slate-700 font-medium" [class]="alignClass(col)">
+                  @if (col.key === 'isActive' || cell(row, col) === 'Active' || cell(row, col) === 'Inactive') {
+                    <span
+                      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-inset"
+                      [class.bg-emerald-50]="cell(row, col) === 'Active'"
+                      [class.text-emerald-700]="cell(row, col) === 'Active'"
+                      [class.ring-emerald-600/10]="cell(row, col) === 'Active'"
+                      [class.bg-slate-50]="cell(row, col) === 'Inactive'"
+                      [class.text-slate-500]="cell(row, col) === 'Inactive'"
+                      [class.ring-slate-500/10]="cell(row, col) === 'Inactive'"
+                    >
+                      <span
+                        class="h-1.5 w-1.5 rounded-full mr-1.5"
+                        [class.bg-emerald-500]="cell(row, col) === 'Active'"
+                        [class.bg-slate-400]="cell(row, col) === 'Inactive'"
+                      ></span>
+                      {{ cell(row, col) }}
+                    </span>
+                  } @else {
+                    {{ cell(row, col) }}
+                  }
                 </td>
               }
               @if (actions(); as tpl) {
-                <td class="px-4 py-2 text-right">
-                  <div class="flex justify-end gap-1">
+                <td class="px-5 py-3 text-right">
+                  <div class="flex justify-end gap-1.5">
                     <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: row }" />
                   </div>
                 </td>
@@ -78,6 +103,3 @@
     </table>
   </div>
 </div>
-
-
-

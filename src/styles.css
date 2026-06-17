@@ -22,6 +22,30 @@
   --color-slate-700: #605e5c;
   --color-slate-800: #323130;
   --color-slate-900: #201f1e;
+
+  /* Custom Modern Animations */
+  --animate-float-slow: float 6s ease-in-out infinite;
+  --animate-float-delayed: float 6s ease-in-out infinite 3s;
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-mesh-slow: mesh 20s ease infinite;
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes mesh {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
 }
 
 :root {
@@ -104,7 +128,65 @@
   .fluent-card:hover {
     box-shadow: var(--shadow-md);
   }
+
+  /* Glassmorphism Styles */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(20px) saturate(190%);
+    -webkit-backdrop-filter: blur(20px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+  }
+
+  .glass-card-dark {
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(24px) saturate(200%);
+    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .mesh-bg {
+    background: linear-gradient(-45deg, #eff6fc, #deecf9, #f5f7fa, #faf9f8);
+    background-size: 400% 400%;
+    animation: mesh 15s ease infinite;
+  }
 }
+
+/* Custom Elegant Scrollbars (Sleek floating thumb - placed globally outside layers) */
+::-webkit-scrollbar {
+  width: 10px !important;
+  height: 10px !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #d2d0ce !important;
+  border: 3px solid transparent !important;
+  background-clip: padding-box !important;
+  border-radius: 9999px !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #a19f9d !important;
+}
+::-webkit-scrollbar-thumb:active {
+  background-color: #106ebe !important;
+}
+
+/* Support for Firefox (hides arrows by default with thin styling) */
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin !important;
+    scrollbar-color: #d2d0ce transparent !important;
+  }
+}
+
 
 
 

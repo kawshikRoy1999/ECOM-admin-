@@ -29,6 +29,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/access/permissions/permissions.page').then((m) => m.PermissionsPage),
       },
+      {
+        path: 'settings/invoice-template',
+        loadComponent: () =>
+          import('./features/settings/invoice-template/invoice-template.page').then(
+            (m) => m.InvoiceTemplatePage,
+          ),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

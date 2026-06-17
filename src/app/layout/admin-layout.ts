@@ -56,6 +56,10 @@ export class AdminLayout {
         { label: 'Permissions', path: '/access/permissions', icon: '◕' },
       ],
     },
+    {
+      group: 'Settings',
+      items: [{ label: 'Invoice Template', path: '/settings/invoice-template', icon: '▤' }],
+    },
   ];
 
   toggleSidebar(): void {
