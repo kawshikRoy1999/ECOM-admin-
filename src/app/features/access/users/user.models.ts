@@ -25,6 +25,19 @@ export interface UserListResponse {
   roleList: UserRoleOption[];
 }
 
+/** AddEditUser response — returns the (new) user's id. */
+export interface SaveUserResponse {
+  userId: string | null;
+  type?: string;
+  msg?: string;
+}
+
+/** GetUserDtlByUserId response — includes the roles currently assigned. */
+export interface UserDetailResponse {
+  userDtl: AdminUser;
+  userRoleDtl: { roleId: string; roleName: string; description?: string }[];
+}
+
 export interface SaveUserRequest {
   UserId: string;
   CompanyId: number;

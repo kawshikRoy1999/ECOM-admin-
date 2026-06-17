@@ -3,7 +3,14 @@ import { Observable } from 'rxjs';
 
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
-import { AdminUser, EMPTY_GUID, SaveUserRequest, UserListResponse } from './user.models';
+import {
+  AdminUser,
+  EMPTY_GUID,
+  SaveUserRequest,
+  SaveUserResponse,
+  UserDetailResponse,
+  UserListResponse,
+} from './user.models';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService {
@@ -21,7 +28,7 @@ export class UsersService {
       AdminUser,
       'userId' | 'email' | 'userName' | 'firstName' | 'middleName' | 'lastName' | 'phone'
     > & { isActive: boolean; password: string },
-  ): Observable<unknown> {
+  ): Observable<SaveUserResponse> {
     const body: SaveUserRequest = {
       UserId: user.userId || EMPTY_GUID,
       CompanyId: this.auth.companyId(),
@@ -36,7 +43,26 @@ export class UsersService {
       CreatedBy: this.auth.userId(),
       ModifiedBy: this.auth.userId(),
     };
-    return this.api.post('UserManagement/AddEditUser', body);
+    return this.api.post<SaveUserResponse>('UserManagement/AddEditUser', body);
+  }
+
+  /** Load a user's detail incl. currently-assigned roles (for editing). */
+  detail(userId: string): Observable<UserDetailResponse> {
+    return this.api.post<UserDetailResponse>('UserManagement/GetUserDtlByUserId', {
+      CompanyId: this.auth.companyId(),
+      UserId: userId,
+    });
+  }
+
+  /** Assign the given roles to a user (replaces their role set). */
+  assignRoles(userId: string, roleIds: string[]): Observable<unknown> {
+    return this.api.post('UserManagement/AddEditAssignRole', {
+      UserId: userId,
+      RoleIdList: roleIds,
+      CompanyId: this.auth.companyId(),
+      CreatedBy: this.auth.userId(),
+      ModifiedBy: this.auth.userId(),
+    });
   }
 
   delete(userId: string): Observable<unknown> {

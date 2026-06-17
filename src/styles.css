@@ -1,26 +1,110 @@
 @import 'tailwindcss';
 
-/* Brand theme tokens — tweak these to match your .NET admin palette */
 @theme {
-  --color-brand-50: #eef4ff;
-  --color-brand-100: #d9e6ff;
-  --color-brand-200: #bcd2ff;
-  --color-brand-300: #8eb4ff;
-  --color-brand-400: #588cff;
-  --color-brand-500: #3366ff;
-  --color-brand-600: #1f47e6;
-  --color-brand-700: #1937b4;
-  --color-brand-800: #1b3192;
-  --color-brand-900: #1c2f76;
-  --color-brand-950: #141d44;
+  /* Premium Fluent UI Light Palette */
+  --color-brand-50: #eff6fc;
+  --color-brand-100: #deecf9;
+  --color-brand-200: #c7e0f4;
+  --color-brand-300: #71afe5;
+  --color-brand-400: #2b88d8;
+  --color-brand-500: #0078d4; /* Azure Blue */
+  --color-brand-600: #106ebe;
+  --color-brand-700: #005a9e;
+
+  /* Neutral palette (Gray 10 - Gray 90) */
+  --color-slate-50: #faf9f8;
+  --color-slate-100: #f3f2f1;
+  --color-slate-200: #edebe9;
+  --color-slate-300: #e1dfdd;
+  --color-slate-400: #d2d0ce;
+  --color-slate-500: #c8c6c4;
+  --color-slate-600: #a19f9d;
+  --color-slate-700: #605e5c;
+  --color-slate-800: #323130;
+  --color-slate-900: #201f1e;
 }
 
-html,
-body {
-  height: 100%;
+:root {
+  color-scheme: light;
+  --bg-page: #f0f2f5; 
+  --bg-card: #ffffff;
+  --text-primary: #201f1e;
+  --text-secondary: #605e5c;
+  --border-color: #e1dfdd;
+  --input-bg: #ffffff;
+  --header-bg: #ffffff;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+@layer base {
+  html,
+  body {
+    height: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  /* Fluent UI Inputs */
+  input[type='text'],
+  input[type='password'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  textarea,
+  select {
+    @apply border-slate-300 px-2 py-1 text-[13px] transition-all focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600/10;
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    border-width: 1px;
+    border-color: var(--border-color);
+    border-radius: 4px;
+  }
 }
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border px-4 py-1.5 text-[13px] font-semibold transition-all active:scale-[0.98];
+    border-color: var(--border-color);
+    background-color: #ffffff;
+    color: var(--text-primary);
+  }
+
+  .btn-secondary:hover {
+    background-color: #faf9f8;
+    border-color: #c8c6c4;
+  }
+
+  .page-title {
+    @apply text-xl font-semibold tracking-tight text-slate-900;
+  }
+
+  .page-subtitle {
+    @apply text-[13px] text-slate-500;
+  }
+
+  .fluent-card {
+    @apply rounded-xl border border-[#e1dfdd] bg-white shadow-sm transition-all;
+    background-color: #ffffff;
+  }
+  
+  .fluent-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+
+
+

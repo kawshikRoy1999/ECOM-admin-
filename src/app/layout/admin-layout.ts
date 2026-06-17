@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, PLATFORM_ID, HostListener } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 
 import { AuthService } from '../core/auth/auth.service';
@@ -17,9 +18,29 @@ interface NavItem {
 export class AdminLayout {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly platformId = inject(PLATFORM_ID);
 
   readonly displayName = this.auth.displayName;
-  readonly sidebarOpen = signal(true);
+  readonly logoUrl = this.auth.logoUrl;
+  readonly sidebarOpen = signal(false);
+  readonly lgScreen = signal(false);
+
+  constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.checkScreenSize();
+    }
+  }
+
+  @HostListener('window:resize')
+  checkScreenSize(): void {
+    const isLg = window.innerWidth >= 1024;
+    this.lgScreen.set(isLg);
+    if (isLg) {
+      this.sidebarOpen.set(true);
+    } else {
+      this.sidebarOpen.set(false);
+    }
+  }
 
   // Static for now; will be replaced by the DB-driven menu on the shell day.
   readonly nav: { group: string; items: NavItem[] }[] = [

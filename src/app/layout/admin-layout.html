@@ -1,54 +1,102 @@
-<div class="flex min-h-screen bg-slate-50">
-  <!-- Sidebar -->
-  <aside
-    class="hidden flex-col border-r border-slate-200 bg-white transition-all lg:flex"
-    [class.w-64]="sidebarOpen()"
-    [class.w-0]="!sidebarOpen()"
-    [class.overflow-hidden]="!sidebarOpen()"
-  >
-    <div class="flex h-16 items-center gap-3 border-b border-slate-200 px-6">
-      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">E</span>
-      <span class="font-semibold text-slate-900">ECOM Admin</span>
+<div class="flex h-screen flex-col bg-[#f0f2f5]">
+  <!-- Top Bar (Standard Light Theme) - 40px height -->
+  <header class="z-50 flex h-10 shrink-0 items-center justify-between border-b border-[#e1dfdd] bg-white px-3 shadow-sm">
+    <div class="flex items-center gap-3">
+      <button
+        (click)="toggleSidebar()"
+        class="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-slate-100"
+        aria-label="Toggle menu"
+      >
+        <svg class="h-4 w-4 fill-slate-600" viewBox="0 0 20 20">
+          <path d="M2 5h16v2H2V5zm0 4h16v2H2V9zm0 4h16v2H2v-2z" />
+        </svg>
+      </button>
+      <div class="flex items-center gap-2">
+        @if (logoUrl()) {
+          <img [src]="logoUrl()" alt="Company logo" class="h-6 max-w-[120px] object-contain" />
+        } @else {
+          <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-brand-600 text-[9px] font-bold text-white shadow-sm">EA</div>
+          <span class="text-[13px] font-bold tracking-wide text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px] sm:max-w-none">ECOM Admin</span>
+        }
+      </div>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-3 py-4">
-      @for (group of nav; track group.group) {
-        <p class="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          {{ group.group }}
-        </p>
-        @for (item of group.items; track item.path) {
-          <a
-            [routerLink]="item.path"
-            routerLinkActive="bg-brand-50 text-brand-700"
-            class="mb-0.5 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-          >
-            <span class="text-slate-400">{{ item.icon }}</span>
-            {{ item.label }}
-          </a>
-        }
-      }
-    </nav>
-  </aside>
+    <div class="flex items-center gap-2">
+      <!-- Removed Theme Toggle -->
 
-  <!-- Main -->
-  <div class="flex min-w-0 flex-1 flex-col">
-    <header class="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-      <button (click)="toggleSidebar()" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Toggle menu">
-        ☰
-      </button>
-      <div class="flex items-center gap-3">
-        <span class="text-sm text-slate-600">{{ displayName() }}</span>
-        <button
-          (click)="logout()"
-          class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Log out
-        </button>
+      <div class="hidden items-center gap-2 text-[12px] font-medium lg:flex">
+        <span class="text-slate-600">{{ displayName() }}</span>
+        <div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-[10px] font-bold text-white uppercase">
+          {{ (displayName() || 'U').charAt(0) }}
+        </div>
       </div>
-    </header>
 
-    <main class="flex-1 overflow-y-auto p-6">
-      <router-outlet />
+      <div class="mx-1 h-4 w-[1px] bg-slate-200"></div>
+
+      <button
+        (click)="logout()"
+        class="flex h-7 items-center rounded-md border border-slate-200 px-2.5 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+      >
+        <span class="sm:inline hidden">Sign out</span>
+        <svg class="h-3.5 w-3.5 sm:hidden fill-slate-600" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex flex-1 overflow-hidden relative">
+    <!-- Sidebar -->
+    <aside
+      class="z-40 flex flex-col border-r border-[#e1dfdd] bg-white transition-all duration-150 absolute inset-y-0 left-0 lg:relative"
+      [class.w-52]="sidebarOpen()"
+      [class.w-0]="!sidebarOpen() && !lgScreen()"
+      [class.w-12]="!sidebarOpen() && lgScreen()"
+      [class.-translate-x-full]="!sidebarOpen() && !lgScreen()"
+      [class.translate-x-0]="sidebarOpen() || lgScreen()"
+    >
+      <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2">
+        @for (group of nav; track group.group) {
+          @if (sidebarOpen()) {
+            <p class="mt-3 px-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">
+              {{ group.group }}
+            </p>
+          } @else {
+            <div class="my-2 h-[1px] bg-slate-100 mx-2"></div>
+          }
+
+          @for (item of group.items; track item.path) {
+            <a
+              [routerLink]="item.path"
+              routerLinkActive="bg-brand-50 text-brand-700 font-bold before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-brand-600"
+              class="relative flex h-9 items-center gap-3 px-4 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              [title]="item.label"
+            >
+              <span class="flex h-5 w-5 shrink-0 items-center justify-center text-lg leading-none text-brand-600">
+                {{ item.icon }}
+              </span>
+              @if (sidebarOpen()) {
+                <span class="truncate">{{ item.label }}</span>
+              }
+            </a>
+          }
+        }
+      </nav>
+    </aside>
+
+    <!-- Mobile Overlay -->
+    @if (sidebarOpen() && !lgScreen()) {
+      <div (click)="toggleSidebar()" class="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-[1px] lg:hidden"></div>
+    }
+
+    <!-- Main Content -->
+    <main class="relative flex-1 overflow-y-auto focus:outline-none bg-[#f0f2f5]">
+      <div class="min-h-full p-4 sm:p-5 lg:p-6 max-w-[1600px] mx-auto">
+        <router-outlet />
+      </div>
     </main>
   </div>
 </div>
+
+
+
