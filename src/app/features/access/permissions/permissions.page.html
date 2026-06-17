@@ -1,0 +1,58 @@
+<div class="space-y-6">
+  <div>
+    <h1 class="text-xl font-bold text-slate-900">Permissions</h1>
+    <p class="mt-1 text-sm text-slate-500">Choose a role and toggle the actions it can perform.</p>
+  </div>
+
+  <div class="flex items-end gap-4">
+    <div>
+      <label class="block text-sm font-medium text-slate-700">Role</label>
+      <select
+        [value]="selectedRoleId()"
+        (change)="onRoleChange($any($event.target).value)"
+        class="mt-1.5 w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+      >
+        <option value="">Select a role…</option>
+        @for (r of roles(); track r.roleId) {
+          <option [value]="r.roleId">{{ r.roleName }}</option>
+        }
+      </select>
+    </div>
+    @if (selectedRoleId()) {
+      <button
+        (click)="save()"
+        [disabled]="saving()"
+        class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+      >
+        {{ saving() ? 'Saving…' : 'Save permissions' }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-slate-400">Loading permissions…</p>
+  } @else if (selectedRoleId() && groups().length) {
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (group of groups(); track group.menuId) {
+        <div class="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 class="mb-3 text-sm font-semibold text-slate-900">{{ group.menuName }}</h3>
+          <div class="space-y-2">
+            @for (action of group.actions; track action.menuActionId) {
+              <label class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  [checked]="action.isActive"
+                  (change)="toggle(action)"
+                  class="h-4 w-4 rounded border-slate-300 text-brand-600"
+                />
+                <span class="text-sm text-slate-600">{{ action.actionName }}</span>
+              </label>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (selectedRoleId()) {
+    <p class="text-sm text-slate-400">No permission actions found for this role.</p>
+  }
+</div>

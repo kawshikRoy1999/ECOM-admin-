@@ -1,0 +1,79 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-slate-900">Roles</h1>
+      <p class="mt-1 text-sm text-slate-500">Define roles and their access scope.</p>
+    </div>
+    <button
+      (click)="openCreate()"
+      class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+    >
+      + New role
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [rows]="rows()"
+    [loading]="loading()"
+    emptyText="No roles yet. Create your first role."
+    searchPlaceholder="Search roles…"
+    [actions]="actionsTpl"
+  />
+
+  <ng-template #actionsTpl let-row>
+    <div class="flex justify-end gap-2">
+      <button (click)="openEdit(row)" class="text-sm font-medium text-brand-600 hover:text-brand-700">
+        Edit
+      </button>
+      <button (click)="remove(row)" class="text-sm font-medium text-red-600 hover:text-red-700">
+        Delete
+      </button>
+    </div>
+  </ng-template>
+
+  @if (modalOpen()) {
+    <app-modal [title]="editingId() ? 'Edit role' : 'New role'" (close)="modalOpen.set(false)">
+      <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Role name</label>
+          <input
+            formControlName="RoleName"
+            class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+          />
+          @if (form.controls.RoleName.touched && form.controls.RoleName.invalid) {
+            <p class="mt-1 text-xs text-red-600">Role name is required.</p>
+          }
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Description</label>
+          <textarea
+            formControlName="Description"
+            rows="2"
+            class="mt-1.5 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+          ></textarea>
+        </div>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" formControlName="IsActive" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
+          <span class="text-sm text-slate-700">Active</span>
+        </label>
+      </form>
+
+      <div footer>
+        <button
+          (click)="modalOpen.set(false)"
+          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="save()"
+          [disabled]="saving()"
+          class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+        >
+          {{ saving() ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
+    </app-modal>
+  }
+</div>

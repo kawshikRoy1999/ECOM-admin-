@@ -20,7 +20,7 @@ export class Login {
   readonly showPassword = signal(false);
 
   readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(4)]],
     remember: [true],
   });
@@ -40,7 +40,7 @@ export class Login {
     const { email, password } = this.form.getRawValue();
     this.submitting.set(true);
 
-    this.auth.login({ email, password }).subscribe({
+    this.auth.login({ UserName: email, Password: password }).subscribe({
       next: () => {
         this.submitting.set(false);
         this.router.navigateByUrl('/dashboard');

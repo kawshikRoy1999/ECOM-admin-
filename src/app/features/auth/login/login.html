@@ -75,7 +75,7 @@
           <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
           <input
             id="email"
-            type="email"
+            type="text"
             formControlName="email"
             autocomplete="email"
             placeholder="you@company.com"
@@ -83,7 +83,7 @@
             [class.border-red-400]="form.controls.email.touched && form.controls.email.invalid"
           />
           @if (form.controls.email.touched && form.controls.email.invalid) {
-            <p class="mt-1.5 text-xs text-red-600">Please enter a valid email address.</p>
+            <p class="mt-1.5 text-xs text-red-600">Email is required.</p>
           }
         </div>
 
