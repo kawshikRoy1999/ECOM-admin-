@@ -1,109 +1,238 @@
-<div class="flex min-h-screen items-center justify-center bg-[#f0f2f5] px-4 py-8">
-  <div class="w-full max-w-[420px]">
-    <!-- Login Card - Premium Light Theme -->
-    <div class="overflow-hidden rounded-xl bg-white p-8 sm:p-10 shadow-lg ring-1 ring-slate-900/5">
-      <div class="mb-8 flex flex-col gap-1.5">
-        <div class="flex items-center gap-2.5 mb-3">
-          <div class="flex h-7 w-7 items-center justify-center rounded bg-brand-600 text-[11px] font-bold text-white shadow-sm">EA</div>
-          <span class="text-xl font-bold tracking-tight text-slate-900 uppercase">ECOM Admin</span>
-        </div>
-        <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Sign in</h2>
-        <p class="text-[14px] text-slate-500">to continue to your dashboard</p>
+<div class="flex h-screen max-h-screen w-full overflow-hidden bg-slate-50 font-sans">
+  <!-- Left Panel: Login Form -->
+  <div class="relative flex w-full flex-col justify-between bg-white px-6 py-8 sm:px-12 sm:py-10 md:px-16 lg:px-10 lg:py-8 xl:px-14 lg:w-[38%] xl:w-[32%] shadow-2xl z-10 h-full overflow-y-auto">
+    <!-- Decorative background elements for mobile/tablet screens only -->
+    <div class="absolute inset-0 -z-10 block overflow-hidden opacity-[0.03] lg:hidden">
+      <div class="absolute -top-40 -left-40 h-80 w-80 rounded-full bg-brand-600 blur-3xl animate-pulse-slow"></div>
+      <div class="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-indigo-600 blur-3xl animate-pulse-slow"></div>
+    </div>
+
+    <!-- Top: Logo & Branding -->
+    <div class="flex items-center gap-3">
+      <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-tr from-brand-600 to-indigo-600 text-white shadow-md shadow-brand-500/20">
+        <!-- Modern Shopping Cart / Gear Icon (ECOM Admin) -->
+        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-sm font-bold tracking-wider text-slate-900 uppercase leading-none">Ecom Admin</span>
+        <span class="text-[9px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5">Control Center</span>
+      </div>
+    </div>
+
+    <!-- Center: Login Form -->
+    <div class="my-auto py-2">
+      <div class="mb-5 flex flex-col gap-1">
+        <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Welcome back</h2>
+        <p class="text-[13px] text-slate-500">Sign in to manage your online store and users</p>
       </div>
 
       @if (errorMessage()) {
         <div
-          class="mb-6 flex items-start gap-3 rounded-md border-l-4 border-red-600 bg-red-50 px-4 py-3 text-[13px] text-red-900"
+          class="mb-4 flex items-start gap-2.5 rounded-xl border-l-4 border-red-500 bg-red-50/50 px-3.5 py-3 text-[13px] text-red-900 shadow-sm animate-bounce"
+          style="animation-duration: 0.5s; animation-iteration-count: 1;"
           role="alert"
         >
-          <span class="mt-0.5 text-red-600">
-            <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
+          <span class="mt-0.5 text-red-500">
+            <svg class="h-4.5 w-4.5 fill-current" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
             </svg>
           </span>
-          <span class="font-medium">{{ errorMessage() }}</span>
+          <span class="font-medium leading-relaxed">{{ errorMessage() }}</span>
         </div>
       }
 
-      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6" novalidate>
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
+        <!-- Email Input -->
         <div class="flex flex-col gap-1.5">
-          <input
-            id="email"
-            type="text"
-            formControlName="email"
-            autocomplete="email"
-            placeholder="Email, phone, or Skype"
-            class="w-full !px-1 border-x-0 border-t-0 border-b-2 border-slate-300 !rounded-none focus:!ring-0 focus:border-brand-600 placeholder:text-slate-400 bg-transparent transition-colors text-[14px] h-10"
-            [class.border-red-600]="form.controls.email.touched && form.controls.email.invalid"
-          />
-          @if (form.controls.email.touched && form.controls.email.invalid) {
-            <p class="text-[12px] text-red-600 font-medium">Enter a valid email address.</p>
-          }
+          <label for="email" class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Email or Username</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-3.5 text-slate-400">
+              <!-- Envelope/User Icon -->
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
+              </svg>
+            </span>
+            <input
+              id="email"
+              type="text"
+              formControlName="email"
+              autocomplete="email"
+              placeholder="name@company.com or username"
+              class="w-full !pl-11 !pr-4 !py-2 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[14px]"
+            />
+          </div>
         </div>
 
+        <!-- Password Input -->
         <div class="flex flex-col gap-1.5">
-          <div class="relative">
+          <div class="flex items-center justify-between">
+            <label for="password" class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Password</label>
+          </div>
+          <div class="relative flex items-center">
+            <span class="absolute left-3.5 text-slate-400">
+              <!-- Lock Icon -->
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </span>
             <input
               id="password"
               [type]="showPassword() ? 'text' : 'password'"
               formControlName="password"
               autocomplete="current-password"
-              placeholder="Password"
-              class="w-full !px-1 border-x-0 border-t-0 border-b-2 border-slate-300 !rounded-none focus:!ring-0 focus:border-brand-600 placeholder:text-slate-400 bg-transparent transition-colors text-[14px] h-10"
-              [class.border-red-600]="form.controls.password.touched && form.controls.password.invalid"
+              placeholder="••••••••"
+              class="w-full !pl-11 !pr-12 !py-2 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[14px]"
+              [class.!border-red-500]="form.controls.password.touched && form.controls.password.invalid"
+              [class.!ring-red-500/10]="form.controls.password.touched && form.controls.password.invalid"
             />
             <button
               type="button"
               (click)="togglePassword()"
-              class="absolute inset-y-0 right-0 flex items-center px-2 text-[12px] font-bold text-brand-600 hover:text-brand-800 hover:underline uppercase tracking-wide"
+              class="absolute right-3.5 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
             >
-              {{ showPassword() ? 'Hide' : 'Show' }}
+              @if (showPassword()) {
+                <!-- Eye Off Icon -->
+                <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                </svg>
+              } @else {
+                <!-- Eye Icon -->
+                <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              }
             </button>
           </div>
           @if (form.controls.password.touched && form.controls.password.invalid) {
-            <p class="text-[12px] text-red-600 font-medium">Password is required.</p>
+            <p class="text-[11px] text-red-500 font-semibold flex items-center gap-1 mt-0.5">
+              <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              Password is required (min 4 characters).
+            </p>
           }
         </div>
 
-        <div class="flex items-center justify-between py-2">
-          <label class="flex items-center gap-2.5 cursor-pointer select-none group">
+        <!-- Remember Me & Forgot Password -->
+        <div class="flex items-center justify-between py-0.5">
+          <label class="flex items-center gap-2 cursor-pointer select-none group">
             <input
               type="checkbox"
               formControlName="remember"
-              class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-600/20"
+              class="h-4 w-4 rounded-md border-slate-300 text-brand-600 focus:ring-brand-600/20 focus:ring-offset-0 transition-colors"
             />
-            <span class="text-[13px] text-slate-600 group-hover:text-slate-900 font-medium transition-colors">Keep me signed in</span>
+            <span class="text-[13px] text-slate-600 group-hover:text-slate-900 font-medium transition-colors">Remember me</span>
           </label>
-          <a href="#" class="text-[13px] font-bold text-brand-600 hover:text-brand-800 hover:underline">Forgot password?</a>
+          <a href="#" class="text-[13px] font-bold text-brand-600 hover:text-brand-800 transition-colors hover:underline">Forgot password?</a>
         </div>
 
-        <div class="flex justify-end pt-4">
+        <!-- Submit Button -->
+        <div class="pt-1">
           <button
             type="submit"
             [disabled]="submitting()"
-            class="btn-primary min-w-[100px] h-9 text-[14px] font-bold tracking-wide"
+            class="w-full flex items-center justify-center h-10 rounded-xl bg-linear-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-semibold text-[14px] shadow-md shadow-brand-500/15 hover:shadow-brand-500/25 active:scale-[0.98] transition-all disabled:opacity-75 disabled:pointer-events-none cursor-pointer"
           >
             @if (submitting()) {
-              <svg class="mr-2 h-4 w-4 animate-spin text-white" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+              <svg class="mr-2 h-4.5 w-4.5 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Signing in…
             } @else {
-              Next
+              Sign In
             }
           </button>
         </div>
       </form>
     </div>
 
-    <!-- Footer Links -->
-    <div class="mt-10 flex justify-center gap-8 text-[11px] text-slate-500 font-semibold tracking-wider">
-      <a href="#" class="hover:underline hover:text-slate-800 transition-colors">Terms of use</a>
-      <a href="#" class="hover:underline hover:text-slate-800 transition-colors">Privacy & cookies</a>
+    <!-- Bottom: Footer links -->
+    <div class="flex items-center justify-between text-[11px] font-semibold tracking-wider text-slate-400 mt-2">
+      <span>© 2026 Ecom Admin</span>
+      <div class="flex gap-4">
+        <a href="#" class="hover:text-slate-600 transition-colors hover:underline">Terms</a>
+        <a href="#" class="hover:text-slate-600 transition-colors hover:underline">Privacy</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Creative Showcase -->
+  <div class="relative hidden lg:flex lg:w-[62%] xl:w-[68%] flex-col justify-between overflow-hidden bg-slate-950 p-10 xl:p-12 h-full">
+    <!-- Glowing background aura shapes -->
+    <div class="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-brand-500/10 blur-[100px] animate-pulse-slow"></div>
+    <div class="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-indigo-500/10 blur-[100px] animate-pulse-slow" style="animation-delay: 2s;"></div>
+    
+    <!-- Top right mini badge -->
+    <div class="self-end z-10">
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-900/60 px-3 py-1 text-[11px] font-semibold text-brand-300 ring-1 ring-white/10 backdrop-blur-md">
+        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+        All Systems Operational
+      </span>
+    </div>
+
+    <!-- Visual Showcase Mockup Container -->
+    <div class="relative my-auto self-center z-10 w-full max-w-[500px] xl:max-w-[580px] flex flex-col items-center justify-center">
+      <!-- Outer wrapper with float animation -->
+      <div class="relative w-full animate-float-slow flex justify-center">
+        <!-- Image Wrapper with widgets inside -->
+        <div class="relative flex justify-center items-center max-h-[46vh] xl:max-h-[50vh]">
+          <img
+            src="/login-showcase.png"
+            alt="Ecommerce Dashboard Preview"
+            class="max-h-full max-w-full rounded-2xl border border-white/10 shadow-2xl shadow-black/60 object-contain bg-slate-950"
+          />
+          
+          <!-- Floating Stats Widget 1 (Top Left) -->
+          <div class="absolute -top-4 -left-8 animate-float-delayed z-20">
+            <div class="glass-card-dark rounded-xl p-2.5 flex items-center gap-2.5 w-[160px]">
+              <div class="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-brand-500/20 text-brand-300 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">Live Sales</span>
+                <span class="text-[13px] font-bold text-white mt-0.5">$12,450.00</span>
+                <span class="text-[8px] font-medium text-emerald-400 mt-0.5 flex items-center gap-0.5 leading-none">
+                  <svg class="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  +42.5%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating Stats Widget 2 (Bottom Right) -->
+          <div class="absolute -bottom-4 -right-8 animate-float-slow z-20">
+            <div class="glass-card-dark rounded-xl p-2.5 flex items-center gap-2.5 w-[150px]">
+              <div class="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-300 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">Fulfilled</span>
+                <span class="text-[13px] font-bold text-white mt-0.5">98.2%</span>
+                <span class="text-[8px] font-medium text-indigo-400 mt-0.5 leading-none">156 Pending</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: Tagline Overlay -->
+    <div class="z-10 max-w-[450px]">
+      <h3 class="text-xl font-bold tracking-tight text-white leading-tight">Next-gen E-commerce Control</h3>
+      <p class="text-[13px] text-slate-400 mt-1.5 leading-relaxed">
+        Gain comprehensive system insights, manage inventories, analyze live streams of sales, and coordinate user groups efficiently.
+      </p>
     </div>
   </div>
 </div>
-
-
-

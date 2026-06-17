@@ -8,33 +8,33 @@ import { Component, input, output } from '@angular/core';
   selector: 'app-modal',
   template: `
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-[2px] p-4"
       (click)="close.emit()"
     >
       <div
-        class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-slate-900/5"
+        class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200/50"
         [class]="widthClass()"
         (click)="$event.stopPropagation()"
       >
-        <header class="flex items-center justify-between border-b border-[#e1dfdd] bg-slate-50 px-6 py-4">
-          <h3 class="text-[13px] font-bold text-slate-800 tracking-widest uppercase">{{ title() }}</h3>
+        <header class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+          <h3 class="text-[13px] font-bold text-slate-800 tracking-wider uppercase">{{ title() }}</h3>
           <button
             type="button"
             (click)="close.emit()"
-            class="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700"
+            class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 cursor-pointer focus:outline-none"
             aria-label="Close"
           >
-            <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
-              <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" />
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-6 py-6 bg-white">
+        <div class="flex-1 overflow-y-auto px-6 py-6 bg-white text-[13.5px]">
           <ng-content />
         </div>
 
-        <footer class="flex justify-end gap-3 border-t border-[#e1dfdd] bg-slate-50 px-6 py-4">
+        <footer class="flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
           <ng-content select="[footer]" />
         </footer>
       </div>

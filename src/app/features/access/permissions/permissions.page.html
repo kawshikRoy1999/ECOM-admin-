@@ -1,16 +1,18 @@
-<div class="space-y-4">
-  <div class="flex flex-col gap-0.5">
-    <h1 class="page-title">Permissions</h1>
-    <p class="page-subtitle">Configure role-based access control for system modules.</p>
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col gap-1">
+    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Permissions</h1>
+    <p class="text-[13.5px] text-slate-500 font-medium">Configure role-based access control for system modules and features.</p>
   </div>
 
-  <div class="fluent-card p-4 flex flex-wrap items-end gap-4">
+  <!-- Role Selection Bar -->
+  <div class="fluent-card p-4.5 flex flex-wrap items-end justify-between gap-4 bg-white border border-slate-200/80 rounded-xl shadow-xs">
     <div class="flex flex-col gap-1.5">
-      <label class="text-[12px] font-bold text-slate-500 uppercase tracking-tight">Select Role</label>
+      <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Select Administrative Role</label>
       <select
         [value]="selectedRoleId()"
         (change)="onRoleChange($any($event.target).value)"
-        class="w-64 h-8"
+        class="w-68 h-9.5 rounded-xl border border-slate-200 px-3.5 text-[13.5px] font-semibold text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all cursor-pointer bg-slate-50/50 hover:bg-slate-50"
       >
         <option value="">Select a role…</option>
         @for (r of roles(); track r.roleId) {
@@ -18,52 +20,66 @@
         }
       </select>
     </div>
+
     @if (selectedRoleId()) {
       <button
         (click)="save()"
         [disabled]="saving()"
-        class="flex h-8 w-8 items-center justify-center rounded-md bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm"
+        class="btn-primary h-9.5 px-4.5 text-[13px] rounded-xl gap-1.5 shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all cursor-pointer font-semibold flex items-center justify-center"
         title="Save Permissions"
       >
         @if (saving()) {
-          <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+          <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
+          Saving Permissions…
         } @else {
-          <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
-            <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+          <!-- Checkmark Icon -->
+          <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
           </svg>
+          Save Permissions
         }
       </button>
     }
   </div>
 
+  <!-- Permissions Grid View -->
   @if (loading()) {
-    <div class="flex items-center justify-center gap-2 py-12 text-slate-500">
-      <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      <span class="text-sm font-medium">Loading permissions…</span>
+    <div class="flex h-[200px] items-center justify-center">
+      <div class="flex flex-col items-center gap-2">
+        <svg class="h-6 w-6 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-xs font-semibold text-slate-400">Loading module permissions…</p>
+      </div>
     </div>
   } @else if (selectedRoleId() && groups().length) {
     <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
       @for (group of groups(); track group.menuId) {
-        <div class="fluent-card flex flex-col overflow-hidden">
-          <header class="bg-slate-50 border-b border-[#e1dfdd] px-4 py-2.5">
-            <h3 class="text-[12px] font-bold text-slate-700 tracking-widest uppercase">{{ group.menuName }}</h3>
+        <div class="fluent-card flex flex-col overflow-hidden bg-white border border-slate-200/80 rounded-xl hover:shadow-md transition-all group">
+          <!-- Module Title Header -->
+          <header class="bg-slate-50/50 border-b border-slate-100 px-4.5 py-3">
+            <h3 class="text-[12px] font-bold text-slate-700 tracking-wider uppercase group-hover:text-brand-600 transition-colors">
+              {{ group.menuName }}
+            </h3>
           </header>
-          <div class="flex-1 space-y-3 p-4">
+          
+          <!-- Actions List -->
+          <div class="flex-1 space-y-3.5 p-4.5">
             @for (action of group.actions; track action.menuActionId) {
-              <label class="flex items-center gap-3 cursor-pointer group select-none">
+              <label class="flex items-center gap-3 cursor-pointer group/label select-none">
                 <input
                   type="checkbox"
                   [checked]="action.isActive"
                   (change)="toggle(action)"
-                  class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-600/20"
+                  class="h-4.5 w-4.5 rounded-md border-slate-300 text-brand-600 focus:ring-brand-600/20 focus:ring-offset-0 transition-colors cursor-pointer"
                 />
-                <span class="text-[13px] font-medium text-slate-700 transition-colors group-hover:text-black">{{ action.actionName }}</span>
+                <span class="text-[13px] font-semibold text-slate-700 transition-colors group-hover/label:text-slate-900">
+                  {{ action.actionName }}
+                </span>
               </label>
             }
           </div>
@@ -71,11 +87,8 @@
       }
     </div>
   } @else if (selectedRoleId()) {
-    <div class="py-12 text-center text-slate-400 italic text-sm">
-      No permission actions found for this role.
+    <div class="text-center py-12 bg-white rounded-xl border border-slate-200">
+      <p class="text-sm text-slate-400 font-medium italic">No permission actions found for this role.</p>
     </div>
   }
 </div>
-
-
-
