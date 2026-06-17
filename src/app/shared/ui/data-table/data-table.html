@@ -21,21 +21,21 @@
   }
 
   <!-- Viewport Grid Table -->
-  <div class="overflow-x-auto">
+  <div [class]="'overflow-auto relative custom-scrollbar ' + maxHeightClass()">
     <table class="min-w-full divide-y divide-slate-100 text-[13px]">
       <!-- Table Header -->
-      <thead class="bg-slate-50/60">
+      <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs border-b border-slate-100 shadow-xs">
         <tr>
           @for (col of columns(); track col.key) {
             <th
-              class="px-5 py-3 text-left text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none"
+              class="px-5 py-3 text-left text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none bg-slate-50/95 backdrop-blur-xs sticky top-0"
               [class]="alignClass(col)"
             >
               {{ col.header }}
             </th>
           }
           @if (actions()) {
-            <th class="px-5 py-3 text-right text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none">
+            <th class="px-5 py-3 text-right text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none bg-slate-50/95 backdrop-blur-xs sticky top-0">
               Actions
             </th>
           }

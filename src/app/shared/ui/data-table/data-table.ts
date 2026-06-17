@@ -30,6 +30,7 @@ export class DataTable<T extends object> {
   readonly searchable = input(true);
   readonly searchPlaceholder = input('Search…');
   readonly actions = input<TemplateRef<unknown> | null>(null);
+  readonly maxHeightClass = input<string>('max-h-[calc(100vh-220px)] md:max-h-[calc(100vh-250px)]');
 
   readonly query = signal('');
 

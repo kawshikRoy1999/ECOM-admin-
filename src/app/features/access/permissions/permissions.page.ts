@@ -20,6 +20,27 @@ export class PermissionsPage {
   readonly actions = signal<PermissionAction[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly searchQuery = signal<string>('');
+
+  /** Roles filtered by the search query. */
+  readonly filteredRoles = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return this.roles();
+    return this.roles().filter((r) => r.roleName.toLowerCase().includes(query));
+  });
+
+  /** Selected role object details. */
+  readonly selectedRole = computed(() => 
+    this.roles().find((r) => r.roleId === this.selectedRoleId())
+  );
+
+  /** Summary stats of active permissions. */
+  readonly activeCount = computed(() => 
+    this.actions().filter((a) => a.isActive).length
+  );
+  readonly totalCount = computed(() => 
+    this.actions().length
+  );
 
   /** Actions grouped by menu for the matrix layout. */
   readonly groups = computed<MenuGroup[]>(() => {
@@ -36,7 +57,15 @@ export class PermissionsPage {
   });
 
   constructor() {
-    this.rolesService.list().subscribe((res) => this.roles.set(res?.roleList ?? []));
+    this.rolesService.list().subscribe((res) => {
+      const roleList = res?.roleList ?? [];
+      this.roles.set(roleList);
+      // Auto-select the first active role if any exist to improve UX
+      const activeRoles = roleList.filter(r => r.isActive);
+      if (activeRoles.length > 0) {
+        this.onRoleChange(activeRoles[0].roleId);
+      }
+    });
   }
 
   onRoleChange(roleId: string): void {
@@ -70,3 +99,4 @@ export class PermissionsPage {
     });
   }
 }
+
