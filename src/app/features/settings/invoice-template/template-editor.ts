@@ -4,13 +4,29 @@ import { FormsModule } from '@angular/forms';
 import { Modal } from '../../../shared/ui/modal/modal';
 
 import { ToastService } from '../../../shared/ui/toast/toast.service';
-import { InvoiceTemplateService } from './invoice-template.service';
-import { TemplateDocType } from './invoice-template.models';
+import { TEMPLATE_PROVIDER, TemplatePlaceholder } from './template-provider';
+
+const DEFAULT_PLACEHOLDERS: TemplatePlaceholder[] = [
+  { name: 'Invoice Number', tag: 'InvoiceNumber' },
+  { name: 'Invoice Date', tag: 'InvoiceDate' },
+  { name: 'Due Date', tag: 'DueDate' },
+  { name: 'Customer Name', tag: 'CustomerName' },
+  { name: 'Customer Email', tag: 'CustomerEmail' },
+  { name: 'Customer Phone', tag: 'CustomerPhone' },
+  { name: 'Billing Address', tag: 'BillingAddress' },
+  { name: 'Shipping Address', tag: 'ShippingAddress' },
+  { name: 'Subtotal', tag: 'Subtotal' },
+  { name: 'Tax Amount', tag: 'TaxAmount' },
+  { name: 'Total Amount', tag: 'TotalAmount' },
+  { name: 'Company Name', tag: 'CompanyName' },
+  { name: 'Company Address', tag: 'CompanyAddress' },
+  { name: 'Items Table', tag: 'ItemsTable' },
+];
 
 /**
- * Reusable HTML template editor shared by the Invoice / Cancellation / Refund
- * tabs. Loads the saved template for [docType], edits the HTML visually or as source,
- * and saves back.
+ * Reusable HTML template editor. Loads/saves the template for [docType] via the
+ * injected TEMPLATE_PROVIDER, so it drives invoice, order or any future template.
+ * Edits visually (WYSIWYG) or as HTML source.
  */
 @Component({
   selector: 'app-template-editor',
@@ -18,11 +34,12 @@ import { TemplateDocType } from './invoice-template.models';
   templateUrl: './template-editor.html',
 })
 export class TemplateEditor {
-  private readonly service = inject(InvoiceTemplateService);
+  private readonly service = inject(TEMPLATE_PROVIDER);
   private readonly toast = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
 
-  readonly docType = input.required<TemplateDocType>();
+  readonly docType = input.required<string>();
+  readonly placeholders = input<TemplatePlaceholder[]>(DEFAULT_PLACEHOLDERS);
 
   readonly html = signal('');
   readonly templateId = signal(0);
@@ -47,23 +64,6 @@ export class TemplateEditor {
   readonly preview = computed<SafeHtml>(() =>
     this.sanitizer.bypassSecurityTrustHtml(this.html() || '<p style="color:#94a3b8">Nothing to preview yet.</p>'),
   );
-
-  readonly placeholders = [
-    { name: 'Invoice Number', tag: 'InvoiceNumber' },
-    { name: 'Invoice Date', tag: 'InvoiceDate' },
-    { name: 'Due Date', tag: 'DueDate' },
-    { name: 'Customer Name', tag: 'CustomerName' },
-    { name: 'Customer Email', tag: 'CustomerEmail' },
-    { name: 'Customer Phone', tag: 'CustomerPhone' },
-    { name: 'Billing Address', tag: 'BillingAddress' },
-    { name: 'Shipping Address', tag: 'ShippingAddress' },
-    { name: 'Subtotal', tag: 'Subtotal' },
-    { name: 'Tax Amount', tag: 'TaxAmount' },
-    { name: 'Total Amount', tag: 'TotalAmount' },
-    { name: 'Company Name', tag: 'CompanyName' },
-    { name: 'Company Address', tag: 'CompanyAddress' },
-    { name: 'Items Table', tag: 'ItemsTable' },
-  ];
 
   private loadedFor = '';
 
