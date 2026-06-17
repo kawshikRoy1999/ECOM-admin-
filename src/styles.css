@@ -11,17 +11,17 @@
   --color-brand-600: #106ebe;
   --color-brand-700: #005a9e;
 
-  /* Neutral palette (Gray 10 - Gray 90) */
+  /* Neutral palette (Gray 10 - Gray 90) - High Contrast & Accessible */
   --color-slate-50: #faf9f8;
   --color-slate-100: #f3f2f1;
-  --color-slate-200: #edebe9;
-  --color-slate-300: #e1dfdd;
-  --color-slate-400: #d2d0ce;
-  --color-slate-500: #c8c6c4;
-  --color-slate-600: #a19f9d;
-  --color-slate-700: #605e5c;
-  --color-slate-800: #323130;
-  --color-slate-900: #201f1e;
+  --color-slate-200: #d5d3d1; /* More visible panel backgrounds and borders */
+  --color-slate-300: #bab7b5; /* Defined layout borders */
+  --color-slate-400: #767676; /* Accessible Gray (4.5:1 contrast against white - WCAG AA compliant) */
+  --color-slate-500: #5c5a59; /* Stronger secondary texts */
+  --color-slate-600: #484645; /* Dark gray for high legibility */
+  --color-slate-700: #3b3938; /* Extra dark gray */
+  --color-slate-800: #201f1e; /* Crisp dark text */
+  --color-slate-900: #11100f; /* Near black high contrast text */
 
   /* Custom Modern Animations */
   --animate-float-slow: float 6s ease-in-out infinite;
@@ -53,8 +53,8 @@
   --bg-page: #f0f2f5; 
   --bg-card: #ffffff;
   --text-primary: #201f1e;
-  --text-secondary: #605e5c;
-  --border-color: #e1dfdd;
+  --text-secondary: #5c5a59; /* Increased contrast for standard secondary text */
+  --border-color: #bab7b5;   /* Increased contrast for input/card borders */
   --input-bg: #ffffff;
   --header-bg: #ffffff;
   
