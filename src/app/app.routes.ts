@@ -8,10 +8,29 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
-    path: 'dashboard',
+    path: '',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+    loadComponent: () => import('./layout/admin-layout').then((m) => m.AdminLayout),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'access/users',
+        loadComponent: () => import('./features/access/users/users.page').then((m) => m.UsersPage),
+      },
+      {
+        path: 'access/roles',
+        loadComponent: () => import('./features/access/roles/roles.page').then((m) => m.RolesPage),
+      },
+      {
+        path: 'access/permissions',
+        loadComponent: () =>
+          import('./features/access/permissions/permissions.page').then((m) => m.PermissionsPage),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+    ],
   },
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

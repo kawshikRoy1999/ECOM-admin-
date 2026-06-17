@@ -1,27 +1,32 @@
 /**
- * Auth contract — ADJUST these to match your .NET admin API.
- *
- * Right now this assumes:
- *   POST {apiUrl}/auth/login
- *   body:     { email, password }
- *   response: { token, user: { id, name, email, role } }
- *
- * Send me your real endpoint + request/response shape and I'll update this file.
+ * Auth contract for the EcomShop gateway.
+ *   POST UserManagement/authenticate
+ *   body:     { UserName, Password, CompanyId? }
+ *   response: Response<UserToken>  (envelope unwrapped to SessionUser)
  */
 
 export interface LoginRequest {
-  email: string;
-  password: string;
+  UserName: string;
+  Password: string;
+  CompanyId?: number;
 }
 
-export interface AuthUser {
+/** Subset of the .NET UserToken (serialized camelCase) we keep as the session. */
+export interface SessionUser {
   id: string;
-  name: string;
-  email: string;
-  role?: string;
-}
-
-export interface LoginResponse {
+  userName: string;
+  companyId: number;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
   token: string;
-  user: AuthUser;
+  imageFilePath?: string;
+  logo?: string;
+  businessType?: string;
+  isActive?: boolean;
+  currencyMasterId?: number;
+  currencyCode?: string;
+  currencySymbol?: string;
+  countryCode?: string;
+  isSuperAdmin?: boolean;
 }
