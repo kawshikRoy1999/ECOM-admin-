@@ -43,6 +43,11 @@ export const routes: Routes = [
             (m) => m.OrderTemplatePage,
           ),
       },
+      {
+        path: 'settings/templates',
+        loadComponent: () =>
+          import('./features/settings/templates/templates.page').then((m) => m.TemplatesPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

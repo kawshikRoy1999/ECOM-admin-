@@ -61,6 +61,7 @@ export class AdminLayout {
       items: [
         { label: 'Invoice Template', path: '/settings/invoice-template', icon: '▤' },
         { label: 'Order Template', path: '/settings/order-template', icon: '▥' },
+        { label: 'Store Front Template', path: '/settings/templates', icon: '▦' },
       ],
     },
   ];
