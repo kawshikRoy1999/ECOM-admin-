@@ -1,16 +1,16 @@
-<div class="space-y-6">
-  <div>
-    <h1 class="text-xl font-bold text-slate-900">Permissions</h1>
-    <p class="mt-1 text-sm text-slate-500">Choose a role and toggle the actions it can perform.</p>
+<div class="space-y-4">
+  <div class="flex flex-col gap-0.5">
+    <h1 class="page-title">Permissions</h1>
+    <p class="page-subtitle">Configure role-based access control for system modules.</p>
   </div>
 
-  <div class="flex items-end gap-4">
-    <div>
-      <label class="block text-sm font-medium text-slate-700">Role</label>
+  <div class="fluent-card p-4 flex flex-wrap items-end gap-4">
+    <div class="flex flex-col gap-1.5">
+      <label class="text-[12px] font-bold text-slate-500 uppercase tracking-tight">Select Role</label>
       <select
         [value]="selectedRoleId()"
         (change)="onRoleChange($any($event.target).value)"
-        class="mt-1.5 w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+        class="w-64 h-8"
       >
         <option value="">Select a role…</option>
         @for (r of roles(); track r.roleId) {
@@ -22,30 +22,48 @@
       <button
         (click)="save()"
         [disabled]="saving()"
-        class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60"
+        class="flex h-8 w-8 items-center justify-center rounded-md bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm"
+        title="Save Permissions"
       >
-        {{ saving() ? 'Saving…' : 'Save permissions' }}
+        @if (saving()) {
+          <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        } @else {
+          <svg class="h-4 w-4 fill-current" viewBox="0 0 20 20">
+            <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+          </svg>
+        }
       </button>
     }
   </div>
 
   @if (loading()) {
-    <p class="text-sm text-slate-400">Loading permissions…</p>
+    <div class="flex items-center justify-center gap-2 py-12 text-slate-500">
+      <svg class="h-5 w-5 animate-spin text-brand-600" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-sm font-medium">Loading permissions…</span>
+    </div>
   } @else if (selectedRoleId() && groups().length) {
-    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div class="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
       @for (group of groups(); track group.menuId) {
-        <div class="rounded-xl border border-slate-200 bg-white p-4">
-          <h3 class="mb-3 text-sm font-semibold text-slate-900">{{ group.menuName }}</h3>
-          <div class="space-y-2">
+        <div class="fluent-card flex flex-col overflow-hidden">
+          <header class="bg-slate-50 border-b border-[#e1dfdd] px-4 py-2.5">
+            <h3 class="text-[12px] font-bold text-slate-700 tracking-widest uppercase">{{ group.menuName }}</h3>
+          </header>
+          <div class="flex-1 space-y-3 p-4">
             @for (action of group.actions; track action.menuActionId) {
-              <label class="flex items-center gap-2">
+              <label class="flex items-center gap-3 cursor-pointer group select-none">
                 <input
                   type="checkbox"
                   [checked]="action.isActive"
                   (change)="toggle(action)"
-                  class="h-4 w-4 rounded border-slate-300 text-brand-600"
+                  class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-600/20"
                 />
-                <span class="text-sm text-slate-600">{{ action.actionName }}</span>
+                <span class="text-[13px] font-medium text-slate-700 transition-colors group-hover:text-black">{{ action.actionName }}</span>
               </label>
             }
           </div>
@@ -53,6 +71,11 @@
       }
     </div>
   } @else if (selectedRoleId()) {
-    <p class="text-sm text-slate-400">No permission actions found for this role.</p>
+    <div class="py-12 text-center text-slate-400 italic text-sm">
+      No permission actions found for this role.
+    </div>
   }
 </div>
+
+
+

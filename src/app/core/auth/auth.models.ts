@@ -11,6 +11,13 @@ export interface LoginRequest {
   CompanyId?: number;
 }
 
+/** CompanyManagement/GetCompany response subset used to enrich the session. */
+export interface CompanyDtl {
+  imageFilePath: string;
+  logoFileName: string;
+  businessType: string;
+}
+
 /** Subset of the .NET UserToken (serialized camelCase) we keep as the session. */
 export interface SessionUser {
   id: string;

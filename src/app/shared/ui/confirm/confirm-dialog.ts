@@ -7,22 +7,23 @@ import { ConfirmService } from './confirm.service';
   template: `
     @if (confirm.state(); as s) {
       <div
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-[1px] p-4"
         (click)="confirm.respond(false)"
       >
-        <div class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl" (click)="$event.stopPropagation()">
-          <p class="text-sm text-slate-700">{{ s.message }}</p>
-          <div class="mt-6 flex justify-end gap-2">
+        <div class="w-full max-w-sm rounded-[2px] bg-white p-6 shadow-xl ring-1 ring-slate-900/5" (click)="$event.stopPropagation()">
+          <h3 class="mb-2 text-base font-semibold text-slate-900 tracking-tight">Confirm Action</h3>
+          <p class="text-sm text-slate-600 leading-relaxed">{{ s.message }}</p>
+          <div class="mt-8 flex justify-end gap-2">
             <button
               (click)="confirm.respond(false)"
-              class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              class="btn-secondary min-w-[80px]"
             >
               Cancel
             </button>
             <button
               (click)="confirm.respond(true)"
-              class="rounded-lg px-4 py-2 text-sm font-semibold text-white"
-              [class]="s.danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-600 hover:bg-brand-700'"
+              class="min-w-[80px]"
+              [class]="s.danger ? 'btn-danger' : 'btn-primary'"
             >
               {{ s.confirmLabel }}
             </button>

@@ -5,8 +5,10 @@ import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
 import { Modal } from '../../../shared/ui/modal/modal';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { of, switchMap } from 'rxjs';
+
 import { UsersService } from './users.service';
-import { AdminUser } from './user.models';
+import { AdminUser, UserRoleOption } from './user.models';
 
 @Component({
   selector: 'app-users-page',
@@ -24,6 +26,10 @@ export class UsersPage {
   readonly saving = signal(false);
   readonly modalOpen = signal(false);
   readonly editingId = signal<string>('');
+
+  /** All assignable roles (from the user list response) + the current selection. */
+  readonly roleOptions = signal<UserRoleOption[]>([]);
+  readonly selectedRoleIds = signal<string[]>([]);
 
   readonly columns: Column<AdminUser>[] = [
     { key: 'userName', header: 'Username' },
@@ -52,6 +58,7 @@ export class UsersPage {
     this.service.list().subscribe({
       next: (res) => {
         this.rows.set(res?.userList ?? []);
+        this.roleOptions.set(res?.roleList ?? []);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -60,6 +67,7 @@ export class UsersPage {
 
   openCreate(): void {
     this.editingId.set('');
+    this.selectedRoleIds.set([]);
     this.form.reset({ UserName: '', Email: '', FirstName: '', LastName: '', Phone: '', Password: '', IsActive: true });
     this.form.controls.Password.addValidators(Validators.required);
     this.form.controls.Password.updateValueAndValidity();
@@ -68,6 +76,7 @@ export class UsersPage {
 
   openEdit(user: AdminUser): void {
     this.editingId.set(user.userId);
+    this.selectedRoleIds.set([]);
     this.form.reset({
       UserName: user.userName,
       Email: user.email,
@@ -80,6 +89,21 @@ export class UsersPage {
     this.form.controls.Password.clearValidators();
     this.form.controls.Password.updateValueAndValidity();
     this.modalOpen.set(true);
+
+    // Preselect the roles already assigned to this user.
+    this.service.detail(user.userId).subscribe({
+      next: (res) => this.selectedRoleIds.set((res?.userRoleDtl ?? []).map((r) => r.roleId)),
+    });
+  }
+
+  toggleRole(roleId: string, checked: boolean): void {
+    this.selectedRoleIds.update((ids) =>
+      checked ? [...new Set([...ids, roleId])] : ids.filter((id) => id !== roleId),
+    );
+  }
+
+  isRoleSelected(roleId: string): boolean {
+    return this.selectedRoleIds().includes(roleId);
   }
 
   save(): void {
@@ -89,6 +113,7 @@ export class UsersPage {
     }
     this.saving.set(true);
     const v = this.form.getRawValue();
+    const wasEditing = !!this.editingId();
     this.service
       .save({
         userId: this.editingId(),
@@ -101,11 +126,19 @@ export class UsersPage {
         password: v.Password,
         isActive: v.IsActive,
       })
+      .pipe(
+        // Once the user exists, assign the selected roles (uses the returned id for new users).
+        switchMap((res) => {
+          const userId = res?.userId || this.editingId();
+          const roleIds = this.selectedRoleIds();
+          return userId && roleIds.length ? this.service.assignRoles(userId, roleIds) : of(null);
+        }),
+      )
       .subscribe({
         next: () => {
           this.saving.set(false);
           this.modalOpen.set(false);
-          this.toast.success(this.editingId() ? 'User updated.' : 'User created.');
+          this.toast.success(wasEditing ? 'User updated.' : 'User created.');
           this.load();
         },
         error: () => this.saving.set(false),

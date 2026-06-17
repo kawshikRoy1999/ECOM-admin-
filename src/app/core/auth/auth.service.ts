@@ -1,8 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, catchError, of, switchMap, tap } from 'rxjs';
 
 import { ApiService } from '../api/api.service';
-import { LoginRequest, SessionUser } from './auth.models';
+import { CompanyDtl, LoginRequest, SessionUser } from './auth.models';
 
 const TOKEN_KEY = 'ecom_admin_token';
 const USER_KEY = 'ecom_admin_user';
@@ -24,10 +24,32 @@ export class AuthService {
     return [u.firstName, u.lastName].filter(Boolean).join(' ') || u.userName;
   });
 
+  /** Full URL of the company logo, or '' if none. Built as imageFilePath + logo. */
+  readonly logoUrl = computed(() => {
+    const u = this._user();
+    return u?.logo ? `${u.imageFilePath ?? ''}${u.logo}` : '';
+  });
+
   login(credentials: LoginRequest): Observable<SessionUser> {
-    return this.api
-      .post<SessionUser>('UserManagement/authenticate', credentials)
-      .pipe(tap((user) => this.persistSession(user)));
+    return this.api.post<SessionUser>('UserManagement/authenticate', credentials).pipe(
+      // Persist immediately so the auth interceptor can attach the token to GetCompany.
+      tap((user) => this.persistSession(user)),
+      // Enrich the session with company details (logo, business type) like the .NET flow.
+      switchMap((user) =>
+        this.api.post<CompanyDtl>('CompanyManagement/GetCompany', { CompanyId: user.companyId }).pipe(
+          catchError(() => of(null)),
+          tap((company) => {
+            if (company) {
+              user.imageFilePath = company.imageFilePath;
+              user.logo = company.logoFileName;
+              user.businessType = company.businessType;
+              this.persistSession(user);
+            }
+          }),
+          switchMap(() => of(user)),
+        ),
+      ),
+    );
   }
 
   logout(): void {
