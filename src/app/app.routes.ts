@@ -48,6 +48,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/templates/templates.page').then((m) => m.TemplatesPage),
       },
+      {
+        path: 'settings/taxes',
+        loadComponent: () =>
+          import('./features/settings/taxes/taxes.page').then((m) => m.TaxesPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
