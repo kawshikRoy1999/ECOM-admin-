@@ -188,20 +188,23 @@
 }
 
 /* Scoped Custom Scrollbars for Tables and Views */
-.custom-scrollbar {
-  scrollbar-width: thin !important;
-  scrollbar-color: #d2d0ce transparent !important;
+@supports (-moz-appearance: none) {
+  .custom-scrollbar {
+    scrollbar-width: thin !important;
+    scrollbar-color: #d2d0ce transparent !important;
+  }
 }
+
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
+  width: 10px !important;
+  height: 10px !important;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent !important;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #d2d0ce !important;
-  border: 1.5px solid transparent !important;
+  border: 3px solid transparent !important;
   background-clip: padding-box !important;
   border-radius: 9999px !important;
 }
