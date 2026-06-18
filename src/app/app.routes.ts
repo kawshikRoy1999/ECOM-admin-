@@ -53,6 +53,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/taxes/taxes.page').then((m) => m.TaxesPage),
       },
+      {
+        path: 'settings/zones',
+        loadComponent: () =>
+          import('./features/settings/zones/zones.page').then((m) => m.ZonesPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
