@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { RolesService } from '../roles/roles.service';
@@ -8,6 +9,7 @@ import { MenuGroup, PermissionAction } from './permission.models';
 
 @Component({
   selector: 'app-permissions-page',
+  imports: [NgTemplateOutlet],
   templateUrl: './permissions.page.html',
 })
 export class PermissionsPage {
@@ -21,6 +23,7 @@ export class PermissionsPage {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly searchQuery = signal<string>('');
+  readonly expandedGroups = signal<Record<string, boolean>>({});
 
   /** Roles filtered by the search query. */
   readonly filteredRoles = computed(() => {
@@ -41,6 +44,13 @@ export class PermissionsPage {
   readonly totalCount = computed(() => 
     this.actions().length
   );
+
+  /** Checks if all groups are currently expanded. */
+  readonly allGroupsExpanded = computed(() => {
+    const grps = this.groups();
+    if (grps.length === 0) return false;
+    return grps.every((g) => this.expandedGroups()[g.menuId]);
+  });
 
   /** Actions grouped by menu for the matrix layout. */
   readonly groups = computed<MenuGroup[]>(() => {
@@ -71,6 +81,7 @@ export class PermissionsPage {
   onRoleChange(roleId: string): void {
     this.selectedRoleId.set(roleId);
     this.actions.set([]);
+    this.expandedGroups.set({});
     if (!roleId) return;
     this.loading.set(true);
     this.service.getForRole(roleId).subscribe({
@@ -80,6 +91,25 @@ export class PermissionsPage {
       },
       error: () => this.loading.set(false),
     });
+  }
+
+  toggleGroup(menuId: string): void {
+    this.expandedGroups.update((map) => ({
+      ...map,
+      [menuId]: !map[menuId],
+    }));
+  }
+
+  toggleAllGroups(): void {
+    const expanded = this.allGroupsExpanded();
+    const map: Record<string, boolean> = {};
+    if (!expanded) {
+      // Expand all groups
+      for (const g of this.groups()) {
+        map[g.menuId] = true;
+      }
+    }
+    this.expandedGroups.set(map);
   }
 
   toggle(action: PermissionAction): void {
