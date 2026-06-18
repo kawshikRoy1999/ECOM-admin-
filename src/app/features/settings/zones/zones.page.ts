@@ -1,6 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NgTemplateOutlet } from '@angular/common';
 
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
@@ -9,7 +8,7 @@ import { Zone } from './zone.models';
 
 @Component({
   selector: 'app-zones-page',
-  imports: [ReactiveFormsModule, NgTemplateOutlet],
+  imports: [ReactiveFormsModule],
   templateUrl: './zones.page.html',
 })
 export class ZonesPage {
