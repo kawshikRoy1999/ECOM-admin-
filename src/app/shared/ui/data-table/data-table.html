@@ -28,8 +28,7 @@
         <tr>
           @for (col of columns(); track col.key) {
             <th
-              class="px-5 py-3 text-left text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none bg-slate-50/95 backdrop-blur-xs sticky top-0"
-              [class]="alignClass(col)"
+              [class]="'px-5 py-3 text-[10.5px] font-bold tracking-wider text-slate-400 uppercase leading-none bg-slate-50/95 backdrop-blur-xs sticky top-0 ' + alignClass(col)"
             >
               {{ col.header }}
             </th>
@@ -66,7 +65,7 @@
           @for (row of filtered(); track $index) {
             <tr class="transition-colors hover:bg-slate-50/50 group">
               @for (col of columns(); track col.key) {
-                <td class="px-5 py-3 text-slate-700 font-medium" [class]="alignClass(col)">
+                <td [class]="'px-5 py-3 text-slate-700 font-medium ' + alignClass(col)">
                   @if (col.key === 'isActive' || cell(row, col) === 'Active' || cell(row, col) === 'Inactive') {
                     <span
                       class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-inset"
@@ -83,6 +82,12 @@
                         [class.bg-slate-400]="cell(row, col) === 'Inactive'"
                       ></span>
                       {{ cell(row, col) }}
+                    </span>
+                  } @else if (cell(row, col) === '✓') {
+                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-50 text-brand-600 shadow-2xs">
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
                     </span>
                   } @else {
                     {{ cell(row, col) }}
