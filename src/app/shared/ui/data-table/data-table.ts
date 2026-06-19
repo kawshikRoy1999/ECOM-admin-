@@ -21,6 +21,12 @@ export interface Column<T> {
   selector: 'app-data-table',
   imports: [NgTemplateOutlet],
   templateUrl: './data-table.html',
+  host: {
+    '[class.flex]': 'fillHeight()',
+    '[class.flex-col]': 'fillHeight()',
+    '[class.flex-1]': 'fillHeight()',
+    '[class.min-h-0]': 'fillHeight()',
+  },
 })
 export class DataTable<T extends object> {
   readonly columns = input.required<Column<T>[]>();
@@ -30,7 +36,9 @@ export class DataTable<T extends object> {
   readonly searchable = input(true);
   readonly searchPlaceholder = input('Search…');
   readonly actions = input<TemplateRef<unknown> | null>(null);
-  readonly maxHeightClass = input<string>('max-h-[calc(100vh-220px)] md:max-h-[calc(100vh-250px)]');
+  readonly maxHeightClass = input<string>('max-h-[calc(100vh-170px)] md:max-h-[calc(100vh-190px)]');
+  /** When true, the table stretches to fill available parent flex space instead of using fixed max-height. */
+  readonly fillHeight = input(false);
 
   readonly query = signal('');
 
