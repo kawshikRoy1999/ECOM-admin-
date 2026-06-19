@@ -8,10 +8,11 @@ import { TemplateEditor } from './template-editor';
 import { TEMPLATE_PROVIDER } from './template-provider';
 import { InvoiceTemplateService } from './invoice-template.service';
 import { InvoiceField, TemplateDocType, TemplateMaster } from './invoice-template.models';
+import { Select } from '../../../shared/ui/select/select';
 
 @Component({
   selector: 'app-invoice-template-page',
-  imports: [TemplateEditor, Modal],
+  imports: [TemplateEditor, Modal, Select],
   providers: [{ provide: TEMPLATE_PROVIDER, useExisting: InvoiceTemplateService }],
   templateUrl: './invoice-template.page.html',
 })
@@ -22,6 +23,12 @@ export class InvoiceTemplatePage {
 
   readonly galleryOpen = signal(false);
   readonly active = signal<TemplateDocType>('INVOICE');
+
+  readonly applyToOptions = [
+    { id: 'INVOICE', name: 'Invoice' },
+    { id: 'CANCELATION', name: 'Cancellation' },
+    { id: 'REFUND', name: 'Refund' },
+  ];
 
   // Field configuration
   readonly fields = signal<InvoiceField[]>([]);
