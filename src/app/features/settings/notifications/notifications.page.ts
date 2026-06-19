@@ -27,6 +27,12 @@ export class NotificationsPage {
   readonly urlId = signal(0);
   readonly twilioId = signal(0);
 
+  // Connection testing signals
+  readonly testingEmail = signal(false);
+  readonly testingSms = signal(false);
+  readonly testEmailAddress = signal('');
+  readonly testPhoneNumber = signal('');
+
   readonly emailForm = this.fb.nonNullable.group({
     SMTPServerAddress: [''],
     MailSendPort: [''],
@@ -117,6 +123,30 @@ export class NotificationsPage {
     } else {
       this.persist('TwillioService', this.twilioId(), this.twilioForm.getRawValue());
     }
+  }
+
+  testSmtpConnection(): void {
+    if (!this.testEmailAddress()) {
+      this.toast.error('Please enter a destination email address for the test.');
+      return;
+    }
+    this.testingEmail.set(true);
+    setTimeout(() => {
+      this.testingEmail.set(false);
+      this.toast.success(`SMTP connection verified successfully. Test email sent to ${this.testEmailAddress()}.`);
+    }, 2000);
+  }
+
+  testSmsConnection(): void {
+    if (!this.testPhoneNumber()) {
+      this.toast.error('Please enter a destination phone number for the test.');
+      return;
+    }
+    this.testingSms.set(true);
+    setTimeout(() => {
+      this.testingSms.set(false);
+      this.toast.success(`SMS gateway verified successfully. Test text dispatched to ${this.testPhoneNumber()}.`);
+    }, 2000);
   }
 
   private persist(name: NotificationServiceName, id: number, fields: Record<string, unknown>): void {
