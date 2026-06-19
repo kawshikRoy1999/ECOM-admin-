@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { Tabs, TabItem } from '../../../shared/ui/tabs/tabs';
+import { TabItem } from '../../../shared/ui/tabs/tabs';
 import { Modal } from '../../../shared/ui/modal/modal';
 import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
@@ -12,7 +12,7 @@ import { CompanyTemplate, CustomGroup, FrontendTemplate } from './template.model
 
 @Component({
   selector: 'app-templates-page',
-  imports: [ReactiveFormsModule, Tabs, Modal, DataTable, ImageUpload],
+  imports: [ReactiveFormsModule, Modal, DataTable, ImageUpload],
   templateUrl: './templates.page.html',
 })
 export class TemplatesPage {

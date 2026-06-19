@@ -1,0 +1,472 @@
+<div class="flex flex-col lg:flex-row h-full lg:h-[calc(100vh-80px)] sm:lg:h-[calc(100vh-90px)] lg:h-[calc(100vh-96px)] overflow-y-auto lg:overflow-hidden gap-5 pb-5 lg:pb-0">
+  
+  <!-- LEFT SIDEBAR: Offers Selector -->
+  <div class="w-full lg:w-[310px] shrink-0 flex flex-col gap-4 bg-white rounded-xl border border-slate-200/80 p-4 h-auto max-h-[380px] lg:h-full lg:max-h-none overflow-hidden shadow-xs">
+    
+    <!-- Sidebar Header -->
+    <div class="flex flex-col gap-1 shrink-0">
+      <div class="flex items-center justify-between shrink-0">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Offers Directory</span>
+        <button
+          (click)="openCreate()"
+          class="text-[11.5px] font-bold text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          New Offer
+        </button>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative mt-2">
+        <input
+          type="text"
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          placeholder="Search offers..."
+          class="w-full h-8.5 rounded-lg border border-slate-200/80 pl-8.5 pr-8 text-[12.5px] font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all bg-slate-50/50 hover:bg-slate-50"
+        />
+        <!-- Search Icon -->
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <!-- Clear Button -->
+        @if (searchQuery()) {
+          <button
+            type="button"
+            (click)="searchQuery.set('')"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-full hover:bg-slate-100 cursor-pointer flex items-center justify-center"
+          >
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="h-[1px] bg-slate-100 w-full shrink-0 my-0.5"></div>
+
+    <!-- Offers List -->
+    <div class="flex-1 overflow-y-auto pr-1 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-2 pb-2 custom-scrollbar">
+      @for (o of filteredOffers(); track o.offerId) {
+        <button
+          type="button"
+          (click)="selectOffer(o)"
+          class="shrink-0 text-left flex flex-col gap-1 px-3.5 py-2.5 text-[13px] rounded-xl border transition-all cursor-pointer relative min-w-[210px] lg:min-w-0"
+          [class.bg-brand-50]="selectedOfferId() === o.offerId"
+          [class.border-brand-200]="selectedOfferId() === o.offerId"
+          [class.text-brand-700]="selectedOfferId() === o.offerId"
+          [class.bg-white]="selectedOfferId() !== o.offerId"
+          [class.border-slate-200/80]="selectedOfferId() !== o.offerId"
+          [class.text-slate-600]="selectedOfferId() !== o.offerId"
+          [class.hover:bg-slate-50]="selectedOfferId() !== o.offerId"
+        >
+          <!-- Offer Info -->
+          <div class="flex items-center justify-between w-full">
+            <span class="font-bold text-[13px] leading-tight truncate" [class.text-brand-700]="selectedOfferId() === o.offerId" [class.text-slate-700]="selectedOfferId() !== o.offerId">
+              {{ o.offerName }}
+            </span>
+            
+            <!-- Status Badge Dot -->
+            @if (selectedOfferId() === o.offerId) {
+              <span class="h-1.5 w-1.5 rounded-full bg-brand-600 shrink-0"></span>
+            } @else if (o.isExpired) {
+              <span class="h-1.5 w-1.5 rounded-full bg-slate-300 shrink-0" title="Expired"></span>
+            } @else if (o.isActive) {
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" title="Active"></span>
+            } @else {
+              <span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" title="Inactive"></span>
+            }
+          </div>
+
+          <!-- Validity Dates -->
+          <div class="flex items-center justify-between text-[10.5px] font-medium leading-normal mt-0.5" [class.text-brand-600/75]="selectedOfferId() === o.offerId" [class.text-slate-400]="selectedOfferId() !== o.offerId">
+            <span class="truncate">{{ fmtDate(o.startDate) }} → {{ fmtDate(o.endDate) }}</span>
+            <span class="font-bold text-[11px] shrink-0 ml-1.5 text-slate-800" [class.text-brand-700]="selectedOfferId() === o.offerId">{{ o.discountPercentage }}% Off</span>
+          </div>
+
+          <!-- Status Text Label -->
+          <div class="flex items-center gap-1.5 mt-1">
+            @if (o.isExpired) {
+              <span class="px-1.5 py-0.25 rounded-md bg-slate-100 text-slate-500 text-[8.5px] font-bold uppercase tracking-wider border border-slate-200/50">Expired</span>
+            } @else if (o.isActive) {
+              <span class="px-1.5 py-0.25 rounded-md bg-emerald-50 text-emerald-600 text-[8.5px] font-bold uppercase tracking-wider border border-emerald-200/30">Active</span>
+            } @else {
+              <span class="px-1.5 py-0.25 rounded-md bg-amber-50 text-amber-600 text-[8.5px] font-bold uppercase tracking-wider border border-amber-200/30">Inactive</span>
+            }
+          </div>
+        </button>
+      } @empty {
+        <div class="flex flex-col items-center justify-center py-8 text-center px-4 w-full">
+          <svg class="h-8 w-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.563 15.625a1.5 1.5 0 111.437 2.502H14a1.5 1.5 0 010 3H8.5a1.5 1.5 0 01-1.5-1.5v-10A1.5 1.5 0 018.5 7h4.063a1.5 1.5 0 011.06.44l2.438 2.438a1.5 1.5 0 01.44 1.06v5.688a1.5 1.5 0 01-1.438 2.5H14a1.5 1.5 0 01-1.437-2.5h1.229" />
+          </svg>
+          <span class="text-xs font-bold text-slate-400">No offers found</span>
+          <span class="text-[10px] text-slate-400/80 mt-0.5">Try a different search query</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- RIGHT CANVAS: Offer Configuration Editor -->
+  <div class="flex-1 flex flex-col gap-4 h-auto min-h-0 lg:h-full lg:overflow-hidden">
+    @if (loading() || loadingDetails()) {
+      <div class="flex-1 flex items-center justify-center bg-white border border-slate-200/80 rounded-xl shadow-xs">
+        <div class="flex flex-col items-center gap-3">
+          <svg class="h-8 w-8 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Loading offer configuration…</p>
+        </div>
+      </div>
+    } @else if (selectedOfferId() !== null) {
+      <!-- Header Action Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs shrink-0">
+        <div class="flex flex-col gap-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-[17px] font-bold text-slate-800 leading-none truncate">
+              {{ selectedOfferId() === 0 ? 'New Offer' : selectedOffer()?.offerName }}
+            </h1>
+            @if (selectedOfferId()! > 0) {
+              @if (selectedOffer()?.isExpired) {
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase bg-slate-100 text-slate-500 border border-slate-200/40 shrink-0">Expired</span>
+              } @else if (form.controls.isActive.value) {
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-700 border border-emerald-200/30 shrink-0">Active</span>
+              } @else {
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase bg-amber-50 text-amber-700 border border-amber-200/30 shrink-0">Inactive</span>
+              }
+            }
+          </div>
+          <span class="text-[11px] sm:text-[12px] text-slate-500 truncate mt-0.5">
+            {{ selectedOfferId() === 0 ? 'Create a discount targeted at specific products or categories.' : 'Manage discount details, banners, and targeting rules.' }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <!-- Toggle Active/Inactive Button (Only for saved/non-expired offers) -->
+          @if (selectedOfferId()! > 0 && !selectedOffer()?.isExpired) {
+            <button
+              (click)="toggleActive()"
+              class="btn-secondary h-9 rounded-xl px-4 text-[12.5px] font-semibold gap-1.5 cursor-pointer flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 bg-white transition-all shadow-xs"
+            >
+              {{ form.controls.isActive.value ? 'Deactivate' : 'Activate' }}
+            </button>
+          }
+
+          <!-- Save Button -->
+          <button
+            (click)="save()"
+            [disabled]="saving()"
+            class="btn-primary h-9 rounded-xl px-4.5 text-[12.5px] font-semibold gap-2 transition-all cursor-pointer shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 flex items-center justify-center shrink-0"
+            title="Deploy Offer"
+          >
+            @if (saving()) {
+              <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Deploying…
+            } @else {
+              <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Deploy Offer
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Editor Canvas -->
+      <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+        <div class="flex flex-col gap-5 pb-4">
+          
+          <!-- Campaign Details Card -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Campaign Details</h2>
+            </div>
+
+            <form [formGroup]="form" class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1.5 sm:col-span-2">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Offer Name</label>
+                <input
+                  formControlName="offerName"
+                  placeholder="e.g. Summer Clearance Sale"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5 font-semibold text-slate-700"
+                />
+                @if (form.controls.offerName.touched && form.controls.offerName.invalid) {
+                  <p class="text-[11px] text-red-500 font-semibold mt-0.5">Required</p>
+                }
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Discount Percentage (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  formControlName="discountPercentage"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5 font-semibold text-slate-700"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Campaign Active Status</label>
+                <div class="flex items-center h-9.5 px-3.5 border border-slate-200 bg-slate-50/20 rounded-xl">
+                  <label class="relative inline-flex cursor-pointer items-center shrink-0 select-none w-full justify-between">
+                    <span class="text-[12.5px] font-bold text-slate-600">Online & Deployable</span>
+                    <input
+                      type="checkbox"
+                      formControlName="isActive"
+                      class="peer sr-only"
+                    />
+                    <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Start Date</label>
+                <input
+                  type="date"
+                  formControlName="startDate"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5 font-semibold text-slate-700"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">End Date</label>
+                <input
+                  type="date"
+                  formControlName="endDate"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5 font-semibold text-slate-700"
+                />
+              </div>
+            </form>
+          </div>
+
+          <!-- Targeting Logic Card -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 shadow-inner">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  </svg>
+                </div>
+                <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Targeting Criteria</h2>
+              </div>
+
+              <!-- Group vs Variant toggle -->
+              <div class="flex items-center gap-3 bg-slate-100 p-0.5 rounded-lg border border-slate-200/40">
+                <button
+                  type="button"
+                  (click)="toggleGroupMode(true)"
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors"
+                  [class.bg-white]="isGroupOffer()"
+                  [class.text-brand-700]="isGroupOffer()"
+                  [class.shadow-2xs]="isGroupOffer()"
+                  [class.text-slate-500]="!isGroupOffer()"
+                >
+                  Group Mode
+                </button>
+                <button
+                  type="button"
+                  (click)="toggleGroupMode(false)"
+                  class="px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors"
+                  [class.bg-white]="!isGroupOffer()"
+                  [class.text-brand-700]="!isGroupOffer()"
+                  [class.shadow-2xs]="!isGroupOffer()"
+                  [class.text-slate-500]="isGroupOffer()"
+                >
+                  Variant Mode
+                </button>
+              </div>
+            </div>
+
+            <!-- Cascade select fields for Group targeting -->
+            @if (isGroupOffer()) {
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/40 border border-slate-100 p-3 rounded-xl">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Brand</label>
+                  <select [value]="selBrand()" (change)="selBrand.set(+$any($event.target).value)" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 focus:outline-none">
+                    <option [value]="0">-- All Brands --</option>
+                    @for (b of brandOptions(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Category</label>
+                  <select [value]="selCategory()" (change)="onCategoryChange($any($event.target).value)" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 focus:outline-none">
+                    <option [value]="0">-- All Categories --</option>
+                    @for (c of categoryOptions(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Subcategory</label>
+                  <select [value]="selSubCategory()" (change)="onSubCategoryChange($any($event.target).value)" [disabled]="!subcategories().length" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 disabled:opacity-50 focus:outline-none">
+                    <option [value]="0">-- All Subcategories --</option>
+                    @for (s of subcategories(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Product Family</label>
+                  <select [value]="selFamily()" (change)="selFamily.set(+$any($event.target).value)" [disabled]="!families().length" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 disabled:opacity-50 focus:outline-none">
+                    <option [value]="0">-- All Families --</option>
+                    @for (f of families(); track f.id) { <option [value]="f.id">{{ f.name }}</option> }
+                  </select>
+                </div>
+              </div>
+              <div class="flex justify-end shrink-0">
+                <button
+                  type="button"
+                  (click)="stageGroupRule()"
+                  class="btn-secondary h-8 rounded-lg px-3.5 text-[11.5px] font-semibold gap-1 transition-all cursor-pointer border border-slate-200 hover:border-slate-300 text-slate-700 bg-white"
+                >
+                  + Add Targeting Rule
+                </button>
+              </div>
+            } @else {
+              <!-- Autocomplete search field for Variant targeting -->
+              <div class="flex flex-col gap-2.5">
+                <div class="relative">
+                  <input
+                    type="text"
+                    [value]="variantTerm()"
+                    (input)="onVariantTerm($any($event.target).value)"
+                    placeholder="Search variants by name, SKU or code…"
+                    class="w-full !px-3.5 !py-2 border border-slate-200/80 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9.5 font-semibold text-slate-700"
+                  />
+                  @if (variantSearching()) {
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4">
+                      <svg class="animate-spin h-4 w-4 text-brand-600" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                      </svg>
+                    </span>
+                  }
+                </div>
+
+                @if (variantResults().length) {
+                  <div class="max-h-48 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-white shadow-sm pr-1.5 custom-scrollbar">
+                    @for (v of variantResults(); track v.id) {
+                      <button
+                        type="button"
+                        (click)="stageVariant(v)"
+                        class="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        @if (v.imageUrl) {
+                          <img [src]="v.imageUrl" (error)="v.imageUrl = ''" class="h-7 w-7 rounded object-cover border border-slate-100 shrink-0" />
+                        }
+                        <span class="text-[12.5px] font-semibold text-slate-600 leading-tight">{{ v.text }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Active Staged Rules List Container -->
+            <div class="rounded-xl border border-slate-200/80 bg-slate-50/30 p-4 mt-2">
+              <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Targeted Rules ({{ rules().length }})
+                </span>
+                @if (rules().length) {
+                  <button
+                    type="button"
+                    (click)="clearRules()"
+                    class="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-wider cursor-pointer"
+                  >
+                    Clear All
+                  </button>
+                }
+              </div>
+
+              @if (rules().length) {
+                <div class="flex flex-wrap gap-2">
+                  @for (r of rules(); track $index) {
+                    <span class="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200/80 px-2.5 py-1.5 text-[11.5px] shadow-2xs hover:shadow-xs transition-shadow relative pr-7.5 group/chip">
+                      @if (r.type === 'Variant' && r.imageUrl) {
+                        <img [src]="r.imageUrl" (error)="r.imageUrl = ''" class="h-6 w-6 rounded object-cover border border-slate-100 shrink-0" />
+                      }
+                      <span class="flex flex-col leading-none">
+                        <span class="text-[8px] font-bold uppercase tracking-wider text-brand-600">{{ r.type }}</span>
+                        <span class="font-bold text-slate-700 mt-1 truncate max-w-[150px]">{{ r.name }}</span>
+                      </span>
+                      <button
+                        type="button"
+                        (click)="removeRule($index)"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-4.5 w-4.5 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-200/20 cursor-pointer"
+                        title="Remove Targeting Rule"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  }
+                </div>
+              } @else {
+                <div class="flex flex-col items-center justify-center py-5 text-center">
+                  <svg class="h-8 w-8 text-slate-300 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  <span class="text-xs font-bold text-slate-400">Global Offer (No Target Rules)</span>
+                  <span class="text-[10px] text-slate-400/80 mt-0.5">This discount will apply to the entire active storefront catalog.</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Offer Banner Card -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Promotion Banner</h2>
+            </div>
+            <div class="w-full">
+              <app-image-upload label="Offer marketing banner image" entityType="Offer" entitySubType="Banner" [(value)]="bannerUrl" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    } @else {
+      <!-- Empty/Intro State -->
+      <div class="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white border border-slate-200/80 rounded-xl shadow-xs">
+        <div class="max-w-sm flex flex-col items-center gap-3">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-inner">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.563 15.625a1.5 1.5 0 111.437 2.502H14a1.5 1.5 0 010 3H8.5a1.5 1.5 0 01-1.5-1.5v-10A1.5 1.5 0 018.5 7h4.063a1.5 1.5 0 011.06.44l2.438 2.438a1.5 1.5 0 01.44 1.06v5.688a1.5 1.5 0 01-1.438 2.5H14a1.5 1.5 0 01-1.437-2.5h1.229" />
+            </svg>
+          </div>
+          <h2 class="text-[15px] font-bold text-slate-800">Select a Marketing Offer</h2>
+          <p class="text-[12.5px] text-slate-400 font-medium">
+            Choose an offer campaign from the sidebar panel to configure its details, date ranges, and targeted product criteria.
+          </p>
+          <button
+            (click)="openCreate()"
+            class="btn-primary h-9 px-4 text-[12.5px] font-semibold gap-1.5 mt-2 transition-all cursor-pointer shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 flex items-center"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Create New Offer
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

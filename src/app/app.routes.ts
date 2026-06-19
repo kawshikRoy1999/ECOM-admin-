@@ -58,6 +58,10 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/zones/zones.page').then((m) => m.ZonesPage),
       },
+      {
+        path: 'offers',
+        loadComponent: () => import('./features/offers/offers.page').then((m) => m.OffersPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
