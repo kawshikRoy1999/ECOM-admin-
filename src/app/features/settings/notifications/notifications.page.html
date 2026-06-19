@@ -1,0 +1,106 @@
+<div class="space-y-4">
+  <div class="flex flex-col gap-0.5">
+    <h1 class="page-title">Notification Settings</h1>
+    <p class="page-subtitle">Configure how the store sends emails and SMS / voice messages.</p>
+  </div>
+
+  <app-tabs [tabs]="tabs" [(active)]="active" />
+
+  <!-- EMAIL (SMTP) -->
+  @if (active() === 'email') {
+    <div class="fluent-card max-w-2xl p-5 space-y-4">
+      <form [formGroup]="emailForm" class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">SMTP server address</label>
+          <input formControlName="SMTPServerAddress" placeholder="smtp.example.com" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Port</label>
+          <input formControlName="MailSendPort" placeholder="587" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Email from</label>
+          <input formControlName="FromEmailId" placeholder="noreply@store.com" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">SMTP user id</label>
+          <input formControlName="SMTPUserId" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">SMTP password</label>
+          <input type="password" formControlName="SMTPPassword" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+        <label class="flex items-center gap-2.5 cursor-pointer select-none sm:col-span-2">
+          <input type="checkbox" formControlName="IsSSLEnabled" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
+          <span class="text-[13px] font-medium text-slate-700">Enable SSL</span>
+        </label>
+      </form>
+      <div class="flex justify-end">
+        <button (click)="saveEmail()" [disabled]="saving()" class="btn-primary h-9 px-5 text-[13px] font-semibold">
+          {{ saving() ? 'Saving…' : 'Save email settings' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- SMS / VOICE -->
+  @if (active() === 'sms') {
+    <div class="fluent-card max-w-2xl p-5 space-y-4">
+      <!-- Provider toggle -->
+      <div class="flex items-center gap-2 rounded-lg bg-slate-100 p-0.5 w-fit">
+        <button (click)="smsMode.set('Url')" class="px-4 py-1.5 text-[12px] font-bold rounded-md transition-all" [class.bg-white]="smsMode() === 'Url'" [class.shadow-sm]="smsMode() === 'Url'" [class.text-slate-500]="smsMode() !== 'Url'">URL Gateway</button>
+        <button (click)="smsMode.set('Twilio')" class="px-4 py-1.5 text-[12px] font-bold rounded-md transition-all" [class.bg-white]="smsMode() === 'Twilio'" [class.shadow-sm]="smsMode() === 'Twilio'" [class.text-slate-500]="smsMode() !== 'Twilio'">Twilio</button>
+      </div>
+
+      @if (smsMode() === 'Url') {
+        <form [formGroup]="urlForm" class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">URL link</label>
+            <input formControlName="URLLink" placeholder="https://sms-gateway/api/send" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sender Id</label>
+            <input formControlName="SenderId" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">API key</label>
+            <input formControlName="APIKey" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+        </form>
+      } @else {
+        <form [formGroup]="twilioForm" class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Account SID</label>
+            <input formControlName="AccountSID" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Auth token</label>
+            <input formControlName="AuthToken" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">From number</label>
+            <input formControlName="FromNumber" placeholder="+1..." class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sort code</label>
+            <input formControlName="SortCode" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">RoboCall from number</label>
+            <input formControlName="RoboCallFromNumber" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Messaging service Sid</label>
+            <input formControlName="MessagingServiceSid" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+        </form>
+      }
+
+      <div class="flex justify-end">
+        <button (click)="saveSms()" [disabled]="saving()" class="btn-primary h-9 px-5 text-[13px] font-semibold">
+          {{ saving() ? 'Saving…' : 'Save ' + (smsMode() === 'Url' ? 'URL gateway' : 'Twilio') + ' settings' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>
