@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, debounceTime, switchMap } from 'rxjs';
 
 import { ImageUpload } from '../../shared/ui/image-upload/image-upload';
+import { DatePicker } from '../../shared/ui/date-picker/date-picker';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { OffersService } from './offers.service';
 import {
@@ -16,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-offers-page',
-  imports: [ReactiveFormsModule, ImageUpload],
+  imports: [ReactiveFormsModule, ImageUpload, DatePicker],
   templateUrl: './offers.page.html',
 })
 export class OffersPage {

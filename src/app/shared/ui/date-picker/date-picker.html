@@ -1,0 +1,67 @@
+<div class="relative w-full" (click)="$event.stopPropagation()">
+  <!-- Input Trigger -->
+  <div 
+    (click)="toggleDropdown()" 
+    class="flex items-center justify-between w-full px-3.5 py-1.5 border border-slate-200 rounded-xl focus-within:border-brand-600 focus-within:ring-4 focus-within:ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5 cursor-pointer select-none"
+    [class.opacity-50]="disabled"
+    [class.pointer-events-none]="disabled"
+  >
+    <span [class.text-slate-400]="!value()" class="font-semibold text-slate-700">
+      {{ displayValue() || placeholder() }}
+    </span>
+    <!-- Calendar Icon -->
+    <svg class="h-4.5 w-4.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  </div>
+
+  <!-- Calendar Dropdown -->
+  @if (isOpen() && !disabled) {
+    <div class="absolute z-50 mt-1.5 w-[280px] bg-white border border-slate-200/80 rounded-2xl shadow-xl p-4 right-0 sm:left-0 select-none animate-fadeIn">
+      <!-- Calendar Header -->
+      <div class="flex items-center justify-between mb-3">
+        <button type="button" (click)="prevMonth()" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <span class="text-[13px] font-bold text-slate-800">
+          {{ monthNames[currentMonth()] }} {{ currentYear() }}
+        </span>
+        <button type="button" (click)="nextMonth()" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Weekdays -->
+      <div class="grid grid-cols-7 gap-1 text-center mb-1">
+        @for (day of weekDays; track day) {
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ day }}</span>
+        }
+      </div>
+
+      <!-- Days Grid -->
+      <div class="grid grid-cols-7 gap-1">
+        @for (cell of calendarCells(); track cell.date.getTime()) {
+          <button
+            type="button"
+            (click)="selectDate(cell)"
+            class="h-8 w-8 rounded-lg flex items-center justify-center text-[12.5px] font-semibold transition-all cursor-pointer border-0"
+            [class.text-slate-700]="cell.isCurrentMonth && !isSelected(cell)"
+            [class.text-slate-300]="!cell.isCurrentMonth"
+            [class.hover:bg-slate-100]="!isSelected(cell)"
+            [class.bg-brand-600]="isSelected(cell)"
+            [class.text-white]="isSelected(cell)"
+            [class.font-bold]="isSelected(cell)"
+            [class.border]="isToday(cell)"
+            [class.border-brand-500]="isToday(cell) && !isSelected(cell)"
+          >
+            {{ cell.day }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>
