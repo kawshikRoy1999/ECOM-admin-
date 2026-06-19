@@ -68,6 +68,7 @@ export class AdminLayout {
         { label: 'Store Front Template', path: '/settings/templates', icon: '▦' },
         { label: 'Taxes', path: '/settings/taxes', icon: '%' },
         { label: 'Zones', path: '/settings/zones', icon: '◎' },
+        { label: 'Notifications', path: '/settings/notifications', icon: '✉' },
       ],
     },
   ];
