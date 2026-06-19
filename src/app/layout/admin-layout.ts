@@ -58,7 +58,7 @@ export class AdminLayout {
     },
     {
       group: 'Marketing',
-      items: [{ label: 'Offers', path: '/offers', icon: '◈' }],
+      items: [{ label: 'Offers kawshik', path: '/offers', icon: '◈' }],
     },
     {
       group: 'Settings',
