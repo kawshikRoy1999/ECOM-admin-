@@ -4,6 +4,7 @@ import { Subject, debounceTime, switchMap } from 'rxjs';
 
 import { ImageUpload } from '../../shared/ui/image-upload/image-upload';
 import { DatePicker } from '../../shared/ui/date-picker/date-picker';
+import { Select } from '../../shared/ui/select/select';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { OffersService } from './offers.service';
 import {
@@ -17,7 +18,7 @@ import {
 
 @Component({
   selector: 'app-offers-page',
-  imports: [ReactiveFormsModule, ImageUpload, DatePicker],
+  imports: [ReactiveFormsModule, ImageUpload, DatePicker, Select],
   templateUrl: './offers.page.html',
 })
 export class OffersPage {

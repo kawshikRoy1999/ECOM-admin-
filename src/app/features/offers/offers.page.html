@@ -291,31 +291,45 @@
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/40 border border-slate-100 p-3 rounded-xl">
                 <div class="flex flex-col gap-1">
                   <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Brand</label>
-                  <select [value]="selBrand()" (change)="selBrand.set(+$any($event.target).value)" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 focus:outline-none">
-                    <option [value]="0">-- All Brands --</option>
-                    @for (b of brandOptions(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
-                  </select>
+                  <app-select
+                    [options]="brandOptions()"
+                    [(value)]="selBrand"
+                    defaultLabel="-- All Brands --"
+                    [defaultValue]="0"
+                    [searchable]="true"
+                  />
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Category</label>
-                  <select [value]="selCategory()" (change)="onCategoryChange($any($event.target).value)" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 focus:outline-none">
-                    <option [value]="0">-- All Categories --</option>
-                    @for (c of categoryOptions(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
-                  </select>
+                  <app-select
+                    [options]="categoryOptions()"
+                    [value]="selCategory()"
+                    (valueChange)="onCategoryChange($event)"
+                    defaultLabel="-- All Categories --"
+                    [defaultValue]="0"
+                    [searchable]="true"
+                  />
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Subcategory</label>
-                  <select [value]="selSubCategory()" (change)="onSubCategoryChange($any($event.target).value)" [disabled]="!subcategories().length" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 disabled:opacity-50 focus:outline-none">
-                    <option [value]="0">-- All Subcategories --</option>
-                    @for (s of subcategories(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
-                  </select>
+                  <app-select
+                    [options]="subcategories()"
+                    [value]="selSubCategory()"
+                    (valueChange)="onSubCategoryChange($event)"
+                    [disabled]="!subcategories().length"
+                    defaultLabel="-- All Subcategories --"
+                    [defaultValue]="0"
+                  />
                 </div>
                 <div class="flex flex-col gap-1">
                   <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Product Family</label>
-                  <select [value]="selFamily()" (change)="selFamily.set(+$any($event.target).value)" [disabled]="!families().length" class="h-9 w-full rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-white font-semibold text-slate-600 disabled:opacity-50 focus:outline-none">
-                    <option [value]="0">-- All Families --</option>
-                    @for (f of families(); track f.id) { <option [value]="f.id">{{ f.name }}</option> }
-                  </select>
+                  <app-select
+                    [options]="families()"
+                    [(value)]="selFamily"
+                    [disabled]="!families().length"
+                    defaultLabel="-- All Families --"
+                    [defaultValue]="0"
+                  />
                 </div>
               </div>
               <div class="flex justify-end shrink-0">
