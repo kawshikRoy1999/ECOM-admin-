@@ -157,7 +157,7 @@
           <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             @for (t of templates(); track t.companyTemplateId) {
               <div class="fluent-card group overflow-hidden flex flex-col border border-slate-200 hover:border-brand-500/40 hover:shadow-md transition-all duration-300 bg-white">
-                <div class="aspect-[16/10] overflow-hidden bg-slate-50 relative border-b border-slate-100">
+                <div (click)="configure(t)" class="aspect-[16/10] overflow-hidden bg-slate-50 relative border-b border-slate-100 cursor-pointer">
                   @if (t.imagePath) {
                     <img [src]="t.imagePath" (error)="t.imagePath = ''" alt="Template" class="h-full w-full object-cover object-top group-hover:scale-102 transition-transform duration-300" />
                   } @else {
@@ -166,6 +166,9 @@
                   @if (t.isDefault) {
                     <span class="absolute top-3 left-3 rounded-lg bg-brand-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm tracking-wider uppercase">Default</span>
                   }
+                  <span class="absolute inset-0 flex items-center justify-center bg-slate-900/0 group-hover:bg-slate-900/40 transition-all">
+                    <span class="opacity-0 group-hover:opacity-100 rounded-lg bg-white/95 px-3 py-1.5 text-[12px] font-bold text-slate-800 shadow transition-all">Configure →</span>
+                  </span>
                 </div>
                 <div class="flex items-center justify-between gap-2 p-3 bg-white">
                   <div class="flex flex-col min-w-0">

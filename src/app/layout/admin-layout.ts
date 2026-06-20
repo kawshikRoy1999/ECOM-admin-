@@ -69,6 +69,7 @@ export class AdminLayout {
         { label: 'Taxes', path: '/settings/taxes', icon: '%' },
         { label: 'Zones', path: '/settings/zones', icon: '◎' },
         { label: 'Notifications', path: '/settings/notifications', icon: '✉' },
+        { label: 'Banners', path: '/settings/banners', icon: '▭' },
       ],
     },
   ];
