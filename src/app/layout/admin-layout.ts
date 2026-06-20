@@ -46,33 +46,45 @@ export class AdminLayout {
   readonly nav: { group: string; items: NavItem[] }[] = [
     {
       group: 'Overview',
-      items: [{ label: 'Dashboard', path: '/dashboard', icon: '▦' }],
+      items: [{ label: 'Dashboard', path: '/dashboard', icon: '' }],
     },
     {
-      group: 'Access',
+      group: 'Access Control',
       items: [
-        { label: 'Users', path: '/access/users', icon: '◔' },
-        { label: 'Roles', path: '/access/roles', icon: '◑' },
-        { label: 'Permissions', path: '/access/permissions', icon: '◕' },
+        { label: 'Users', path: '/access/users', icon: '' },
+        { label: 'Roles', path: '/access/roles', icon: '' },
+        { label: 'Permissions', path: '/access/permissions', icon: '' },
       ],
     },
     {
       group: 'Marketing',
-      items: [{ label: 'Offers', path: '/offers', icon: '◈' }],
+      items: [
+        { label: 'Offers', path: '/offers', icon: '' },
+        { label: 'Banners', path: '/settings/banners', icon: '' },
+      ],
     },
     {
-      group: 'Settings',
+      group: 'Store Setup',
       items: [
-        { label: 'Invoice Template', path: '/settings/invoice-template', icon: '▤' },
-        { label: 'Order Template', path: '/settings/order-template', icon: '▥' },
-        { label: 'Store Front Template', path: '/settings/templates', icon: '▦' },
-        { label: 'Taxes', path: '/settings/taxes', icon: '%' },
-        { label: 'Zones', path: '/settings/zones', icon: '◎' },
-        { label: 'Notifications', path: '/settings/notifications', icon: '✉' },
-        { label: 'Banners', path: '/settings/banners', icon: '▭' },
-        { label: 'Social Links', path: '/settings/social', icon: '◍' },
-        { label: 'Locations', path: '/settings/locations', icon: '⌖' },
-        { label: 'Order Statuses', path: '/settings/statuses', icon: '☰' },
+        { label: 'Locations', path: '/settings/locations', icon: '' },
+        { label: 'Taxes', path: '/settings/taxes', icon: '' },
+        { label: 'Zones', path: '/settings/zones', icon: '' },
+      ],
+    },
+    {
+      group: 'Design & Layout',
+      items: [
+        { label: 'Store Front Template', path: '/settings/templates', icon: '' },
+        { label: 'Invoice Template', path: '/settings/invoice-template', icon: '' },
+        { label: 'Order Template', path: '/settings/order-template', icon: '' },
+      ],
+    },
+    {
+      group: 'System Settings',
+      items: [
+        { label: 'Notifications', path: '/settings/notifications', icon: '' },
+        { label: 'Social Links', path: '/settings/social', icon: '' },
+        { label: 'Order Statuses', path: '/settings/statuses', icon: '' },
       ],
     },
   ];
