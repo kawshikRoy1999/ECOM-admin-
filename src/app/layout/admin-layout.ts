@@ -71,6 +71,8 @@ export class AdminLayout {
         { label: 'Notifications', path: '/settings/notifications', icon: '✉' },
         { label: 'Banners', path: '/settings/banners', icon: '▭' },
         { label: 'Social Links', path: '/settings/social', icon: '◍' },
+        { label: 'Locations', path: '/settings/locations', icon: '⌖' },
+        { label: 'Order Statuses', path: '/settings/statuses', icon: '☰' },
       ],
     },
   ];
