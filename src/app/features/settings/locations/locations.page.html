@@ -1,0 +1,101 @@
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-0.5">
+      <h1 class="page-title">Locations</h1>
+      <p class="page-subtitle">Manage warehouses / stock locations and their storage bins.</p>
+    </div>
+    <button (click)="openCreate()" class="btn-primary h-9 px-4 text-[13px] gap-1.5">
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+      New Location
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns()"
+    [rows]="rows()"
+    [loading]="loading()"
+    emptyText="No locations yet."
+    searchPlaceholder="Search locations…"
+    [actions]="actionsTpl"
+  />
+
+  <ng-template #actionsTpl let-row>
+    <div class="flex justify-end gap-1.5">
+      <button (click)="openEdit(row)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50" title="Edit">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+      </button>
+      <button (click)="remove(row)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" title="Delete">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+      </button>
+    </div>
+  </ng-template>
+</div>
+
+<!-- Location modal -->
+@if (modalOpen()) {
+  <app-modal [title]="editingId() ? 'Edit Location' : 'New Location'" widthClass="max-w-2xl" (close)="modalOpen.set(false)">
+    <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
+      <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Location name</label>
+          <input formControlName="locationName" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          @if (form.controls.locationName.touched && form.controls.locationName.invalid) {
+            <p class="text-[11px] text-red-500 font-semibold">Required</p>
+          }
+        </div>
+        @for (f of [['addressLine1','Address line 1'],['addressLine2','Address line 2'],['city','City'],['district','District'],['state','State'],['country','Country'],['pin','PIN / Zip']]; track f[0]) {
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">{{ f[1] }}</label>
+            <input [formControlName]="f[0]" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+          </div>
+        }
+      </div>
+
+      <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3 border-t border-slate-100 pt-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Contact person</label>
+          <input formControlName="contactPerson" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Phone</label>
+          <input formControlName="contactPersonPhone" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Email</label>
+          <input formControlName="contactPersonEmail" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+        </div>
+      </div>
+
+      <!-- Bins -->
+      <div class="flex flex-col gap-2 border-t border-slate-100 pt-4">
+        <div class="flex items-center justify-between">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Storage bins</label>
+          <button type="button" (click)="addBin()" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700">+ Add bin</button>
+        </div>
+        <div formArrayName="bins" class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+          @for (group of bins.controls; track $index) {
+            <div [formGroupName]="$index" class="flex items-center gap-2">
+              <input formControlName="binNumber" placeholder="Bin number" class="flex-1 !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+              <label class="flex items-center gap-1.5 shrink-0 cursor-pointer select-none" title="Default bin">
+                <input type="checkbox" formControlName="isDefault" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
+                <span class="text-[11px] font-semibold text-slate-500">Default</span>
+              </label>
+              <button type="button" (click)="removeBin($index)" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </form>
+
+    <div footer class="flex justify-end gap-2">
+      <button (click)="modalOpen.set(false)" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[70px]">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </app-modal>
+}

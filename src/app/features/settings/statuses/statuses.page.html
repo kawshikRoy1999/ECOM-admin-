@@ -1,0 +1,91 @@
+<div class="space-y-4">
+  <div class="flex flex-col gap-0.5">
+    <h1 class="page-title">Order Statuses</h1>
+    <p class="page-subtitle">Customize order status labels and manage cancellation reasons.</p>
+  </div>
+
+  <app-tabs [tabs]="tabs" [(active)]="active" />
+
+  <!-- STATUS NAMES -->
+  @if (active() === 'statuses') {
+    @if (statusesLoading()) {
+      <p class="py-8 text-sm text-slate-400">Loading statuses…</p>
+    } @else if (statuses().length) {
+      <div class="fluent-card overflow-hidden">
+        <div class="grid grid-cols-12 gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <div class="col-span-5">Admin status name</div>
+          <div class="col-span-5">Storefront label (shown to customers)</div>
+          <div class="col-span-2 text-right">Action</div>
+        </div>
+        @for (s of statuses(); track s.statusId) {
+          <div class="grid grid-cols-12 items-center gap-3 border-b border-slate-100 px-4 py-2.5 last:border-0">
+            <input [(ngModel)]="s.statusName" class="col-span-5 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+            <input [(ngModel)]="s.storeFrontStatus" class="col-span-5 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+            <div class="col-span-2 flex justify-end">
+              <button (click)="saveStatus(s)" [disabled]="savingStatusId() === s.statusId" class="btn-secondary h-8 px-3 text-[12px] font-semibold">
+                {{ savingStatusId() === s.statusId ? 'Saving…' : 'Save' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="py-8 text-sm text-slate-400">No statuses found.</p>
+    }
+  }
+
+  <!-- CANCELLATION REASONS -->
+  @if (active() === 'cancellations') {
+    <div class="flex justify-end">
+      <button (click)="openCreate()" class="btn-primary h-9 px-4 text-[13px] gap-1.5">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+        New Reason
+      </button>
+    </div>
+
+    <app-data-table
+      [columns]="reasonColumns"
+      [rows]="reasons()"
+      [loading]="reasonsLoading()"
+      emptyText="No cancellation reasons yet."
+      searchPlaceholder="Search reasons…"
+      [actions]="actionsTpl"
+    />
+
+    <ng-template #actionsTpl let-row>
+      <div class="flex justify-end gap-1.5">
+        <button (click)="openEdit(row)" class="text-[13px] font-semibold text-brand-600 hover:text-brand-700">Edit</button>
+        <button (click)="removeReason(row)" class="text-[13px] font-semibold text-red-600 hover:text-red-700">Delete</button>
+      </div>
+    </ng-template>
+  }
+</div>
+
+<!-- Reason modal -->
+@if (modalOpen()) {
+  <app-modal [title]="editingId() ? 'Edit Reason' : 'New Reason'" (close)="modalOpen.set(false)">
+    <form [formGroup]="reasonForm" (ngSubmit)="saveReason()" class="space-y-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Reason name</label>
+        <input formControlName="reasonName" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        @if (reasonForm.controls.reasonName.touched && reasonForm.controls.reasonName.invalid) {
+          <p class="text-[11px] text-red-500 font-semibold">Required</p>
+        }
+      </div>
+      <label class="flex items-center gap-2.5 cursor-pointer select-none">
+        <input type="checkbox" formControlName="explanationRequired" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
+        <span class="text-[13px] font-medium text-slate-700">Require customer explanation</span>
+      </label>
+      <label class="flex items-center gap-2.5 cursor-pointer select-none">
+        <input type="checkbox" formControlName="isActive" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
+        <span class="text-[13px] font-medium text-slate-700">Active</span>
+      </label>
+    </form>
+    <div footer class="flex justify-end gap-2">
+      <button (click)="modalOpen.set(false)" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
+      <button (click)="saveReason()" [disabled]="savingReason()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[70px]">
+        {{ savingReason() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </app-modal>
+}

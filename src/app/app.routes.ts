@@ -84,6 +84,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/social/social.page').then((m) => m.SocialPage),
       },
+      {
+        path: 'settings/locations',
+        loadComponent: () =>
+          import('./features/settings/locations/locations.page').then((m) => m.LocationsPage),
+      },
+      {
+        path: 'settings/statuses',
+        loadComponent: () =>
+          import('./features/settings/statuses/statuses.page').then((m) => m.StatusesPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
