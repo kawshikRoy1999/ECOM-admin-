@@ -1,0 +1,103 @@
+<div class="space-y-4">
+  <div class="flex flex-col gap-0.5">
+    <h1 class="page-title">Social Links</h1>
+    <p class="page-subtitle">Set the social profiles and contact details shown on the storefront.</p>
+  </div>
+
+  @if (loading()) {
+    <p class="py-8 text-sm text-slate-400">Loading…</p>
+  } @else {
+    <div class="fluent-card max-w-lg p-5 bg-white/90 border border-slate-200/60 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.03)] space-y-4">
+      <form [formGroup]="form" class="space-y-3">
+        <div class="space-y-2.5">
+          @for (ch of channels; track ch.value) {
+            <div class="flex items-center gap-3.5 pb-2.5 border-b border-slate-100/80 last:border-0 last:pb-0">
+              <!-- Label -->
+              <span class="w-24 shrink-0 text-[12px] font-bold text-slate-500 select-none">{{ ch.label }}</span>
+
+              <!-- Prefix Icon Input Wrapper -->
+              <div class="relative flex-1 min-w-0">
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                  @switch (ch.value) {
+                    @case ('facebook') {
+                      <svg class="h-4 w-4 text-blue-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                    }
+                    @case ('instagram') {
+                      <svg class="h-4 w-4 text-pink-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                      </svg>
+                    }
+                    @case ('twitter') {
+                      <svg class="h-3.5 w-3.5 text-slate-800 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                    }
+                    @case ('contactEmail') {
+                      <svg class="h-4 w-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                      </svg>
+                    }
+                    @case ('contactPhone') {
+                      <svg class="h-4 w-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                      </svg>
+                    }
+                  }
+                </div>
+                <input
+                  [formControlName]="ch.value"
+                  [placeholder]="ch.placeholder"
+                  class="w-full h-8.5 pl-9 pr-3.5 border border-slate-200 rounded-xl bg-slate-50/40 hover:bg-slate-50 focus:bg-white focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all text-[12.5px] text-slate-700 font-medium"
+                />
+              </div>
+
+              <!-- iOS Switch for Visibility -->
+              <label class="relative inline-flex cursor-pointer items-center select-none shrink-0" title="Show on storefront">
+                <input type="checkbox" [formControlName]="ch.show" class="peer sr-only" />
+                <div class="h-4.5 w-8 rounded-full bg-slate-200/80 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+              </label>
+            </div>
+          }
+        </div>
+
+        <!-- Master active switch banner -->
+        <div class="flex items-center justify-between bg-slate-50/60 border border-slate-100 rounded-2xl p-3.5 mt-1 select-none">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-[12px] font-bold text-slate-800">Social links active</span>
+            <span class="text-[10px] text-slate-400 font-medium leading-normal">Master switch for displaying social links.</span>
+          </div>
+          <label class="relative inline-flex cursor-pointer items-center shrink-0">
+            <input type="checkbox" formControlName="isActive" class="peer sr-only" />
+            <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+          </label>
+        </div>
+      </form>
+
+      <!-- Form Actions -->
+      <div class="flex justify-end pt-1">
+        <button
+          (click)="save()"
+          [disabled]="saving()"
+          class="btn-primary h-8.5 px-5 text-[12.5px] font-bold flex items-center gap-1.5 cursor-pointer shadow-sm hover:shadow transition-all duration-300"
+        >
+          @if (saving()) {
+            <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Saving…</span>
+          } @else {
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            <span>Save social links</span>
+          }
+        </button>
+      </div>
+    </div>
+  }
+</div>
