@@ -49,13 +49,13 @@
     <!-- Sidebar -->
     <aside
       class="z-40 flex flex-col border-r border-[#e1dfdd] bg-white transition-all duration-150 absolute inset-y-0 left-0 lg:relative"
-      [class.w-52]="sidebarOpen()"
+      [class.w-60]="sidebarOpen()"
       [class.w-0]="!sidebarOpen() && !lgScreen()"
       [class.w-12]="!sidebarOpen() && lgScreen()"
       [class.-translate-x-full]="!sidebarOpen() && !lgScreen()"
       [class.translate-x-0]="sidebarOpen() || lgScreen()"
     >
-      <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2">
+      <nav class="flex-1 overflow-y-auto overflow-x-hidden py-2" (scroll)="hideTooltip()">
         @for (group of nav; track group.group) {
           @if (sidebarOpen()) {
             <p class="mt-3 px-4 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">
@@ -69,8 +69,10 @@
             <a
               [routerLink]="item.path"
               routerLinkActive="bg-brand-50 text-brand-700 font-bold before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-brand-600"
-              class="relative flex h-9 items-center gap-3 px-4 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
-              [title]="item.label"
+              class="relative flex min-h-9 py-1.5 items-center gap-3 px-4 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 group"
+              (mouseenter)="showTooltip($event, item)"
+              (mouseleave)="hideTooltip()"
+              (click)="hideTooltip()"
             >
               <span class="flex h-5 w-5 shrink-0 items-center justify-center text-brand-600">
                 @if (item.path === '/dashboard') {
@@ -142,7 +144,7 @@
                 }
               </span>
               @if (sidebarOpen()) {
-                <span class="truncate">{{ item.label }}</span>
+                <span class="whitespace-normal break-words leading-tight py-0.5">{{ item.label }}</span>
               }
             </a>
           }
@@ -161,6 +163,26 @@
         <router-outlet />
       </div>
     </main>
+  </div>
+
+  <!-- Global Glassmorphic Tooltip Overlay (Light Mode Frost Glass) -->
+  <div 
+    class="fixed z-50 w-52 p-3 bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-xl shadow-lg pointer-events-none select-none transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[transform,opacity,top,left]"
+    [class.opacity-0]="!tooltipState().visible"
+    [class.opacity-100]="tooltipState().visible"
+    [style.left.px]="tooltipState().left"
+    [style.top.px]="tooltipState().top"
+    [style.transform]="tooltipState().visible ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(-4px)'"
+  >
+    <!-- Left-pointing triangle arrow (Rotated Square) -->
+    <div class="absolute right-[calc(100%-6px)] top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 bg-white/90 border-l border-b border-slate-200/80"></div>
+    
+    <div class="flex flex-col gap-1 text-left relative z-10">
+      <span class="text-[11.5px] font-bold text-slate-800 leading-tight">{{ tooltipState().label }}</span>
+      @if (tooltipState().info) {
+        <span class="text-[10px] text-slate-500 font-medium leading-normal mt-0.5">{{ tooltipState().info }}</span>
+      }
+    </div>
   </div>
 </div>
 
