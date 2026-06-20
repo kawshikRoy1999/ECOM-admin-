@@ -1,218 +1,466 @@
-<div class="space-y-5">
-  <!-- Header -->
-  <div class="flex items-center justify-between">
+<div class="flex flex-col h-full lg:h-[calc(100vh-96px)] overflow-hidden gap-3 pb-4">
+  
+  <!-- Breadcrumbs & Header -->
+  <div class="flex items-center justify-between shrink-0">
     <div class="flex flex-col gap-0.5">
-      <a routerLink="/settings/templates" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700">← Back to templates</a>
+      <a routerLink="/settings/templates" class="text-[11.5px] font-bold text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1 cursor-pointer">
+        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to templates
+      </a>
       <h1 class="page-title">{{ detail()?.templateName || 'Template Builder' }}</h1>
-      <p class="page-subtitle">Edit the theme and arrange the storefront sections.</p>
+      <p class="page-subtitle">Configure theme palettes, typography, and order storefront layout sections.</p>
     </div>
   </div>
 
   @if (loading()) {
-    <p class="py-10 text-center text-sm text-slate-400">Loading template…</p>
+    <div class="flex-1 flex items-center justify-center py-10">
+      <p class="text-sm font-semibold text-slate-400">Loading storefront template settings…</p>
+    </div>
   } @else if (detail()) {
-    <!-- MASTER -->
-    <div class="fluent-card p-5 space-y-4">
-      <h3 class="text-[12.5px] font-bold text-slate-800 uppercase tracking-wider">Theme</h3>
-      <form [formGroup]="masterForm" class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="flex flex-col gap-1.5 sm:col-span-2">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Template name</label>
-          <input formControlName="templateName" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
-        </div>
-        @for (c of [['primaryColor','Primary'],['secondaryColor','Secondary'],['tertiaryColor','Tertiary']]; track c[0]) {
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">{{ c[1] }} colour</label>
-            <div class="flex items-center gap-2">
-              <input type="color" [formControlName]="c[0]" class="h-9 w-12 rounded-lg border border-slate-200 bg-white" />
-              <input [formControlName]="c[0]" class="flex-1 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[12.5px] h-9.5" />
-            </div>
+    <!-- Dual-Pane Studio Canvas -->
+    <div class="flex-1 flex flex-col lg:flex-row gap-5 min-h-0 lg:h-full overflow-hidden">
+      
+      <!-- LEFT PANEL: Theme Master Settings -->
+      <div class="w-full lg:w-[340px] shrink-0 flex flex-col bg-white rounded-xl border border-slate-200/80 h-auto lg:h-full overflow-hidden shadow-xs">
+        
+        <!-- Sidebar Scrollable Body -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Theme Palette & Font</span>
           </div>
-        }
-        @if (detail()?.responseTemplateFontFamilyMaster?.length) {
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Font</label>
-            <select formControlName="fontFamilyId" class="h-9.5 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50">
-              <option [value]="0">Default</option>
-              @for (f of detail()!.responseTemplateFontFamilyMaster!; track f.fontFamilyId) {
-                <option [value]="f.fontFamilyId">{{ f.fontName }}</option>
-              }
-            </select>
-          </div>
-        }
-        <div class="flex items-end gap-6">
-          <label class="flex items-center gap-2.5 cursor-pointer select-none">
-            <input type="checkbox" formControlName="isActive" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-            <span class="text-[13px] font-medium text-slate-700">Active</span>
-          </label>
-          <label class="flex items-center gap-2.5 cursor-pointer select-none">
-            <input type="checkbox" formControlName="isForB2C" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-            <span class="text-[13px] font-medium text-slate-700">B2C</span>
-          </label>
-        </div>
-      </form>
-      <div class="flex justify-end">
-        <button (click)="saveMaster()" [disabled]="savingMaster()" class="btn-primary h-9 px-5 text-[13px] font-semibold">
-          {{ savingMaster() ? 'Saving…' : 'Update theme' }}
-        </button>
-      </div>
-    </div>
 
-    <!-- SECTIONS -->
-    <div class="flex items-center justify-between">
-      <h3 class="text-[12.5px] font-bold text-slate-800 uppercase tracking-wider">Sections</h3>
-      <button (click)="openCreateSection()" class="btn-primary h-9 px-4 text-[13px] gap-1.5">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-        New Section
-      </button>
-    </div>
-
-    @if (orderedSections().length) {
-      <div class="space-y-2.5" cdkDropList (cdkDropListDropped)="onDrop($event)">
-        @for (s of orderedSections(); track s.companyTemplateSectionId) {
-          <div class="fluent-card overflow-hidden" cdkDrag>
-            <!-- placeholder shown while dragging -->
-            <div class="h-16 rounded-xl border-2 border-dashed border-brand-300 bg-brand-50/40" *cdkDragPlaceholder></div>
-            <!-- Accordion header -->
-            <div class="flex items-center gap-3 px-4 py-3">
-              <button
-                cdkDragHandle
-                class="flex h-7 w-7 shrink-0 cursor-grab items-center justify-center rounded-lg text-slate-300 hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing"
-                title="Drag to reorder"
-              >
-                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M7 4a1 1 0 11-2 0 1 1 0 012 0zM7 10a1 1 0 11-2 0 1 1 0 012 0zM7 16a1 1 0 11-2 0 1 1 0 012 0zM15 4a1 1 0 11-2 0 1 1 0 012 0zM15 10a1 1 0 11-2 0 1 1 0 012 0zM15 16a1 1 0 11-2 0 1 1 0 012 0z" />
-                </svg>
-              </button>
-              <button (click)="toggle(s.companyTemplateSectionId)" class="flex flex-1 items-center justify-between text-left">
-                <div class="flex items-center gap-2.5">
-                  <span class="font-bold text-[13.5px] text-slate-800">{{ s.sectionName }}</span>
-                  <span class="rounded-md bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-700">{{ sectionForLabel(s.sectionFor) }}</span>
-                  @if (s.sectionTypeName) { <span class="text-[11px] text-slate-400">{{ s.sectionTypeName }}</span> }
-                  @if (!s.isActive) { <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">Inactive</span> }
-                </div>
-                <span class="text-slate-300">{{ expanded() === s.companyTemplateSectionId ? '▾' : '▸' }}</span>
-              </button>
-              <button (click)="openEditSection(s)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50" title="Edit section">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
+          <form [formGroup]="masterForm" class="space-y-4">
+            <!-- Template Name -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Template Name</label>
+              <input
+                formControlName="templateName"
+                placeholder="e.g. Summer Collection"
+                class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13px] h-8.5"
+              />
             </div>
 
-            <!-- Accordion body: section items / images -->
-            @if (expanded() === s.companyTemplateSectionId) {
-              <div class="border-t border-slate-100 bg-slate-50/40 p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                  @if (s.primaryText || s.secondaryText || s.tertiaryText) {
-                    <p class="text-[12px] text-slate-500">{{ s.primaryText }} · {{ s.secondaryText }} · {{ s.tertiaryText }}</p>
-                  } @else { <span></span> }
-                  <button (click)="openAddItems(s)" class="btn-secondary h-8 px-3 text-[12px] font-semibold gap-1.5">
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                    Add {{ sectionForLabel(s.sectionFor) }}
-                  </button>
-                </div>
-
-                @if (s.responseSectionItemAndImage?.sectionItems?.length) {
-                  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                    @for (item of s.responseSectionItemAndImage!.sectionItems!; track item.companyTemplateSectionItemMappingId) {
-                      <div class="relative rounded-lg border border-slate-200 bg-white overflow-hidden">
-                        <div class="aspect-square bg-slate-100">
-                          @if (item.imagePath) { <img [src]="item.imagePath" (error)="item.imagePath = ''" class="h-full w-full object-cover" /> }
-                        </div>
-                        <div class="p-2">
-                          <p class="text-[11px] font-semibold text-slate-700 truncate">{{ item.name }}</p>
-                          <p class="text-[10px] text-slate-400">₹{{ item.salePrice || item.price }}</p>
-                        </div>
-                        <button (click)="deleteItem(item.companyTemplateSectionItemMappingId)" class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] shadow">✕</button>
-                      </div>
-                    }
-                  </div>
-                } @else if (s.responseSectionItemAndImage?.sectionImages?.length) {
-                  <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    @for (img of s.responseSectionItemAndImage!.sectionImages!; track img.companyTemplateSectionImageMappingId) {
-                      <div class="relative rounded-lg border border-slate-200 bg-white overflow-hidden">
-                        <div class="aspect-video bg-slate-100">
-                          @if (img.imagePath) { <img [src]="img.imagePath" (error)="img.imagePath = ''" class="h-full w-full object-cover" /> }
-                        </div>
-                        <button (click)="deleteImage(img.companyTemplateSectionImageMappingId)" class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] shadow">✕</button>
-                      </div>
-                    }
-                  </div>
-                } @else {
-                  <p class="text-[12px] text-slate-400">No items in this section yet.</p>
-                }
+            <!-- Font Family Selector -->
+            @if (detail()?.responseTemplateFontFamilyMaster?.length) {
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Font Family</label>
+                <app-select
+                  formControlName="fontFamilyId"
+                  [options]="detail()!.responseTemplateFontFamilyMaster!"
+                  labelKey="fontName"
+                  valueKey="fontFamilyId"
+                  defaultLabel="Default Font"
+                  [defaultValue]="0"
+                />
               </div>
             }
-          </div>
-        }
+
+            <!-- Colors Stack -->
+            <div class="space-y-3.5 pt-1">
+              @for (c of [['primaryColor','Primary'],['secondaryColor','Secondary'],['tertiaryColor','Tertiary']]; track c[0]) {
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">{{ c[1] }} Color</label>
+                  <div class="flex items-center gap-2">
+                    <!-- Color Picker Box -->
+                    <div class="relative h-8.5 w-12 rounded-xl border border-slate-200 bg-white overflow-hidden shrink-0 cursor-pointer shadow-xs hover:border-slate-300 transition-colors">
+                      <input
+                        type="color"
+                        [formControlName]="c[0]"
+                        class="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                      />
+                      <div class="h-full w-full" [style.backgroundColor]="masterForm.get(c[0])?.value"></div>
+                    </div>
+                    <!-- Color Code Input -->
+                    <input
+                      [formControlName]="c[0]"
+                      placeholder="#FFFFFF"
+                      class="flex-1 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 hover:bg-slate-50 focus:border-brand-600 transition-all text-[12.5px] h-8.5 uppercase"
+                    />
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Toggle Options -->
+            <div class="space-y-3 pt-3 border-t border-slate-100">
+              <!-- Active Switch -->
+              <div class="flex items-center justify-between py-1 shrink-0">
+                <div class="flex flex-col gap-0.5 max-w-[70%]">
+                  <span class="text-[12.5px] font-bold text-slate-700 leading-tight">Template Active</span>
+                  <span class="text-[10px] text-slate-400 leading-normal">Publish this template to live storefront.</span>
+                </div>
+                <label class="relative inline-flex cursor-pointer items-center shrink-0 select-none">
+                  <input
+                    type="checkbox"
+                    formControlName="isActive"
+                    class="peer sr-only"
+                  />
+                  <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+                </label>
+              </div>
+
+              <!-- B2C Switch -->
+              <div class="flex items-center justify-between py-1 shrink-0 border-t border-slate-50 pt-3">
+                <div class="flex flex-col gap-0.5 max-w-[70%]">
+                  <span class="text-[12.5px] font-bold text-slate-700 leading-tight">For B2C Channels</span>
+                  <span class="text-[10px] text-slate-400 leading-normal">Apply theme options for B2C retail customers.</span>
+                </div>
+                <label class="relative inline-flex cursor-pointer items-center shrink-0 select-none">
+                  <input
+                    type="checkbox"
+                    formControlName="isForB2C"
+                    class="peer sr-only"
+                  />
+                  <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Sidebar Sticky Footer -->
+        <div class="p-3 border-t border-slate-100 flex justify-end shrink-0 bg-slate-50/50">
+          <button
+            (click)="saveMaster()"
+            [disabled]="savingMaster()"
+            class="btn-primary w-full h-8.5 text-[12.5px] font-bold shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 flex items-center justify-center shrink-0 cursor-pointer"
+          >
+            {{ savingMaster() ? 'Saving Changes…' : 'Update Theme' }}
+          </button>
+        </div>
       </div>
-    } @else {
-      <p class="py-8 text-sm text-slate-400">No sections yet. Click “New Section”.</p>
-    }
+
+      <!-- RIGHT PANEL: Sections Layout Canvas -->
+      <div class="flex-1 flex flex-col gap-3 h-auto min-h-0 lg:h-full lg:overflow-hidden">
+        
+        <!-- Header Controls Bar -->
+        <div class="flex items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs shrink-0">
+          <div class="flex flex-col gap-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-slate-800 leading-none">Layout Sections</h2>
+              <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold tracking-wider uppercase bg-brand-50 text-brand-700 shrink-0">
+                {{ orderedSections().length }} Sections
+              </span>
+            </div>
+            <span class="text-[11px] sm:text-[12px] text-slate-500 truncate mt-0.5">
+              Drag sections to re-order. Expand a section card to manage items or section titles.
+            </span>
+          </div>
+
+          <!-- Add Section Button -->
+          <button
+            (click)="openCreateSection()"
+            class="btn-primary h-8.5 rounded-xl px-3.5 text-[11.5px] font-bold gap-1 shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 flex items-center justify-center shrink-0 cursor-pointer"
+            title="Create Storefront Section"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            New Section
+          </button>
+        </div>
+
+        <!-- Sections List Scroll Canvas -->
+        <div class="flex-1 overflow-y-auto pr-1 space-y-2.5 custom-scrollbar pb-4" cdkDropList (cdkDropListDropped)="onDrop($event)">
+          @for (s of orderedSections(); track s.companyTemplateSectionId) {
+            <div class="fluent-card overflow-hidden bg-white hover:border-slate-300 shadow-xs flex flex-col !transition-none" cdkDrag>
+              
+              <!-- Drag Handle & General Accordion Toggle Row -->
+              <div class="flex items-center gap-3 px-4 py-3 shrink-0">
+                <!-- Drag Handle -->
+                <button
+                  cdkDragHandle
+                  class="flex h-7.5 w-7.5 shrink-0 cursor-grab items-center justify-center rounded-lg text-slate-300 hover:bg-slate-50 hover:text-slate-500 active:cursor-grabbing transition-all"
+                  title="Drag to reorder section"
+                >
+                  <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+
+                <!-- Expand/Collapse Interactive Info Area -->
+                <button
+                  (click)="toggle(s.companyTemplateSectionId)"
+                  class="flex-1 flex items-center justify-between text-left cursor-pointer group"
+                >
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="font-bold text-[13px] sm:text-[13.5px] text-slate-800 group-hover:text-brand-600 transition-colors">
+                      {{ s.sectionName }}
+                    </span>
+                    <span class="rounded-md bg-brand-50/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-700 border border-brand-200/20">
+                      {{ sectionForLabel(s.sectionFor) }}
+                    </span>
+                    @if (s.sectionTypeName) {
+                      <span class="rounded-md bg-slate-50 border border-slate-200/50 px-2 py-0.5 text-[9px] font-semibold text-slate-500">
+                        {{ s.sectionTypeName }}
+                      </span>
+                    }
+                    @if (!s.isActive) {
+                      <span class="rounded-md bg-amber-50 border border-amber-200/30 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-600">
+                        Inactive
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Accordion status chevron -->
+                  <span class="text-slate-400 group-hover:text-slate-600 transition-colors mr-1">
+                    @if (expanded() === s.companyTemplateSectionId) {
+                      <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                      </svg>
+                    } @else {
+                      <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    }
+                  </span>
+                </button>
+
+                <!-- Divider -->
+                <div class="h-5 w-[1px] bg-slate-200 shrink-0 mx-1"></div>
+
+                <!-- Section Action Controls -->
+                <button
+                  (click)="openEditSection(s)"
+                  class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50 hover:text-brand-700 transition-all cursor-pointer"
+                  title="Configure Section Titles & Background"
+                >
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Accordion Body: Section Items Mapping / Custom Groups Grid -->
+              @if (expanded() === s.companyTemplateSectionId) {
+                <div class="border-t border-slate-100 bg-slate-50/30 p-4 space-y-4">
+                  
+                  <!-- Metadata Header -->
+                  <div class="flex items-center justify-between gap-4">
+                    @if (s.primaryText || s.secondaryText || s.tertiaryText) {
+                      <div class="flex flex-col gap-0.5 max-w-[70%]">
+                        @if (s.primaryText) {
+                          <span class="text-[12px] font-bold text-slate-700 leading-tight">{{ s.primaryText }}</span>
+                        }
+                        @if (s.secondaryText || s.tertiaryText) {
+                          <span class="text-[10px] text-slate-400 leading-normal">
+                            {{ s.secondaryText }} @if (s.secondaryText && s.tertiaryText) { · } {{ s.tertiaryText }}
+                          </span>
+                        }
+                      </div>
+                    } @else {
+                      <span class="text-[11px] text-slate-400 italic">No marketing header copy configured for this section.</span>
+                    }
+
+                    <button
+                      (click)="openAddItems(s)"
+                      class="btn-secondary h-8 px-3 text-[11.5px] font-bold gap-1 shadow-xs hover:bg-slate-100 transition-all cursor-pointer"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      Add {{ sectionForLabel(s.sectionFor) }}
+                    </button>
+                  </div>
+
+                  <!-- Products / Variants Grid -->
+                  @if (s.responseSectionItemAndImage?.sectionItems?.length) {
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      @for (item of s.responseSectionItemAndImage!.sectionItems!; track item.companyTemplateSectionItemMappingId) {
+                        <div class="group relative rounded-xl border border-slate-200/80 bg-white overflow-hidden shadow-xs hover:border-brand-300 transition-all flex flex-col hover:shadow-sm">
+                          <!-- Image Box -->
+                          <div class="aspect-square bg-slate-50 relative flex items-center justify-center overflow-hidden border-b border-slate-100 shrink-0">
+                            @if (item.imagePath) {
+                              <img [src]="item.imagePath" (error)="item.imagePath = ''" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            } @else {
+                              <svg class="h-8 w-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                              </svg>
+                            }
+                          </div>
+                          <!-- Info Box -->
+                          <div class="p-2 flex-1 flex flex-col justify-between">
+                            <p class="text-[11.5px] font-bold text-slate-700 truncate leading-tight" [title]="item.name">{{ item.name }}</p>
+                            <p class="text-[10px] font-semibold text-slate-400 mt-0.5">₹{{ item.salePrice || item.price }}</p>
+                          </div>
+                          <!-- Hover Unstage Control -->
+                          <button
+                            (click)="deleteItem(item.companyTemplateSectionItemMappingId)"
+                            class="absolute top-1.5 right-1.5 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200/50 hover:border-red-500 text-[10px] shadow-xs cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+                            title="Remove from Section"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  } @else if (s.responseSectionItemAndImage?.sectionImages?.length) {
+                    <!-- Section Images Banner Grid -->
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      @for (img of s.responseSectionItemAndImage!.sectionImages!; track img.companyTemplateSectionImageMappingId) {
+                        <div class="group relative rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs hover:border-brand-300 transition-all aspect-video flex items-center justify-center">
+                          @if (img.imagePath) {
+                            <img [src]="img.imagePath" (error)="img.imagePath = ''" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          } @else {
+                            <svg class="h-8 w-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                          }
+                          <!-- Hover Unstage Image Control -->
+                          <button
+                            (click)="deleteImage(img.companyTemplateSectionImageMappingId)"
+                            class="absolute top-1.5 right-1.5 flex h-5.5 w-5.5 items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200/50 hover:border-red-500 text-[10px] shadow-xs cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+                            title="Remove Image mapping"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <!-- Empty Placeholder -->
+                    <div class="flex flex-col items-center justify-center py-6 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                      <svg class="h-7 w-7 text-slate-300 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span class="text-xs font-bold text-slate-400">Empty section items</span>
+                      <span class="text-[10px] text-slate-400/80 mt-0.5">Staged storefront items will display here. Click "Add {{ sectionForLabel(s.sectionFor) }}" to select.</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          } @empty {
+            <div class="flex-1 flex flex-col items-center justify-center py-12 text-center bg-white border border-slate-200/80 rounded-xl shadow-xs">
+              <svg class="h-10 w-10 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              <span class="text-sm font-bold text-slate-400">No storefront sections created</span>
+              <span class="text-xs text-slate-400/80 mt-0.5">Click "New Section" to add content layouts to this storefront.</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
   }
 </div>
 
 <!-- Section modal -->
 @if (sectionModalOpen()) {
-  <app-modal [title]="editingSectionId() ? 'Edit Section' : 'New Section'" widthClass="max-w-lg" (close)="sectionModalOpen.set(false)">
+  <app-modal [title]="editingSectionId() ? 'Edit Section Details' : 'Create New Layout Section'" widthClass="max-w-lg" (close)="sectionModalOpen.set(false)">
     <form [formGroup]="sectionForm" class="space-y-4">
       <div class="grid grid-cols-2 gap-4">
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Section name</label>
-          <input formControlName="sectionName" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        <!-- Section name -->
+        <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Section Name</label>
+          <input
+            formControlName="sectionName"
+            placeholder="e.g. Featured Banner"
+            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-8.5"
+          />
           @if (sectionForm.controls.sectionName.touched && sectionForm.controls.sectionName.invalid) {
-            <p class="text-[11px] text-red-500 font-semibold">Required</p>
+            <p class="text-[11px] text-red-500 font-semibold mt-0.5">Required</p>
           }
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Section for</label>
-          <select formControlName="sectionFor" class="h-9.5 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50">
-            @for (f of metadata()?.sectionForList ?? []; track f.templateSectionForId) {
-              <option [value]="f.templateSectionForId">{{ f.templateSectionForName }}</option>
-            }
-          </select>
+
+        <!-- Section for -->
+        <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Section For</label>
+          <app-select
+            formControlName="sectionFor"
+            [options]="metadata()?.sectionForList ?? []"
+            labelKey="templateSectionForName"
+            valueKey="templateSectionForId"
+          />
         </div>
+
+        <!-- Layout type -->
         <div class="flex flex-col gap-1.5 col-span-2">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Layout type</label>
-          <select formControlName="sectionType" class="h-9.5 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50">
-            <option [value]="0">— Select —</option>
-            @for (t of metadata()?.templateSectionTypemaster ?? []; track t.templateSectionType) {
-              <option [value]="t.templateSectionType">{{ t.templateSectionName }}</option>
-            }
-          </select>
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Layout Type</label>
+          <app-select
+            formControlName="sectionType"
+            [options]="metadata()?.templateSectionTypemaster ?? []"
+            labelKey="templateSectionName"
+            valueKey="templateSectionType"
+            defaultLabel="— Select Layout —"
+            [defaultValue]="0"
+          />
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Primary text</label>
-          <input formControlName="primaryText" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+
+        <!-- Primary text -->
+        <div class="flex flex-col gap-1.5 col-span-2">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Primary Text (Header)</label>
+          <input
+            formControlName="primaryText"
+            placeholder="e.g. Seasonal Clearance"
+            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-8.5"
+          />
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Secondary text</label>
-          <input formControlName="secondaryText" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+
+        <!-- Secondary text -->
+        <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Secondary Text (Sub-header)</label>
+          <input
+            formControlName="secondaryText"
+            placeholder="e.g. Up to 50% Off"
+            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-8.5"
+          />
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Tertiary text</label>
-          <input formControlName="tertiaryText" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+
+        <!-- Tertiary text -->
+        <div class="flex flex-col gap-1.5 col-span-2 sm:col-span-1">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Tertiary Text (Caption)</label>
+          <input
+            formControlName="tertiaryText"
+            placeholder="e.g. Limited Stock"
+            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-8.5"
+          />
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Background colour</label>
+
+        <!-- Background colour -->
+        <div class="flex flex-col gap-1.5 col-span-2">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Background Color</label>
           <div class="flex items-center gap-2">
-            <input type="color" formControlName="sectionBackgroundColor" class="h-9 w-12 rounded-lg border border-slate-200 bg-white" />
-            <input formControlName="sectionBackgroundColor" class="flex-1 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[12.5px] h-9.5" />
+            <div class="relative h-8.5 w-12 rounded-xl border border-slate-200 bg-white overflow-hidden shrink-0 cursor-pointer shadow-xs hover:border-slate-300 transition-colors">
+              <input
+                type="color"
+                formControlName="sectionBackgroundColor"
+                class="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+              />
+              <div class="h-full w-full" [style.backgroundColor]="sectionForm.get('sectionBackgroundColor')?.value"></div>
+            </div>
+            <input
+              formControlName="sectionBackgroundColor"
+              placeholder="#FFFFFF"
+              class="flex-1 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[12.5px] h-8.5 uppercase"
+            />
           </div>
         </div>
       </div>
-      <label class="flex items-center gap-2.5 cursor-pointer select-none">
-        <input type="checkbox" formControlName="isActive" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-        <span class="text-[13px] font-medium text-slate-700">Active</span>
-      </label>
+
+      <!-- Section Active Toggle -->
+      <div class="flex items-center justify-between py-1 shrink-0 border-t border-slate-100 pt-3.5">
+        <div class="flex flex-col gap-0.5 max-w-[70%]">
+          <span class="text-[12.5px] font-bold text-slate-700 leading-tight">Section Active</span>
+          <span class="text-[10px] text-slate-400 leading-normal">Render section layout on storefront.</span>
+        </div>
+        <label class="relative inline-flex cursor-pointer items-center shrink-0 select-none">
+          <input
+            type="checkbox"
+            formControlName="isActive"
+            class="peer sr-only"
+          />
+          <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+        </label>
+      </div>
     </form>
 
-    <div footer class="flex justify-end gap-2">
-      <button (click)="sectionModalOpen.set(false)" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
-      <button (click)="saveSection()" [disabled]="savingSection()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[70px]">
-        {{ savingSection() ? 'Saving…' : 'Save' }}
+    <div footer class="flex justify-end gap-2.5">
+      <button (click)="sectionModalOpen.set(false)" class="btn-secondary h-8.5 rounded-xl px-4 text-[12.5px] font-bold cursor-pointer">Cancel</button>
+      <button (click)="saveSection()" [disabled]="savingSection()" class="btn-primary h-8.5 rounded-xl px-4 text-[12.5px] font-bold min-w-[70px] cursor-pointer">
+        {{ savingSection() ? 'Saving…' : 'Save Section' }}
       </button>
     </div>
   </app-modal>
@@ -220,100 +468,196 @@
 
 <!-- Add items modal -->
 @if (itemModalOpen()) {
-  <app-modal [title]="'Add ' + sectionForLabel(itemSection()!.sectionFor)" widthClass="max-w-2xl" (close)="itemModalOpen.set(false)">
+  <app-modal [title]="'Add Items to ' + itemSection()!.sectionName" widthClass="max-w-2xl" (close)="itemModalOpen.set(false)">
+    
+    <!-- CUSTOM GROUP MODE -->
     @if (itemSection()!.sectionFor === SECTION_FOR_CUSTOM_GROUPS) {
-      <!-- Create new group inline -->
-      <div class="mb-3">
-        @if (!newGroupOpen()) {
-          <button (click)="newGroupOpen.set(true)" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700">+ Create new group</button>
-        } @else {
-          <div class="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-3">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Group name</label>
-              <input [value]="newGroupName()" (input)="newGroupName.set($any($event.target).value)" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-white text-[13.5px] h-9.5" />
+      <div class="space-y-4">
+        <!-- Create new group inline -->
+        <div>
+          @if (!newGroupOpen()) {
+            <button
+              (click)="newGroupOpen.set(true)"
+              class="text-[11.5px] font-bold text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Create New Custom Group
+            </button>
+          } @else {
+            <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">New Custom Group Creator</span>
+                <button (click)="newGroupOpen.set(false)" class="text-[11px] text-slate-400 hover:text-slate-600 font-semibold cursor-pointer">Discard</button>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Group Name</label>
+                <input
+                  [value]="newGroupName()"
+                  (input)="newGroupName.set($any($event.target).value)"
+                  placeholder="e.g. Summer Collection"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-white text-[13px] h-8.5"
+                />
+              </div>
+              <app-image-upload label="Group image Link" entityType="CustomGroup" entitySubType="Group" [(value)]="newGroupImage" />
+              <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button (click)="newGroupOpen.set(false)" class="btn-secondary h-8 px-3 text-[11.5px] font-bold cursor-pointer">Cancel</button>
+                <button (click)="createGroup()" [disabled]="creatingGroup()" class="btn-primary h-8 px-3 text-[11.5px] font-bold cursor-pointer">
+                  {{ creatingGroup() ? 'Creating…' : 'Create Group' }}
+                </button>
+              </div>
             </div>
-            <app-image-upload label="Group image" entityType="CustomGroup" entitySubType="Group" [(value)]="newGroupImage" />
-            <div class="flex justify-end gap-2">
-              <button (click)="newGroupOpen.set(false)" class="btn-secondary h-8 px-3 text-[12px] font-semibold">Cancel</button>
-              <button (click)="createGroup()" [disabled]="creatingGroup()" class="btn-primary h-8 px-3 text-[12px] font-semibold">{{ creatingGroup() ? 'Creating…' : 'Create group' }}</button>
+          }
+        </div>
+
+        <div class="h-[1px] bg-slate-100"></div>
+
+        <!-- Custom group multi-select list -->
+        @if (allGroups().length) {
+          <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 max-h-[40vh] overflow-y-auto pr-1 custom-scrollbar">
+            @for (g of allGroups(); track g.customGroupId) {
+              <label class="flex items-center gap-3 rounded-xl border border-slate-200 p-2.5 cursor-pointer hover:bg-slate-50 transition-all select-none group">
+                <input
+                  type="checkbox"
+                  [checked]="stagedGroupIds().includes(g.customGroupId)"
+                  (change)="toggleGroup(g.customGroupId, $any($event.target).checked)"
+                  class="h-4.5 w-4.5 rounded-md border-slate-300 text-brand-600 focus:ring-brand-600/20 cursor-pointer"
+                />
+                @if (g.customGroupImageLink) {
+                  <img [src]="g.customGroupImageLink" (error)="g.customGroupImageLink = ''" class="h-9 w-9 rounded-lg object-cover border border-slate-100" />
+                }
+                <span class="text-[12.5px] font-bold text-slate-700 truncate group-hover:text-slate-900 transition-colors">
+                  {{ g.customGroupName }}
+                </span>
+              </label>
+            }
+          </div>
+        } @else {
+          <p class="py-8 text-center text-xs font-semibold text-slate-400">No custom groups found. Use the inline creator above to add one.</p>
+        }
+      </div>
+    } @else {
+      <!-- PRODUCT / VARIANT SEARCH & STAGE MODE -->
+      <div class="space-y-3.5">
+        <!-- Search Input -->
+        <div class="relative">
+          <input
+            type="text"
+            [value]="productTerm()"
+            (input)="onProductTerm($any($event.target).value)"
+            placeholder="Search items by name, barcode or SKU…"
+            class="w-full h-9.5 rounded-xl border border-slate-200/80 pl-9 pr-9 text-[13px] font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all bg-slate-50/50 hover:bg-slate-50"
+          />
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+        </div>
+
+        <!-- Staged products container -->
+        @if (stagedProducts().length) {
+          <div class="p-3 bg-slate-50 border border-slate-200/50 rounded-xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider">Staged Items ({{ stagedProducts().length }})</span>
+            </div>
+            <div class="flex flex-wrap gap-2 max-h-[100px] overflow-y-auto custom-scrollbar">
+              @for (p of stagedProducts(); track $index) {
+                <span class="inline-flex items-center gap-2 rounded-lg bg-brand-50 border border-brand-200/50 px-2 py-1 text-[11.5px] font-bold text-brand-700 shrink-0 select-none">
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" class="h-5 w-5 rounded-md object-cover" />
+                  }
+                  <span class="truncate max-w-[150px]">{{ p.name }}</span>
+                  <button
+                    (click)="unstageProduct($index)"
+                    class="text-brand-400 hover:text-red-600 transition-colors p-0.5 rounded-full hover:bg-brand-100 flex items-center justify-center cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </span>
+              }
             </div>
           </div>
         }
-      </div>
 
-      <!-- Custom group multi-select -->
-      @if (allGroups().length) {
-        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 max-h-[55vh] overflow-y-auto pr-1">
-          @for (g of allGroups(); track g.customGroupId) {
-            <label class="flex items-center gap-3 rounded-xl border border-slate-200 p-2.5 cursor-pointer hover:bg-slate-50">
-              <input type="checkbox" [checked]="stagedGroupIds().includes(g.customGroupId)" (change)="toggleGroup(g.customGroupId, $any($event.target).checked)" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-              @if (g.customGroupImageLink) { <img [src]="g.customGroupImageLink" (error)="g.customGroupImageLink = ''" class="h-9 w-9 rounded object-cover" /> }
-              <span class="text-[13px] font-semibold text-slate-700 truncate">{{ g.customGroupName }}</span>
-            </label>
-          }
-        </div>
-      } @else {
-        <p class="py-8 text-center text-[13px] text-slate-400">No custom groups found. Create them under Store Front Template → Custom Group.</p>
-      }
-    } @else {
-      <!-- Product / variant search -->
-      <input type="text" [value]="productTerm()" (input)="onProductTerm($any($event.target).value)" placeholder="🔍 Search products by name / code…" class="w-full !px-3.5 !py-2 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px]" />
-
-      @if (stagedProducts().length) {
-        <div class="mt-3 flex flex-wrap gap-2">
-          @for (p of stagedProducts(); track $index) {
-            <span class="inline-flex items-center gap-2 rounded-lg bg-brand-50 border border-brand-200 px-2.5 py-1.5 text-[12px] font-semibold text-brand-700">
-              @if (p.imageUrl) { <img [src]="p.imageUrl" class="h-6 w-6 rounded object-cover" /> }
-              {{ p.name }}
-              <button (click)="unstageProduct($index)" class="text-brand-400 hover:text-red-600">✕</button>
-            </span>
-          }
-        </div>
-      }
-
-      <div class="mt-3 max-h-[40vh] overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
-        @if (productSearching()) {
-          <p class="px-3 py-3 text-[12px] text-slate-400">Searching…</p>
-        } @else if (productResults().length) {
-          @for (p of productResults(); track p.itemId + '-' + p.variantId) {
-            <div>
-              <button (click)="expandProduct(p)" class="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-slate-50">
-                @if (p.imageUrl) { <img [src]="p.imageUrl" (error)="p.imageUrl = ''" class="h-8 w-8 rounded object-cover" /> }
-                <span class="flex-1 text-[13px] text-slate-700">{{ p.name }}</span>
-                <span class="text-slate-300 text-[11px]">{{ expandedProduct()?.itemId === p.itemId ? 'Hide images ▾' : 'Pick image ▸' }}</span>
-              </button>
-              <!-- per-item image selection -->
-              @if (expandedProduct()?.itemId === p.itemId) {
-                <div class="bg-slate-50/70 px-3 py-2.5">
-                  @if (loadingImages()) {
-                    <p class="text-[12px] text-slate-400">Loading images…</p>
+        <!-- Search results list -->
+        <div class="max-h-[35vh] overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-white custom-scrollbar">
+          @if (productSearching()) {
+            <p class="px-4 py-4 text-xs font-semibold text-slate-400">Querying product index…</p>
+          } @else if (productResults().length) {
+            @for (p of productResults(); track p.itemId + '-' + p.variantId) {
+              <div class="transition-all hover:bg-slate-50/50">
+                <button
+                  (click)="expandProduct(p)"
+                  class="flex w-full items-center gap-3 px-3.5 py-2.5 text-left cursor-pointer group"
+                >
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" (error)="p.imageUrl = ''" class="h-8.5 w-8.5 rounded-lg object-cover border border-slate-100 shadow-xs" />
                   } @else {
-                    <div class="flex flex-wrap gap-2">
-                      @for (img of itemImages(); track img.imageId) {
-                        <button (click)="stageImage(p, img)" class="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white hover:ring-2 hover:ring-brand-500" title="Add this image">
-                          @if (img.path) { <img [src]="img.path" (error)="img.path = ''" class="h-full w-full object-cover" /> }
-                          @if (img.isPrimary) { <span class="absolute bottom-0 inset-x-0 bg-brand-600/80 text-white text-[8px] font-bold text-center">PRIMARY</span> }
-                        </button>
-                      }
+                    <div class="h-8.5 w-8.5 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 border border-slate-200/20">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                      </svg>
                     </div>
-                    <p class="mt-1.5 text-[11px] text-slate-400">Click an image to add it to the section.</p>
                   }
-                </div>
-              }
-            </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-[13px] font-bold text-slate-700 truncate group-hover:text-slate-900">{{ p.name }}</p>
+                  </div>
+                  <span class="text-slate-400 text-[11px] font-bold flex items-center gap-1">
+                    {{ expandedProduct()?.itemId === p.itemId ? 'Hide Gallery' : 'View Gallery' }}
+                    <svg class="h-3 w-3 transition-transform" [class.rotate-90]="expandedProduct()?.itemId === p.itemId" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
+                </button>
+
+                <!-- Per-product image picker sub-grid -->
+                @if (expandedProduct()?.itemId === p.itemId) {
+                  <div class="bg-slate-50/70 border-t border-slate-100/80 px-4 py-3 space-y-2">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Available Media Library</span>
+                    @if (loadingImages()) {
+                      <p class="text-[11.5px] font-semibold text-slate-400 italic">Querying imagery index…</p>
+                    } @else {
+                      <div class="flex flex-wrap gap-2.5">
+                        @for (img of itemImages(); track img.imageId) {
+                          <button
+                            (click)="stageImage(p, img)"
+                            class="group/img relative h-16 w-16 overflow-hidden rounded-xl border border-slate-200 bg-white hover:border-brand-500 hover:ring-4 hover:ring-brand-500/10 transition-all cursor-pointer shadow-xs shrink-0"
+                            title="Add this image mapping to storefront section"
+                          >
+                            @if (img.path) {
+                              <img [src]="img.path" (error)="img.path = ''" class="h-full w-full object-cover group-hover/img:scale-105 transition-transform duration-200" />
+                            }
+                            @if (img.isPrimary) {
+                              <span class="absolute bottom-0 inset-x-0 bg-brand-600/90 text-white text-[8px] font-bold text-center py-0.5 tracking-wide">PRIMARY</span>
+                            }
+                          </button>
+                        }
+                      </div>
+                      <p class="text-[10px] font-medium text-slate-400">Click any colorway or media image above to select and stage it.</p>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          } @else if (productTerm()) {
+            <p class="px-4 py-4 text-xs font-semibold text-slate-400">No matching catalog products found.</p>
+          } @else {
+            <p class="px-4 py-4 text-xs font-semibold text-slate-400">Begin searching above by typing a product name or variant code.</p>
           }
-        } @else if (productTerm()) {
-          <p class="px-3 py-3 text-[12px] text-slate-400">No products found.</p>
-        } @else {
-          <p class="px-3 py-3 text-[12px] text-slate-400">Type to search products.</p>
-        }
+        </div>
       </div>
     }
 
-    <div footer class="flex justify-end gap-2">
-      <button (click)="itemModalOpen.set(false)" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
-      <button (click)="saveItems()" [disabled]="savingItems()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[80px]">
-        {{ savingItems() ? 'Saving…' : 'Add to section' }}
+    <div footer class="flex justify-end gap-2.5">
+      <button (click)="itemModalOpen.set(false)" class="btn-secondary h-8.5 rounded-xl px-4 text-[12.5px] font-bold cursor-pointer">Cancel</button>
+      <button
+        (click)="saveItems()"
+        [disabled]="savingItems() || (itemSection()!.sectionFor === SECTION_FOR_CUSTOM_GROUPS ? !stagedGroupIds().length : !stagedProducts().length)"
+        class="btn-primary h-8.5 rounded-xl px-4 text-[12.5px] font-bold min-w-[90px] cursor-pointer"
+      >
+        {{ savingItems() ? 'Saving…' : 'Add to Section' }}
       </button>
     </div>
   </app-modal>

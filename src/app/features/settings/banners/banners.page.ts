@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
 import { Modal } from '../../../shared/ui/modal/modal';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
@@ -11,7 +10,7 @@ import { Banner } from './banner.models';
 
 @Component({
   selector: 'app-banners-page',
-  imports: [ReactiveFormsModule, DataTable, Modal, ImageUpload],
+  imports: [ReactiveFormsModule, Modal, ImageUpload],
   templateUrl: './banners.page.html',
 })
 export class BannersPage {
@@ -26,11 +25,6 @@ export class BannersPage {
   readonly modalOpen = signal(false);
   readonly editingId = signal(0);
   readonly imageUrl = signal('');
-
-  readonly columns: Column<Banner>[] = [
-    { key: 'bannerName', header: 'Banner' },
-    { key: 'description', header: 'Description' },
-  ];
 
   readonly form = this.fb.nonNullable.group({
     bannerName: ['', [Validators.required]],
