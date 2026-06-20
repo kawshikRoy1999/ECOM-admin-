@@ -9,25 +9,122 @@
   <!-- STATUS NAMES -->
   @if (active() === 'statuses') {
     @if (statusesLoading()) {
-      <p class="py-8 text-sm text-slate-400">Loading statuses…</p>
+      <p class="py-8 text-sm text-slate-400 font-semibold animate-pulse">Loading statuses…</p>
     } @else if (statuses().length) {
-      <div class="fluent-card overflow-hidden">
-        <div class="grid grid-cols-12 gap-3 border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-          <div class="col-span-5">Admin status name</div>
-          <div class="col-span-5">Storefront label (shown to customers)</div>
-          <div class="col-span-2 text-right">Action</div>
+      <div class="fluent-card max-w-5xl bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden animate-fadeIn">
+        <div class="divide-y divide-slate-100/80">
+          @for (s of statuses(); track s.statusId) {
+            @if (editingStatusId() !== s.statusId) {
+              <!-- Read-only View -->
+              <div class="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-slate-50/30 transition-all duration-300 group">
+                <!-- Left: Badge + Storefront Label -->
+                <div class="flex items-center gap-3.5 min-w-0">
+                  <div class="h-9 w-9 rounded-full flex items-center justify-center shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-105" [class]="statusColorClass(s.statusName)">
+                    @switch (s.statusName.toLowerCase()) {
+                      @case ('order placed') {
+                        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                      }
+                      @case ('ready to dispatch') {
+                        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      }
+                      @case ('order delivered') {
+                        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      }
+                      @case ('order cancelled') {
+                        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      }
+                      @default {
+                        <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                      }
+                    }
+                  </div>
+                  
+                  <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="text-[13.5px] font-bold text-slate-700 truncate leading-tight">{{ s.storeFrontStatus || s.statusName }}</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider select-none leading-none mt-0.5">System: {{ s.statusName }}</span>
+                  </div>
+                </div>
+
+                <!-- Right: Action Edit Button -->
+                <button
+                  type="button"
+                  (click)="startEditStatus(s)"
+                  class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:text-brand-600 hover:bg-brand-50 border border-transparent hover:border-brand-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0"
+                  title="Edit Storefront Label"
+                >
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+              </div>
+            } @else {
+              <!-- Edit View -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 bg-brand-50/10 border-l-4 border-brand-500 animate-fadeIn">
+                <!-- Label Info -->
+                <div class="flex items-center gap-3.5 shrink-0 sm:w-1/3 select-none">
+                  <div class="h-9 w-9 rounded-full flex items-center justify-center shrink-0 shadow-xs bg-brand-50 text-brand-600 border border-brand-100/60 animate-pulse">
+                    <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <span class="text-[13px] font-bold text-slate-800 leading-tight">Editing Label</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none mt-0.5">System: {{ s.statusName }}</span>
+                  </div>
+                </div>
+
+                <!-- Input Box -->
+                <div class="flex-1 min-w-0">
+                  <input
+                    [(ngModel)]="editStoreFrontStatus"
+                    placeholder="Enter customer-facing label (e.g. Processing)"
+                    class="w-full !px-3.5 !py-1.5 border border-brand-300 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-white text-[13px] h-9 font-semibold text-slate-700 transition-all shadow-xs"
+                  />
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    (click)="cancelEditStatus()"
+                    class="btn-secondary h-8.5 px-3.5 text-[12px] font-bold border border-slate-200 hover:bg-slate-100 transition-all cursor-pointer rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    (click)="saveStatus(s)"
+                    [disabled]="savingStatusId() === s.statusId"
+                    class="btn-primary h-8.5 px-4.5 text-[12px] font-bold flex items-center justify-center gap-1.5 cursor-pointer rounded-xl shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 transition-all shrink-0"
+                  >
+                    @if (savingStatusId() === s.statusId) {
+                      <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Saving…</span>
+                    } @else {
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Save</span>
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          }
         </div>
-        @for (s of statuses(); track s.statusId) {
-          <div class="grid grid-cols-12 items-center gap-3 border-b border-slate-100 px-4 py-2.5 last:border-0">
-            <input [(ngModel)]="s.statusName" class="col-span-5 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
-            <input [(ngModel)]="s.storeFrontStatus" class="col-span-5 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
-            <div class="col-span-2 flex justify-end">
-              <button (click)="saveStatus(s)" [disabled]="savingStatusId() === s.statusId" class="btn-secondary h-8 px-3 text-[12px] font-semibold">
-                {{ savingStatusId() === s.statusId ? 'Saving…' : 'Save' }}
-              </button>
-            </div>
-          </div>
-        }
       </div>
     } @else {
       <p class="py-8 text-sm text-slate-400">No statuses found.</p>
@@ -36,26 +133,34 @@
 
   <!-- CANCELLATION REASONS -->
   @if (active() === 'cancellations') {
-    <div class="flex justify-end">
-      <button (click)="openCreate()" class="btn-primary h-9 px-4 text-[13px] gap-1.5">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-        New Reason
-      </button>
-    </div>
+    <div class="max-w-5xl space-y-4 animate-fadeIn">
+      <div class="flex justify-end">
+        <button (click)="openCreate()" class="btn-primary h-9 rounded-xl px-4 text-[12.5px] font-semibold gap-1.5 transition-all cursor-pointer shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 flex items-center">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          New Reason
+        </button>
+      </div>
 
-    <app-data-table
-      [columns]="reasonColumns"
-      [rows]="reasons()"
-      [loading]="reasonsLoading()"
-      emptyText="No cancellation reasons yet."
-      searchPlaceholder="Search reasons…"
-      [actions]="actionsTpl"
-    />
+      <app-data-table
+        [columns]="reasonColumns"
+        [rows]="reasons()"
+        [loading]="reasonsLoading()"
+        emptyText="No cancellation reasons yet."
+        searchPlaceholder="Search reasons…"
+        [actions]="actionsTpl"
+      />
+    </div>
 
     <ng-template #actionsTpl let-row>
       <div class="flex justify-end gap-1.5">
-        <button (click)="openEdit(row)" class="text-[13px] font-semibold text-brand-600 hover:text-brand-700">Edit</button>
-        <button (click)="removeReason(row)" class="text-[13px] font-semibold text-red-600 hover:text-red-700">Delete</button>
+        <button (click)="openEdit(row)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50 transition-colors" title="Edit">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+        </button>
+        <button (click)="removeReason(row)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        </button>
       </div>
     </ng-template>
   }
@@ -66,25 +171,53 @@
   <app-modal [title]="editingId() ? 'Edit Reason' : 'New Reason'" (close)="modalOpen.set(false)">
     <form [formGroup]="reasonForm" (ngSubmit)="saveReason()" class="space-y-4">
       <div class="flex flex-col gap-1.5">
-        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Reason name</label>
-        <input formControlName="reasonName" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
+        <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Reason Name</label>
+        <input formControlName="reasonName" placeholder="e.g. Changed my mind" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9 font-semibold text-slate-700" />
         @if (reasonForm.controls.reasonName.touched && reasonForm.controls.reasonName.invalid) {
-          <p class="text-[11px] text-red-500 font-semibold">Required</p>
+          <p class="text-[11px] text-red-500 font-semibold mt-0.5">Required</p>
         }
       </div>
-      <label class="flex items-center gap-2.5 cursor-pointer select-none">
-        <input type="checkbox" formControlName="explanationRequired" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-        <span class="text-[13px] font-medium text-slate-700">Require customer explanation</span>
-      </label>
-      <label class="flex items-center gap-2.5 cursor-pointer select-none">
-        <input type="checkbox" formControlName="isActive" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-        <span class="text-[13px] font-medium text-slate-700">Active</span>
-      </label>
+      
+      <!-- Require customer explanation iOS switch -->
+      <div class="flex items-center justify-between py-1 shrink-0 border-t border-slate-100 pt-3.5">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-[12.5px] font-bold text-slate-700 leading-tight">Require customer explanation</span>
+          <span class="text-[10px] text-slate-400 leading-normal">Require customer to input a note when cancelling.</span>
+        </div>
+        <label class="relative inline-flex cursor-pointer items-center select-none shrink-0">
+          <input type="checkbox" formControlName="explanationRequired" class="peer sr-only" />
+          <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+        </label>
+      </div>
+
+      <!-- Active iOS switch -->
+      <div class="flex items-center justify-between py-1 shrink-0 border-t border-slate-100 pt-3.5">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-[12.5px] font-bold text-slate-700 leading-tight">Active Status</span>
+          <span class="text-[10px] text-slate-400 leading-normal">Enable this cancellation reason on storefront.</span>
+        </div>
+        <label class="relative inline-flex cursor-pointer items-center select-none shrink-0">
+          <input type="checkbox" formControlName="isActive" class="peer sr-only" />
+          <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+        </label>
+      </div>
     </form>
+    
     <div footer class="flex justify-end gap-2">
-      <button (click)="modalOpen.set(false)" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
-      <button (click)="saveReason()" [disabled]="savingReason()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[70px]">
-        {{ savingReason() ? 'Saving…' : 'Save' }}
+      <button (click)="modalOpen.set(false)" class="btn-secondary h-8.5 px-4 text-[12px] font-bold">Cancel</button>
+      <button (click)="saveReason()" [disabled]="savingReason()" class="btn-primary h-8.5 px-5 text-[12px] font-bold flex items-center gap-1.5 min-w-[80px]">
+        @if (savingReason()) {
+          <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Saving…</span>
+        } @else {
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Save</span>
+        }
       </button>
     </div>
   </app-modal>
