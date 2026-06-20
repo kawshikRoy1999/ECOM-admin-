@@ -7,6 +7,7 @@ import { Subject, debounceTime, switchMap } from 'rxjs';
 import { Modal } from '../../../shared/ui/modal/modal';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Select } from '../../../shared/ui/select/select';
+import { ColorPicker } from '../../../shared/ui/color-picker/color-picker';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { TemplatesService } from './templates.service';
@@ -24,7 +25,7 @@ import {
 
 @Component({
   selector: 'app-template-builder-page',
-  imports: [ReactiveFormsModule, RouterLink, Modal, DragDropModule, ImageUpload, Select],
+  imports: [ReactiveFormsModule, RouterLink, Modal, DragDropModule, ImageUpload, Select, ColorPicker],
   templateUrl: './template-builder.page.html',
 })
 export class TemplateBuilderPage {

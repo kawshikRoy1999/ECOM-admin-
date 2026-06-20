@@ -60,26 +60,10 @@
             <!-- Colors Stack -->
             <div class="space-y-3.5 pt-1">
               @for (c of [['primaryColor','Primary'],['secondaryColor','Secondary'],['tertiaryColor','Tertiary']]; track c[0]) {
-                <div class="flex flex-col gap-1.5">
-                  <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">{{ c[1] }} Color</label>
-                  <div class="flex items-center gap-2">
-                    <!-- Color Picker Box -->
-                    <div class="relative h-8.5 w-12 rounded-xl border border-slate-200 bg-white overflow-hidden shrink-0 cursor-pointer shadow-xs hover:border-slate-300 transition-colors">
-                      <input
-                        type="color"
-                        [formControlName]="c[0]"
-                        class="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
-                      />
-                      <div class="h-full w-full" [style.backgroundColor]="masterForm.get(c[0])?.value"></div>
-                    </div>
-                    <!-- Color Code Input -->
-                    <input
-                      [formControlName]="c[0]"
-                      placeholder="#FFFFFF"
-                      class="flex-1 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 hover:bg-slate-50 focus:border-brand-600 transition-all text-[12.5px] h-8.5 uppercase"
-                    />
-                  </div>
-                </div>
+                <app-color-picker
+                  [formControlName]="c[0]"
+                  [label]="c[1] + ' Color'"
+                />
               }
             </div>
 
@@ -420,23 +404,11 @@
         </div>
 
         <!-- Background colour -->
-        <div class="flex flex-col gap-1.5 col-span-2">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Background Color</label>
-          <div class="flex items-center gap-2">
-            <div class="relative h-8.5 w-12 rounded-xl border border-slate-200 bg-white overflow-hidden shrink-0 cursor-pointer shadow-xs hover:border-slate-300 transition-colors">
-              <input
-                type="color"
-                formControlName="sectionBackgroundColor"
-                class="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
-              />
-              <div class="h-full w-full" [style.backgroundColor]="sectionForm.get('sectionBackgroundColor')?.value"></div>
-            </div>
-            <input
-              formControlName="sectionBackgroundColor"
-              placeholder="#FFFFFF"
-              class="flex-1 !px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[12.5px] h-8.5 uppercase"
-            />
-          </div>
+        <div class="col-span-2">
+          <app-color-picker
+            formControlName="sectionBackgroundColor"
+            label="Background Color"
+          />
         </div>
       </div>
 
