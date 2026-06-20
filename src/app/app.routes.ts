@@ -79,6 +79,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/banners/banners.page').then((m) => m.BannersPage),
       },
+      {
+        path: 'settings/social',
+        loadComponent: () =>
+          import('./features/settings/social/social.page').then((m) => m.SocialPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
