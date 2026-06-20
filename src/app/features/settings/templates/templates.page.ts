@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { TabItem } from '../../../shared/ui/tabs/tabs';
 import { Modal } from '../../../shared/ui/modal/modal';
@@ -20,6 +21,12 @@ export class TemplatesPage {
   private readonly service = inject(TemplatesService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly router = inject(Router);
+
+  /** Open the storefront builder for a template. */
+  configure(template: CompanyTemplate): void {
+    this.router.navigate(['/settings/templates', template.companyTemplateId]);
+  }
 
   readonly tabs: TabItem[] = [
     { id: 'templates', label: 'Template List' },

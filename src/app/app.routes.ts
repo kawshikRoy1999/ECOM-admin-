@@ -49,6 +49,13 @@ export const routes: Routes = [
           import('./features/settings/templates/templates.page').then((m) => m.TemplatesPage),
       },
       {
+        path: 'settings/templates/:id',
+        loadComponent: () =>
+          import('./features/settings/templates/template-builder.page').then(
+            (m) => m.TemplateBuilderPage,
+          ),
+      },
+      {
         path: 'settings/taxes',
         loadComponent: () =>
           import('./features/settings/taxes/taxes.page').then((m) => m.TaxesPage),
@@ -66,6 +73,11 @@ export const routes: Routes = [
         path: 'settings/notifications',
         loadComponent: () =>
           import('./features/settings/notifications/notifications.page').then((m) => m.NotificationsPage),
+      },
+      {
+        path: 'settings/banners',
+        loadComponent: () =>
+          import('./features/settings/banners/banners.page').then((m) => m.BannersPage),
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
