@@ -1,8 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
-import { Modal } from '../../../shared/ui/modal/modal';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { LocationsService } from './locations.service';
@@ -10,7 +8,7 @@ import { Location } from './location.models';
 
 @Component({
   selector: 'app-locations-page',
-  imports: [ReactiveFormsModule, DataTable, Modal],
+  imports: [ReactiveFormsModule],
   templateUrl: './locations.page.html',
 })
 export class LocationsPage {
@@ -22,15 +20,25 @@ export class LocationsPage {
   readonly rows = signal<Location[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
-  readonly modalOpen = signal(false);
-  readonly editingId = signal(0);
+  
+  readonly selectedLocationId = signal<number | null>(null);
+  readonly searchQuery = signal('');
 
-  readonly columns = computed<Column<Location>[]>(() => [
-    { key: 'locationName', header: 'Location' },
-    { key: 'city', header: 'City' },
-    { key: 'state', header: 'State' },
-    { key: 'contactPerson', header: 'Contact' },
-  ]);
+  readonly selectedLocation = computed(() => 
+    this.rows().find((r) => r.locationId === this.selectedLocationId())
+  );
+
+  readonly filteredLocations = computed(() => {
+    const q = this.searchQuery().trim().toLowerCase();
+    const list = this.rows();
+    if (!q) return list;
+    return list.filter((r) =>
+      (r.locationName ?? '').toLowerCase().includes(q) ||
+      (r.city ?? '').toLowerCase().includes(q) ||
+      (r.state ?? '').toLowerCase().includes(q) ||
+      (r.contactPerson ?? '').toLowerCase().includes(q)
+    );
+  });
 
   readonly form = this.fb.nonNullable.group({
     locationName: ['', [Validators.required]],
@@ -75,15 +83,14 @@ export class LocationsPage {
   }
 
   openCreate(): void {
-    this.editingId.set(0);
+    this.selectedLocationId.set(0);
     this.form.reset({});
     this.bins.clear();
-    this.modalOpen.set(true);
   }
 
-  openEdit(loc: Location): void {
-    this.editingId.set(loc.locationId);
-    this.modalOpen.set(true);
+  selectLocation(loc: Location): void {
+    this.selectedLocationId.set(loc.locationId);
+    this.loading.set(true);
     this.service.detail(loc.locationId).subscribe({
       next: (d) => {
         this.form.reset({
@@ -103,7 +110,9 @@ export class LocationsPage {
         (d.binDetails ?? []).forEach((b) =>
           this.bins.push(this.binGroup(b.binId, b.binName, b.isDefault)),
         );
+        this.loading.set(false);
       },
+      error: () => this.loading.set(false),
     });
   }
 
@@ -124,7 +133,7 @@ export class LocationsPage {
     const v = this.form.getRawValue();
     this.service
       .save({
-        locationId: this.editingId(),
+        locationId: this.selectedLocationId() ?? 0,
         locationName: v.locationName,
         addressLine1: v.addressLine1,
         addressLine2: v.addressLine2,
@@ -141,20 +150,23 @@ export class LocationsPage {
       .subscribe({
         next: () => {
           this.saving.set(false);
-          this.modalOpen.set(false);
-          this.toast.success(this.editingId() ? 'Location updated.' : 'Location created.');
+          this.toast.success(this.selectedLocationId() ? 'Location updated.' : 'Location created.');
+          this.selectedLocationId.set(null);
           this.load();
         },
         error: () => this.saving.set(false),
       });
   }
 
-  async remove(loc: Location): Promise<void> {
-    const ok = await this.confirm.ask(`Delete location "${loc.locationName}"?`, { confirmLabel: 'Delete', danger: true });
+  async remove(loc?: Location): Promise<void> {
+    const target = loc ?? this.selectedLocation();
+    if (!target) return;
+    const ok = await this.confirm.ask(`Delete location "${target.locationName}"?`, { confirmLabel: 'Delete', danger: true });
     if (!ok) return;
-    this.service.delete(loc.locationId).subscribe({
+    this.service.delete(target.locationId).subscribe({
       next: () => {
         this.toast.success('Location deleted.');
+        this.selectedLocationId.set(null);
         this.load();
       },
     });

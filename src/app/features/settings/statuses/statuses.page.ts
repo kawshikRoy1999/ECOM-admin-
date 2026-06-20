@@ -30,6 +30,8 @@ export class StatusesPage {
   readonly statuses = signal<CompanyStatus[]>([]);
   readonly statusesLoading = signal(false);
   readonly savingStatusId = signal<number | null>(null);
+  readonly editingStatusId = signal<number | null>(null);
+  editStoreFrontStatus = '';
 
   // Cancellation reasons
   readonly reasons = signal<CancellationReason[]>([]);
@@ -67,15 +69,38 @@ export class StatusesPage {
     });
   }
 
+  startEditStatus(s: CompanyStatus): void {
+    this.editingStatusId.set(s.statusId);
+    this.editStoreFrontStatus = s.storeFrontStatus ?? '';
+  }
+
+  cancelEditStatus(): void {
+    this.editingStatusId.set(null);
+    this.editStoreFrontStatus = '';
+  }
+
   saveStatus(s: CompanyStatus): void {
+    s.storeFrontStatus = this.editStoreFrontStatus;
     this.savingStatusId.set(s.statusId);
     this.service.saveStatus(s).subscribe({
       next: () => {
         this.savingStatusId.set(null);
+        this.editingStatusId.set(null);
         this.toast.success('Status saved.');
+        this.loadStatuses();
       },
       error: () => this.savingStatusId.set(null),
     });
+  }
+
+  statusColorClass(statusName: string): string {
+    const name = statusName.toLowerCase();
+    if (name.includes('placed')) return 'bg-blue-50 text-blue-600 border border-blue-100/60';
+    if (name.includes('processed') || name.includes('accept')) return 'bg-indigo-50 text-indigo-600 border border-indigo-100/60';
+    if (name.includes('dispatch') || name.includes('ready')) return 'bg-amber-50 text-amber-600 border border-amber-100/60';
+    if (name.includes('delivered')) return 'bg-emerald-50 text-emerald-600 border border-emerald-100/60';
+    if (name.includes('cancel')) return 'bg-red-50 text-red-600 border border-red-100/60';
+    return 'bg-slate-50 text-slate-500 border border-slate-100/60';
   }
 
   // --- Cancellation reasons ---

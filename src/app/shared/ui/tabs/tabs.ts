@@ -9,15 +9,15 @@ export interface TabItem {
 @Component({
   selector: 'app-tabs',
   template: `
-    <div class="flex gap-1  ">
+    <div class="inline-flex p-1 bg-slate-100/80 rounded-xl border border-slate-200/40 shadow-2xs select-none">
       @for (tab of tabs(); track tab.id) {
         <button
           type="button"
           (click)="active.set(tab.id)"
-          class="relative -mb-px px-4 py-2.5 text-[13px] font-semibold transition-colors cursor-pointer"
+          class="px-4 py-1.5 rounded-lg text-[12.5px] font-bold transition-all duration-300 cursor-pointer select-none focus:outline-none"
           [class]="
             active() === tab.id
-              ? 'text-brand-700 border-b-2 border-brand-600'
+              ? 'bg-white text-slate-800 shadow-xs'
               : 'text-slate-500 hover:text-slate-800'
           "
         >

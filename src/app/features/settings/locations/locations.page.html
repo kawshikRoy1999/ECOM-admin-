@@ -1,101 +1,355 @@
-<div class="space-y-5">
-  <div class="flex items-center justify-between">
-    <div class="flex flex-col gap-0.5">
-      <h1 class="page-title">Locations</h1>
-      <p class="page-subtitle">Manage warehouses / stock locations and their storage bins.</p>
-    </div>
-    <button (click)="openCreate()" class="btn-primary h-9 px-4 text-[13px] gap-1.5">
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-      </svg>
-      New Location
-    </button>
-  </div>
+<div class="flex flex-col lg:flex-row h-full lg:h-[calc(100vh-80px)] sm:lg:h-[calc(100vh-90px)] lg:h-[calc(100vh-96px)] overflow-y-auto lg:overflow-hidden gap-5 pb-5 lg:pb-0">
+  
+  <!-- LEFT SIDEBAR: Locations Selector -->
+  <div class="w-full lg:w-[310px] shrink-0 flex flex-col gap-4 bg-white rounded-xl border border-slate-200/80 p-4 h-auto max-h-[380px] lg:h-full lg:max-h-none overflow-hidden shadow-xs animate-fadeIn">
+    
+    <!-- Sidebar Header -->
+    <div class="flex flex-col gap-1 shrink-0">
+      <div class="flex items-center justify-between shrink-0">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Locations</span>
+        <button
+          (click)="openCreate()"
+          class="text-[11.5px] font-bold text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1 cursor-pointer"
+        >
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          New Location
+        </button>
+      </div>
 
-  <app-data-table
-    [columns]="columns()"
-    [rows]="rows()"
-    [loading]="loading()"
-    emptyText="No locations yet."
-    searchPlaceholder="Search locations…"
-    [actions]="actionsTpl"
-  />
-
-  <ng-template #actionsTpl let-row>
-    <div class="flex justify-end gap-1.5">
-      <button (click)="openEdit(row)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50" title="Edit">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-      </button>
-      <button (click)="remove(row)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" title="Delete">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-      </button>
-    </div>
-  </ng-template>
-</div>
-
-<!-- Location modal -->
-@if (modalOpen()) {
-  <app-modal [title]="editingId() ? 'Edit Location' : 'New Location'" widthClass="max-w-2xl" (close)="modalOpen.set(false)">
-    <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
-      <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-1.5 sm:col-span-2">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Location name</label>
-          <input formControlName="locationName" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
-          @if (form.controls.locationName.touched && form.controls.locationName.invalid) {
-            <p class="text-[11px] text-red-500 font-semibold">Required</p>
-          }
-        </div>
-        @for (f of [['addressLine1','Address line 1'],['addressLine2','Address line 2'],['city','City'],['district','District'],['state','State'],['country','Country'],['pin','PIN / Zip']]; track f[0]) {
-          <div class="flex flex-col gap-1.5">
-            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">{{ f[1] }}</label>
-            <input [formControlName]="f[0]" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5" />
-          </div>
+      <!-- Search Input -->
+      <div class="relative mt-2">
+        <input
+          type="text"
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          placeholder="Search locations..."
+          class="w-full h-8.5 rounded-lg border border-slate-200/80 pl-8.5 pr-8 text-[12.5px] font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all bg-slate-50/50 hover:bg-slate-50"
+        />
+        <!-- Search Icon -->
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <!-- Clear Button -->
+        @if (searchQuery()) {
+          <button
+            type="button"
+            (click)="searchQuery.set('')"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-full hover:bg-slate-100 cursor-pointer flex items-center justify-center"
+          >
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         }
       </div>
+    </div>
 
-      <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3 border-t border-slate-100 pt-4">
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Contact person</label>
-          <input formControlName="contactPerson" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+    <!-- Divider -->
+    <div class="h-[1px] bg-slate-100 w-full shrink-0 my-0.5"></div>
+
+    <!-- Locations List -->
+    <div class="flex-1 overflow-y-auto pr-1 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-2 pb-2 custom-scrollbar">
+      @for (l of filteredLocations(); track l.locationId) {
+        <button
+          type="button"
+          (click)="selectLocation(l)"
+          class="shrink-0 text-left flex flex-col gap-1 px-3.5 py-2.5 text-[13px] rounded-xl border transition-all cursor-pointer relative min-w-[200px] lg:min-w-0"
+          [class.bg-brand-50]="selectedLocationId() === l.locationId"
+          [class.border-brand-200]="selectedLocationId() === l.locationId"
+          [class.text-brand-700]="selectedLocationId() === l.locationId"
+          [class.bg-white]="selectedLocationId() !== l.locationId"
+          [class.border-slate-200/80]="selectedLocationId() !== l.locationId"
+          [class.text-slate-600]="selectedLocationId() !== l.locationId"
+          [class.hover:bg-slate-50]="selectedLocationId() !== l.locationId"
+        >
+          <!-- Location Info -->
+          <div class="flex items-center justify-between w-full">
+            <span class="font-bold text-[13px] leading-tight truncate" [class.text-brand-700]="selectedLocationId() === l.locationId" [class.text-slate-700]="selectedLocationId() !== l.locationId">
+              {{ l.locationName }}
+            </span>
+            
+            <!-- Active Indicator -->
+            @if (selectedLocationId() === l.locationId) {
+              <span class="h-1.5 w-1.5 rounded-full bg-brand-600 shrink-0"></span>
+            }
+          </div>
+
+          <!-- Description / Stats -->
+          <div class="flex items-center justify-between text-[10.5px] font-medium leading-normal shrink-0" [class.text-brand-600/75]="selectedLocationId() === l.locationId" [class.text-slate-400]="selectedLocationId() !== l.locationId">
+            <span>{{ l.city || 'No City' }} · {{ l.state || 'No State' }}</span>
+          </div>
+        </button>
+      } @empty {
+        <div class="flex flex-col items-center justify-center py-8 text-center px-4 w-full">
+          <svg class="h-8 w-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          <span class="text-xs font-bold text-slate-400">No locations found</span>
+          <span class="text-[10px] text-slate-400/80 mt-0.5">Try a different search query</span>
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Phone</label>
-          <input formControlName="contactPersonPhone" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+      }
+    </div>
+  </div>
+
+  <!-- RIGHT CANVAS: Location Configuration Canvas -->
+  <div class="flex-1 flex flex-col gap-4 h-auto min-h-0 lg:h-full lg:overflow-hidden animate-fadeIn">
+    @if (loading()) {
+      <div class="flex-1 flex items-center justify-center bg-white border border-slate-200/80 rounded-xl shadow-xs">
+        <div class="flex flex-col items-center gap-3">
+          <svg class="h-8 w-8 animate-spin text-brand-600" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-xs font-bold text-slate-400 tracking-wide uppercase">Loading location details…</p>
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Email</label>
-          <input formControlName="contactPersonEmail" class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13.5px] h-9.5" />
+      </div>
+    } @else if (selectedLocationId() !== null) {
+      <!-- Header Action Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs shrink-0">
+        <div class="flex flex-col gap-1 min-w-0">
+          <h1 class="text-base sm:text-[17px] font-bold text-slate-800 leading-none truncate">
+            {{ selectedLocationId() === 0 ? 'New Location' : selectedLocation()?.locationName }}
+          </h1>
+          <span class="text-[11px] sm:text-[12px] text-slate-500 truncate mt-0.5">
+            {{ selectedLocationId() === 0 ? 'Define identification, address, and contact person for this location.' : 'Configure warehouse details, contact card, and storage bins.' }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <!-- Delete Button (Only for existing locations) -->
+          @if (selectedLocationId()! > 0) {
+            <button
+              (click)="remove()"
+              class="btn-secondary h-9 rounded-xl px-4 text-[12.5px] font-semibold gap-1.5 cursor-pointer flex items-center justify-center border border-red-200 hover:border-red-300 text-red-600 hover:bg-red-50/50 bg-white transition-all shadow-xs"
+              title="Delete Location"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete Location
+            </button>
+          }
+
+          <!-- Save Button -->
+          <button
+            (click)="save()"
+            [disabled]="saving()"
+            class="btn-primary h-9 rounded-xl px-4.5 text-[12.5px] font-semibold gap-2 transition-all cursor-pointer shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 flex items-center justify-center shrink-0"
+            title="Save Location"
+          >
+            @if (saving()) {
+              <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Saving…
+            } @else {
+              <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Save Location
+            }
+          </button>
         </div>
       </div>
 
-      <!-- Bins -->
-      <div class="flex flex-col gap-2 border-t border-slate-100 pt-4">
-        <div class="flex items-center justify-between">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Storage bins</label>
-          <button type="button" (click)="addBin()" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700">+ Add bin</button>
-        </div>
-        <div formArrayName="bins" class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-          @for (group of bins.controls; track $index) {
-            <div [formGroupName]="$index" class="flex items-center gap-2">
-              <input formControlName="binNumber" placeholder="Bin number" class="flex-1 !px-3.5 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
-              <label class="flex items-center gap-1.5 shrink-0 cursor-pointer select-none" title="Default bin">
-                <input type="checkbox" formControlName="isDefault" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-                <span class="text-[11px] font-semibold text-slate-500">Default</span>
-              </label>
-              <button type="button" (click)="removeBin($index)" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      <!-- Scrollable Form Canvas Area -->
+      <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar">
+        <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col gap-5 pb-4">
+          
+          <!-- Location Identification Card -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Location Identification</h2>
+            </div>
+            
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Location Name</label>
+              <input
+                formControlName="locationName"
+                placeholder="e.g. Main Location"
+                class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9 font-semibold text-slate-700"
+              />
+              @if (form.controls.locationName.touched && form.controls.locationName.invalid) {
+                <p class="text-[11px] text-red-500 font-semibold mt-0.5">Required</p>
+              }
+            </div>
+          </div>
+
+          <!-- Address Details Card -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Address details</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              @for (f of [
+                ['addressLine1','Address Line 1', 'e.g. 128 Main St'],
+                ['addressLine2','Address Line 2', 'e.g. Suite 400'],
+                ['city','City', 'e.g. Durgapur'],
+                ['district','District', 'e.g. Paschim Bardhaman'],
+                ['state','State', 'e.g. West Bengal'],
+                ['country','Country', 'e.g. India'],
+                ['pin','PIN / Zip Code', 'e.g. 713212']
+              ]; track f[0]) {
+                <div class="flex flex-col gap-1.5" [class.md:col-span-2]="f[0] === 'addressLine1' || f[0] === 'addressLine2'">
+                  <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">{{ f[1] }}</label>
+                  <input
+                    [formControlName]="f[0]"
+                    [placeholder]="f[2]"
+                    class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9 font-semibold text-slate-700"
+                  />
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Contact Card Details -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Contact Person Card</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Contact Person</label>
+                <input
+                  formControlName="contactPerson"
+                  placeholder="e.g. John Doe"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9 font-semibold text-slate-700"
+                />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</label>
+                <input
+                  formControlName="contactPersonPhone"
+                  placeholder="e.g. +91 9988776655"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9 font-semibold text-slate-700"
+                />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+                <input
+                  formControlName="contactPersonEmail"
+                  placeholder="e.g. john@store.com"
+                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9 font-semibold text-slate-700"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Bins Card -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 shadow-inner">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+                <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Storage Bins</h2>
+              </div>
+              <button
+                type="button"
+                (click)="addBin()"
+                class="btn-secondary h-7.5 px-3 text-[11px] font-bold whitespace-nowrap cursor-pointer hover:border-brand-500 hover:text-brand-700 transition-colors flex items-center gap-1 rounded-lg"
+              >
+                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Bin
               </button>
             </div>
-          }
+
+            <!-- Bins List FormArray -->
+            <div formArrayName="bins" class="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1.5 custom-scrollbar">
+              @for (group of bins.controls; track $index) {
+                <div [formGroupName]="$index" class="flex items-center gap-3 bg-slate-50/30 border border-slate-100/80 p-2.5 rounded-xl relative group/row">
+                  <span class="text-[11px] font-bold text-slate-400 bg-slate-100 h-6.5 w-6.5 flex items-center justify-center rounded-lg select-none shrink-0">{{ $index + 1 }}</span>
+                  
+                  <input
+                    formControlName="binNumber"
+                    placeholder="Bin number/label (e.g. BIN-01)"
+                    class="flex-1 !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-white text-[13px] h-9 font-semibold text-slate-700"
+                  />
+                  
+                  <!-- Checkbox for Default Bin -->
+                  <label class="flex items-center gap-2 cursor-pointer select-none shrink-0" title="Default bin">
+                    <span class="text-[11.5px] font-semibold text-slate-400">Default</span>
+                    <div class="relative inline-flex items-center select-none">
+                      <input type="checkbox" formControlName="isDefault" class="peer sr-only" />
+                      <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+                    </div>
+                  </label>
+
+                  <button
+                    type="button"
+                    (click)="removeBin($index)"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                    title="Remove Bin"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              } @empty {
+                <div class="flex flex-col items-center justify-center py-8 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/20">
+                  <svg class="h-8 w-8 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4" />
+                  </svg>
+                  <span class="text-xs font-bold text-slate-400">No bins defined for this location</span>
+                  <span class="text-[10px] text-slate-400/80 mt-0.5">Click "Add Bin" to declare stock storage partitions.</span>
+                </div>
+              }
+            </div>
+          </div>
+        </form>
+      </div>
+    } @else {
+      <!-- Empty/Intro State -->
+      <div class="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white border border-slate-200/80 rounded-xl shadow-xs">
+        <div class="max-w-sm flex flex-col items-center gap-3">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 shadow-inner animate-pulse">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h2 class="text-[15px] font-bold text-slate-800">Select a Location</h2>
+          <p class="text-[12.5px] text-slate-400 font-medium">
+            Choose a warehouse or stock storage location from the sidebar panel to configure address maps, contact person cards, and storage bins.
+          </p>
+          <button
+            (click)="openCreate()"
+            class="btn-primary h-9 px-4 text-[12.5px] font-semibold gap-1.5 mt-2 transition-all cursor-pointer shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 flex items-center"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Create New Location
+          </button>
         </div>
       </div>
-    </form>
-
-    <div footer class="flex justify-end gap-2">
-      <button (click)="modalOpen.set(false)" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
-      <button (click)="save()" [disabled]="saving()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[70px]">
-        {{ saving() ? 'Saving…' : 'Save' }}
-      </button>
-    </div>
-  </app-modal>
-}
+    }
+  </div>
+</div>
