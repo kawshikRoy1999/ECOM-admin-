@@ -82,20 +82,37 @@
             <tr class="transition-colors hover:bg-slate-50/50 group">
               @for (col of columns(); track col.key) {
                 <td [class]="'px-5 py-3 text-slate-700 font-medium ' + alignClass(col)">
-                  @if (col.key === 'isActive' || cell(row, col) === 'Active' || cell(row, col) === 'Inactive') {
+                  @if (isReturnImageList(col, row[col.key])) {
+                    <div class="flex items-center gap-1.5 justify-center sm:justify-start">
+                      @for (img of $any(row[col.key]); track img.imageId) {
+                        <div
+                          (click)="openPreview(cleanImageUrl(img.filePath), $event)"
+                          class="h-8.5 w-8.5 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 hover:border-brand-500 hover:scale-105 active:scale-95 transition-all shrink-0 block cursor-zoom-in"
+                          title="Click to zoom"
+                        >
+                          <img [src]="cleanImageUrl(img.filePath)" class="h-full w-full object-cover animate-fadeIn" alt="evidence" />
+                        </div>
+                      }
+                      @if (!$any(row[col.key])?.length) {
+                        <span class="text-slate-400 text-[12px]">-</span>
+                      }
+                    </div>
+                  } @else if (isImageColumn(col, cell(row, col))) {
+                    <div
+                      (click)="openPreview(cleanImageUrl(cell(row, col)), $event)"
+                      class="h-10 w-10 rounded-lg overflow-hidden border border-slate-200/60 bg-slate-50 hover:border-brand-500 hover:scale-105 active:scale-95 transition-all shrink-0 mx-auto lg:mx-0 cursor-zoom-in"
+                      title="Click to zoom"
+                    >
+                      <img [src]="cleanImageUrl(cell(row, col))" class="h-full w-full object-cover animate-fadeIn" alt="item" />
+                    </div>
+                  } @else if (isStatusColumn(col, cell(row, col))) {
                     <span
                       class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-inset"
-                      [class.bg-emerald-50]="cell(row, col) === 'Active'"
-                      [class.text-emerald-700]="cell(row, col) === 'Active'"
-                      [class.ring-emerald-600/10]="cell(row, col) === 'Active'"
-                      [class.bg-slate-50]="cell(row, col) === 'Inactive'"
-                      [class.text-slate-500]="cell(row, col) === 'Inactive'"
-                      [class.ring-slate-500/10]="cell(row, col) === 'Inactive'"
+                      [class]="statusClasses(cell(row, col)).bg + ' ' + statusClasses(cell(row, col)).text + ' ' + statusClasses(cell(row, col)).ring"
                     >
                       <span
                         class="h-1.5 w-1.5 rounded-full mr-1.5"
-                        [class.bg-emerald-500]="cell(row, col) === 'Active'"
-                        [class.bg-slate-400]="cell(row, col) === 'Inactive'"
+                        [class]="statusClasses(cell(row, col)).dot"
                       ></span>
                       {{ cell(row, col) }}
                     </span>
@@ -124,3 +141,33 @@
     </table>
   </div>
 </div>
+
+<!-- Image Lightbox Modal Overlay -->
+@if (previewImageUrl(); as url) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 cursor-zoom-out animate-fadeIn"
+    (click)="closePreview()"
+  >
+    <div
+      class="relative max-w-4xl max-h-[85vh] bg-white border border-slate-200/80 rounded-2xl p-2.5 shadow-2xl animate-scaleIn cursor-default"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Close Button -->
+      <button
+        (click)="closePreview()"
+        class="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:bg-slate-50 transition-colors text-slate-500 hover:text-slate-800 cursor-pointer z-10"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Image Content -->
+      <img
+        [src]="url"
+        class="max-w-full max-h-[80vh] object-contain rounded-xl"
+        alt="Preview Image"
+      />
+    </div>
+  </div>
+}

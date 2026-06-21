@@ -1,16 +1,18 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 import { Tabs, TabItem } from '../../shared/ui/tabs/tabs';
 import { DataTable, Column } from '../../shared/ui/data-table/data-table';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/confirm/confirm.service';
+import { DatePicker } from '../../shared/ui/date-picker/date-picker';
 import { OrdersService } from './orders.service';
 import { OrderListItem, RefundItem, ReturnItem } from './order.models';
 
 @Component({
   selector: 'app-orders-list-page',
-  imports: [Tabs, DataTable],
+  imports: [Tabs, DataTable, DatePicker, FormsModule],
   templateUrl: './orders-list.page.html',
 })
 export class OrdersListPage {
@@ -28,6 +30,7 @@ export class OrdersListPage {
     { id: 'returnorder', label: 'Return' },
   ];
   readonly active = signal('');
+  readonly showAdvanced = signal(false);
 
   readonly isRefund = computed(() => this.active() === 'refund');
   readonly isReturn = computed(() => this.active() === 'returnorder');
@@ -55,7 +58,7 @@ export class OrdersListPage {
     { key: 'firstName', header: 'Customer', format: (o) => [o.firstName, o.lastName].filter(Boolean).join(' ') },
     { key: 'city', header: 'City' },
     { key: 'phone', header: 'Phone' },
-    { key: 'total', header: 'Total', align: 'right', format: (o) => String(o.total ?? 0) },
+    { key: 'total', header: 'Total', align: 'right', format: (o) => Number(o.total ?? 0).toFixed(2) },
     { key: 'statusName', header: 'Status' },
   ];
 
@@ -63,21 +66,24 @@ export class OrdersListPage {
     { key: 'custOrdNo', header: 'Order #' },
     { key: 'invoiceNumber', header: 'Invoice' },
     { key: 'items', header: 'Item' },
-    { key: 'itemQty', header: 'Qty', align: 'center' },
-    { key: 'itemTotalAmountAtInvoice', header: 'Amount', align: 'right' },
+    { key: 'itemQty', header: 'Qty', align: 'center', format: (r) => r.itemQty !== null ? String(r.itemQty) : '-' },
+    { key: 'itemTotalAmountAtInvoice', header: 'Amount', align: 'right', format: (r) => Number(r.itemTotalAmountAtInvoice ?? 0).toFixed(2) },
     { key: 'invoiceLineItemStatus', header: 'Status' },
   ];
 
   readonly returnColumns: Column<ReturnItem>[] = [
+    { key: 'imagePath', header: 'Image', align: 'center' },
     { key: 'itemName', header: 'Item' },
-    { key: 'itemQty', header: 'Qty', align: 'center' },
-    { key: 'amount', header: 'Amount', align: 'right' },
+    { key: 'itemQty', header: 'Qty', align: 'center', format: (r) => r.itemQty !== null ? String(r.itemQty) : '-' },
+    { key: 'amount', header: 'Amount', align: 'right', format: (r) => Number(r.amount ?? 0).toFixed(2) },
     { key: 'returnReason', header: 'Reason' },
+    { key: 'returnImageList' as any, header: 'Evidence', align: 'center' },
     { key: 'statusName', header: 'Status' },
   ];
 
   readonly canPrev = computed(() => this.pageNo() > 1);
   readonly canNext = computed(() => this.pageNo() < this.totalPages());
+
 
   constructor() {
     this.load();

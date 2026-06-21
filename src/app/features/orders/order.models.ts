@@ -42,6 +42,12 @@ export interface RefundItem {
   invoiceLineItemStatus: string;
 }
 
+export interface ReturnImage {
+  imageId: number;
+  returnId: string;
+  filePath: string;
+}
+
 /** A return row (returnItems / ReturnItemResponseList). */
 export interface ReturnItem {
   returnItemId: string;
@@ -55,6 +61,7 @@ export interface ReturnItem {
   returnReason: string;
   imagePath: string;
   pickupDate: string | null;
+  returnImageList?: ReturnImage[];
 }
 
 /** Order list filters. */
