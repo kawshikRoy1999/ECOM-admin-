@@ -151,6 +151,44 @@
     background-size: 400% 400%;
     animation: mesh 15s ease infinite;
   }
+
+  /* Reusable Status Chips */
+  .status-chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold border whitespace-nowrap shadow-2xs transition-colors shrink-0 uppercase tracking-wider;
+  }
+  .status-chip .dot {
+    @apply h-1.5 w-1.5 rounded-full shrink-0;
+  }
+  .status-chip.success {
+    @apply bg-emerald-50 text-emerald-700 border-emerald-100;
+  }
+  .status-chip.success .dot {
+    @apply bg-emerald-500;
+  }
+  .status-chip.danger {
+    @apply bg-rose-50 text-rose-700 border-rose-100;
+  }
+  .status-chip.danger .dot {
+    @apply bg-rose-500;
+  }
+  .status-chip.warning {
+    @apply bg-amber-50 text-amber-700 border-amber-100;
+  }
+  .status-chip.warning .dot {
+    @apply bg-amber-500;
+  }
+  .status-chip.info {
+    @apply bg-brand-50 text-brand-700 border-brand-100;
+  }
+  .status-chip.info .dot {
+    @apply bg-brand-500;
+  }
+  .status-chip.neutral {
+    @apply bg-slate-50 text-slate-600 border-slate-200;
+  }
+  .status-chip.neutral .dot {
+    @apply bg-slate-400;
+  }
 }
 
 /* Custom Elegant Scrollbars (Sleek floating thumb - placed globally outside layers) */

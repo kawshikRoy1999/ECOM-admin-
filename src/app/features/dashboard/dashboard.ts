@@ -317,21 +317,12 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     return '→';
   }
 
-  orderStatusBadge(s: string): string {
-    const lower = s.toLowerCase();
-    if (lower.includes('deliver')) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-    if (lower.includes('cancel'))  return 'bg-rose-50 text-rose-700 border-rose-100';
-    if (lower.includes('placed') || lower.includes('pending'))
-      return 'bg-amber-50 text-amber-700 border-amber-100';
-    return 'bg-brand-50 text-brand-700 border-brand-100';
-  }
-
-  orderStatusDot(s: string): string {
-    const lower = s.toLowerCase();
-    if (lower.includes('deliver')) return 'bg-emerald-500';
-    if (lower.includes('cancel'))  return 'bg-rose-500';
-    if (lower.includes('placed') || lower.includes('pending')) return 'bg-amber-500';
-    return 'bg-brand-500';
+  orderStatusClass(s: string): string {
+    const lower = (s ?? '').toLowerCase();
+    if (lower.includes('deliver') || lower.includes('complet')) return 'success';
+    if (lower.includes('cancel') || lower.includes('refund') || lower.includes('return')) return 'danger';
+    if (lower.includes('placed') || lower.includes('pending') || lower.includes('process') || lower.includes('dispatch')) return 'warning';
+    return 'info';
   }
 
   slaItems = computed(() => {
