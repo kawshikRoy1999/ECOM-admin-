@@ -8,16 +8,25 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { OrdersService } from './orders.service';
 import { InvoiceGenerate } from './invoice-generate';
 import { DeliveryPersonOption, InvoiceTracking, ItemRateQty, OrderDetail, OrderItem } from './order.models';
+import { Tabs, TabItem } from '../../shared/ui/tabs/tabs';
+import { Select } from '../../shared/ui/select/select';
 
 @Component({
   selector: 'app-order-detail-page',
-  imports: [RouterLink, FormsModule, InvoiceGenerate, DecimalPipe],
+  imports: [RouterLink, FormsModule, InvoiceGenerate, DecimalPipe, Tabs, Select],
   templateUrl: './order-detail.page.html',
 })
 export class OrderDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(OrdersService);
   private readonly toast = inject(ToastService);
+
+  readonly tabs: TabItem[] = [
+    { id: 'items', label: 'Items List' },
+    { id: 'manage', label: 'Status & Delivery' },
+    { id: 'history', label: 'Payments & Log' },
+  ];
+  readonly activeTab = signal('items');
 
   private orderId = 0;
   readonly detail = signal<OrderDetail | null>(null);
@@ -77,6 +86,7 @@ export class OrderDetailPage {
           for (const p of list ?? []) {
             if (p.userId && !seen.has(p.userId)) {
               seen.add(p.userId);
+              p.fullName = p.fullName || `${p.firstName} ${p.lastName}`.trim();
               merged.push(p);
             }
           }
