@@ -1,0 +1,80 @@
+<app-modal title="Generate Invoice" widthClass="max-w-3xl" (close)="close.emit()">
+  <div class="space-y-4">
+    @if (rows().length) {
+      <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table class="min-w-full divide-y divide-slate-100 text-[13px]">
+          <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
+            <tr>
+              <th class="px-3 py-2 text-left">Item</th>
+              <th class="px-3 py-2 text-left">Warehouse</th>
+              <th class="px-3 py-2 text-left">Bin</th>
+              <th class="px-3 py-2 text-center">Qty</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (row of rows(); track row.item.orderDetailId) {
+              <tr>
+                <td class="px-3 py-2 text-slate-700">
+                  {{ row.item.itemName }} <span class="text-slate-400">{{ row.item.itemVariantName }}</span>
+                  @if (row.item.isSerialized) { <span class="ml-1 rounded bg-amber-50 px-1.5 text-[10px] font-bold text-amber-600">Serialized</span> }
+                </td>
+                <td class="px-3 py-2">
+                  <select [ngModel]="row.warehouseId" (ngModelChange)="onWarehouse(row, $event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12px] bg-slate-50/50">
+                    <option [ngValue]="0">— Select —</option>
+                    @for (w of row.warehouses; track w.storeId) {
+                      <option [ngValue]="w.storeId">{{ w.storeName }}</option>
+                    }
+                  </select>
+                </td>
+                <td class="px-3 py-2">
+                  <select [ngModel]="row.binId" (ngModelChange)="onBin(row, $event)" [disabled]="!row.bins.length" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12px] bg-slate-50/50 disabled:opacity-50">
+                    <option [ngValue]="0">— Select —</option>
+                    @for (b of row.bins; track b.id) {
+                      <option [ngValue]="b.id">{{ b.name }} ({{ b.qty }})</option>
+                    }
+                  </select>
+                </td>
+                <td class="px-3 py-2 text-center">
+                  <input type="number" min="0" [(ngModel)]="row.qty" class="h-8 w-16 rounded-lg border border-slate-200 px-2 text-center text-[12px] bg-slate-50/50" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="py-6 text-center text-[13px] text-slate-400">All items already invoiced / delivered.</p>
+    }
+
+    <!-- Payment -->
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 border-t border-slate-100 pt-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Payment mode</label>
+        <select [(ngModel)]="mode" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50">
+          <option>Cash</option><option>Card</option><option>UPI</option><option>Online</option><option>Credit</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Payment status</label>
+        <select [(ngModel)]="status" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50">
+          <option>Paid</option><option>Partial</option><option>Unpaid</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Payment note</label>
+        <input [(ngModel)]="note" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50" />
+      </div>
+      <label class="flex items-center gap-2.5 cursor-pointer select-none sm:col-span-3">
+        <input type="checkbox" [(ngModel)]="isLastInvoice" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
+        <span class="text-[13px] font-medium text-slate-700">This is the final invoice for the order</span>
+      </label>
+    </div>
+  </div>
+
+  <div footer class="flex justify-end gap-2">
+    <button (click)="close.emit()" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
+    <button (click)="generate()" [disabled]="generating()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[110px]">
+      {{ generating() ? 'Generating…' : 'Generate invoice' }}
+    </button>
+  </div>
+</app-modal>

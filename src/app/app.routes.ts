@@ -70,6 +70,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/offers/offers.page').then((m) => m.OffersPage),
       },
       {
+        path: 'orders',
+        loadComponent: () => import('./features/orders/orders-list.page').then((m) => m.OrdersListPage),
+      },
+      {
+        path: 'orders/:id',
+        loadComponent: () => import('./features/orders/order-detail.page').then((m) => m.OrderDetailPage),
+      },
+      {
         path: 'settings/notifications',
         loadComponent: () =>
           import('./features/settings/notifications/notifications.page').then((m) => m.NotificationsPage),
