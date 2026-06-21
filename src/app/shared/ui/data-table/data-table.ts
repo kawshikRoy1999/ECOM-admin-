@@ -62,4 +62,117 @@ export class DataTable<T extends object> {
         ? 'text-center'
         : 'text-left';
   }
+
+  isStatusColumn(col: Column<T>, val: string): boolean {
+    const key = col.key.toLowerCase();
+    const value = val.toLowerCase();
+    return (
+      key.includes('status') ||
+      key === 'isactive' ||
+      value === 'active' ||
+      value === 'inactive' ||
+      value === 'delivered' ||
+      value === 'cancelled' ||
+      value === 'placed' ||
+      value === 'pending'
+    );
+  }
+
+  statusClasses(val: string): { bg: string; text: string; dot: string; ring: string } {
+    const value = val.toLowerCase();
+    // Green / Positive
+    if (
+      value === 'active' ||
+      value.includes('delivered') ||
+      value.includes('paid') ||
+      value.includes('approved') ||
+      value.includes('success') ||
+      value.includes('completed') ||
+      value.includes('accept')
+    ) {
+      return {
+        bg: 'bg-emerald-50',
+        text: 'text-emerald-700',
+        dot: 'bg-emerald-500',
+        ring: 'ring-emerald-600/10'
+      };
+    }
+    // Red / Negative / Error
+    if (
+      value === 'inactive' ||
+      value.includes('cancel') ||
+      value.includes('reject') ||
+      value.includes('fail') ||
+      value.includes('refunded')
+    ) {
+      return {
+        bg: 'bg-rose-50',
+        text: 'text-rose-700',
+        dot: 'bg-rose-500',
+        ring: 'ring-rose-600/10'
+      };
+    }
+    // Amber / Warning / In-Progress
+    if (
+      value.includes('pending') ||
+      value.includes('placed') ||
+      value.includes('dispatch') ||
+      value.includes('ready') ||
+      value.includes('processing') ||
+      value.includes('requested') ||
+      value.includes('return') ||
+      value.includes('refund')
+    ) {
+      return {
+        bg: 'bg-amber-50',
+        text: 'text-amber-700',
+        dot: 'bg-amber-500',
+        ring: 'ring-amber-600/10'
+      };
+    }
+    // Gray / Neutral
+    return {
+      bg: 'bg-slate-50',
+      text: 'text-slate-600',
+      dot: 'bg-slate-400',
+      ring: 'ring-slate-500/10'
+    };
+  }
+
+  isImageColumn(col: Column<T>, val: any): boolean {
+    const key = col.key.toLowerCase();
+    if (typeof val !== 'string') return false;
+    return (
+      key.includes('image') &&
+      (val.startsWith('http://') || val.startsWith('https://') || val.startsWith('/') || val.startsWith('http:/') || val.startsWith('https:/'))
+    );
+  }
+
+  isReturnImageList(col: Column<T>, val: any): boolean {
+    return col.key === 'returnImageList' && Array.isArray(val);
+  }
+
+  cleanImageUrl(url: string): string {
+    if (!url) return '';
+    // Fix single slash malformation (e.g. http:/domain.com)
+    if (url.startsWith('http:/') && !url.startsWith('http://')) {
+      return 'http://' + url.substring(6);
+    }
+    if (url.startsWith('https:/') && !url.startsWith('https://')) {
+      return 'https://' + url.substring(7);
+    }
+    return url;
+  }
+
+  readonly previewImageUrl = signal<string>('');
+
+  openPreview(url: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.previewImageUrl.set(url);
+  }
+
+  closePreview(): void {
+    this.previewImageUrl.set('');
+  }
 }
+
