@@ -71,6 +71,12 @@ export class AdminLayout {
       ],
     },
     {
+      group: 'Sales',
+      items: [
+        { label: 'Orders', path: '/orders', icon: '', info: 'Review and manage customer orders.' },
+      ],
+    },
+    {
       group: 'Marketing',
       items: [
         { label: 'Offers', path: '/offers', icon: '', info: 'Manage coupon codes and discount criteria.' },

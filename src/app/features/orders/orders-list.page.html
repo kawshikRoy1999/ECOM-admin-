@@ -1,0 +1,78 @@
+<div class="space-y-4">
+  <div class="flex flex-col gap-0.5">
+    <h1 class="page-title">Orders</h1>
+    <p class="page-subtitle">Review and manage customer orders.</p>
+  </div>
+
+  <app-tabs [tabs]="tabs" [active]="active()" (activeChange)="changeTab($event)" />
+
+  <!-- Filters -->
+  <div class="fluent-card p-4">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <input [value]="cName()" (input)="cName.set($any($event.target).value)" placeholder="Customer name" class="!px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+      <input [value]="orderno()" (input)="orderno.set($any($event.target).value)" placeholder="Order #" class="!px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+      <input [value]="custphone()" (input)="custphone.set($any($event.target).value)" placeholder="Phone" class="!px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+      <input [value]="pinCode()" (input)="pinCode.set($any($event.target).value)" placeholder="PIN" class="!px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+      <input type="date" [value]="fromDate()" (input)="fromDate.set($any($event.target).value)" class="!px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+      <input type="date" [value]="toDate()" (input)="toDate.set($any($event.target).value)" class="!px-3 !py-1.5 border border-slate-200 !rounded-xl bg-slate-50/50 text-[13px] h-9" />
+    </div>
+    <div class="mt-3 flex justify-end gap-2">
+      <button (click)="clearFilters()" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Clear</button>
+      <button (click)="applyFilters()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold">Apply filters</button>
+    </div>
+  </div>
+
+  <!-- Order-level tabs -->
+  @if (isOrder()) {
+    <app-data-table
+      [columns]="columns"
+      [rows]="rows()"
+      [loading]="loading()"
+      [searchable]="false"
+      emptyText="No orders found."
+      [actions]="orderActions"
+    />
+    <ng-template #orderActions let-row>
+      <button (click)="open(row)" class="text-[13px] font-semibold text-brand-600 hover:text-brand-700">View</button>
+    </ng-template>
+
+    <div class="flex items-center justify-between">
+      <span class="text-[12px] text-slate-500">{{ totalRecords() }} orders</span>
+      <div class="flex items-center gap-2">
+        <button (click)="prev()" [disabled]="!canPrev()" class="btn-secondary h-8 px-3 text-[12px] font-semibold disabled:opacity-40">Prev</button>
+        <span class="text-[12px] font-semibold text-slate-600">Page {{ pageNo() }} / {{ totalPages() }}</span>
+        <button (click)="next()" [disabled]="!canNext()" class="btn-secondary h-8 px-3 text-[12px] font-semibold disabled:opacity-40">Next</button>
+      </div>
+    </div>
+  }
+
+  <!-- Refund tab -->
+  @if (isRefund()) {
+    <app-data-table
+      [columns]="refundColumns"
+      [rows]="refundRows()"
+      [loading]="loading()"
+      [searchable]="false"
+      emptyText="No refund requests."
+      [actions]="refundActions"
+    />
+    <ng-template #refundActions let-row>
+      <button (click)="approveRefund(row)" class="text-[13px] font-semibold text-emerald-600 hover:text-emerald-700">Approve refund</button>
+    </ng-template>
+  }
+
+  <!-- Return tab -->
+  @if (isReturn()) {
+    <app-data-table
+      [columns]="returnColumns"
+      [rows]="returnRows()"
+      [loading]="loading()"
+      [searchable]="false"
+      emptyText="No return requests."
+      [actions]="returnActions"
+    />
+    <ng-template #returnActions let-row>
+      <button (click)="approveReturn(row)" class="text-[13px] font-semibold text-emerald-600 hover:text-emerald-700">Approve return</button>
+    </ng-template>
+  }
+</div>
