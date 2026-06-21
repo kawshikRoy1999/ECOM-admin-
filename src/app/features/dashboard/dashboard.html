@@ -35,12 +35,8 @@
   @if (selectedPeriod() === 'custom') {
     <div class="fluent-card px-4 py-3 flex flex-col sm:flex-row sm:items-end gap-3 shrink-0 relative z-10 animate-fadeIn">
       <div class="flex flex-col gap-1.5 flex-1">
-        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">From Date</label>
-        <app-date-picker [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" placeholder="Select start date"/>
-      </div>
-      <div class="flex flex-col gap-1.5 flex-1">
-        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">To Date</label>
-        <app-date-picker [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" placeholder="Select end date"/>
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Range</label>
+        <app-date-range-picker [(startDate)]="fromDate" [(endDate)]="toDate" placeholder="Select date range"/>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button (click)="clearFilter()" class="btn-secondary h-9 px-4 text-[12px] font-bold cursor-pointer">Clear</button>

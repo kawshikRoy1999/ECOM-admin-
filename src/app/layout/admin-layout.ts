@@ -34,6 +34,9 @@ export class AdminLayout {
     if (isPlatformBrowser(this.platformId)) {
       this.checkScreenSize();
     }
+    this.router.events.subscribe(() => {
+      this.hideTooltip();
+    });
   }
 
   @HostListener('window:resize')

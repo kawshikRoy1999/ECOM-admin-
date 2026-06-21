@@ -88,7 +88,8 @@
                         <div
                           (click)="openPreview(cleanImageUrl(img.filePath), $event)"
                           class="h-8.5 w-8.5 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 hover:border-brand-500 hover:scale-105 active:scale-95 transition-all shrink-0 block cursor-zoom-in"
-                          title="Click to zoom"
+                          (mouseenter)="tooltip.show($event, 'Click to zoom', { info: 'Enlarge image in a high-resolution preview lightbox.', placement: 'left' })"
+                          (mouseleave)="tooltip.hide()"
                         >
                           <img [src]="cleanImageUrl(img.filePath)" class="h-full w-full object-cover animate-fadeIn" alt="evidence" />
                         </div>
@@ -101,7 +102,8 @@
                     <div
                       (click)="openPreview(cleanImageUrl(cell(row, col)), $event)"
                       class="h-10 w-10 rounded-lg overflow-hidden border border-slate-200/60 bg-slate-50 hover:border-brand-500 hover:scale-105 active:scale-95 transition-all shrink-0 mx-auto lg:mx-0 cursor-zoom-in"
-                      title="Click to zoom"
+                      (mouseenter)="tooltip.show($event, 'Click to zoom', { info: 'Enlarge image in a high-resolution preview lightbox.', placement: 'right' })"
+                      (mouseleave)="tooltip.hide()"
                     >
                       <img [src]="cleanImageUrl(cell(row, col))" class="h-full w-full object-cover animate-fadeIn" alt="item" />
                     </div>

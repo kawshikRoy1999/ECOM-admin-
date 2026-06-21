@@ -6,7 +6,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService }      from '../../core/auth/auth.service';
-import { DatePicker }       from '../../shared/ui/date-picker/date-picker';
+import { DateRangePicker }  from '../../shared/ui/date-range-picker/date-range-picker';
 import { DashboardService } from './dashboard.service';
 import {
   DashboardPeriod,
@@ -21,7 +21,7 @@ interface PeriodOption { id: DashboardPeriod; label: string; }
 
 @Component({
   selector: 'app-dashboard',
-  imports: [DecimalPipe, DatePipe, FormsModule, DatePicker],
+  imports: [DecimalPipe, DatePipe, FormsModule, DateRangePicker],
   templateUrl: './dashboard.html',
 })
 export class Dashboard implements AfterViewInit, OnDestroy {

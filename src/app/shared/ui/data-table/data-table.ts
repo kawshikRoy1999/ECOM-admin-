@@ -1,5 +1,6 @@
-import { Component, TemplateRef, computed, input, signal } from '@angular/core';
+import { Component, TemplateRef, computed, inject, input, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { TooltipService } from '../tooltip.service';
 
 export interface Column<T> {
   key: keyof T & string;
@@ -29,6 +30,8 @@ export interface Column<T> {
   },
 })
 export class DataTable<T extends object> {
+  public readonly tooltip = inject(TooltipService);
+
   readonly columns = input.required<Column<T>[]>();
   readonly rows = input.required<T[]>();
   readonly loading = input(false);
