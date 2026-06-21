@@ -6,10 +6,11 @@ import { RolesService } from '../roles/roles.service';
 import { Role } from '../roles/role.models';
 import { PermissionsService } from './permissions.service';
 import { MenuGroup, PermissionAction } from './permission.models';
+import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 
 @Component({
   selector: 'app-permissions-page',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, Checkbox],
   templateUrl: './permissions.page.html',
 })
 export class PermissionsPage {
@@ -24,6 +25,7 @@ export class PermissionsPage {
   readonly saving = signal(false);
   readonly searchQuery = signal<string>('');
   readonly expandedGroups = signal<Record<string, boolean>>({});
+  readonly permissionSearchQuery = signal<string>('');
 
   /** Roles filtered by the search query. */
   readonly filteredRoles = computed(() => {
@@ -45,9 +47,9 @@ export class PermissionsPage {
     this.actions().length
   );
 
-  /** Checks if all groups are currently expanded. */
+  /** Checks if all visible groups are currently expanded. */
   readonly allGroupsExpanded = computed(() => {
-    const grps = this.groups();
+    const grps = this.filteredGroups();
     if (grps.length === 0) return false;
     return grps.every((g) => this.expandedGroups()[g.menuId]);
   });
@@ -66,6 +68,18 @@ export class PermissionsPage {
     return [...map.values()];
   });
 
+  /** Filtered groups based on the search query. */
+  readonly filteredGroups = computed<MenuGroup[]>(() => {
+    const query = this.permissionSearchQuery().toLowerCase().trim();
+    const allGroups = this.groups();
+    if (!query) return allGroups;
+    return allGroups.filter((g) => g.menuName.toLowerCase().includes(query));
+  });
+
+  activeCountForGroup(group: MenuGroup): number {
+    return group.actions.filter((a) => a.isActive).length;
+  }
+
   constructor() {
     this.rolesService.list().subscribe((res) => {
       const roleList = res?.roleList ?? [];
@@ -82,6 +96,7 @@ export class PermissionsPage {
     this.selectedRoleId.set(roleId);
     this.actions.set([]);
     this.expandedGroups.set({});
+    this.permissionSearchQuery.set('');
     if (!roleId) return;
     this.loading.set(true);
     this.service.getForRole(roleId).subscribe({
@@ -102,12 +117,9 @@ export class PermissionsPage {
 
   toggleAllGroups(): void {
     const expanded = this.allGroupsExpanded();
-    const map: Record<string, boolean> = {};
-    if (!expanded) {
-      // Expand all groups
-      for (const g of this.groups()) {
-        map[g.menuId] = true;
-      }
+    const map: Record<string, boolean> = { ...this.expandedGroups() };
+    for (const g of this.filteredGroups()) {
+      map[g.menuId] = !expanded;
     }
     this.expandedGroups.set(map);
   }
@@ -115,6 +127,24 @@ export class PermissionsPage {
   toggle(action: PermissionAction): void {
     action.isActive = !action.isActive;
     this.actions.set([...this.actions()]);
+  }
+
+  isAllSelected(group: MenuGroup): boolean {
+    if (group.actions.length === 0) return false;
+    return group.actions.every((a) => a.isActive);
+  }
+
+  toggleAllGroupPermissions(group: MenuGroup): void {
+    const targetState = !this.isAllSelected(group);
+    for (const a of group.actions) {
+      a.isActive = targetState;
+    }
+    this.actions.set([...this.actions()]);
+  }
+
+  isSomeSelected(group: MenuGroup): boolean {
+    const active = this.activeCountForGroup(group);
+    return active > 0 && active < group.actions.length;
   }
 
   save(): void {

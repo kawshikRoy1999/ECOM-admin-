@@ -54,7 +54,7 @@
           [class.hover:bg-slate-50]="selectedRoleId() !== r.roleId"
         >
           <!-- Role Info -->
-          <div class="flex items-center justify-between w-full">
+          <div class="flex items-center justify-between gap-3 w-full">
             <span class="font-bold text-[13px] leading-tight truncate" [class.text-brand-700]="selectedRoleId() === r.roleId" [class.text-slate-700]="selectedRoleId() !== r.roleId">
               {{ r.roleName }}
             </span>
@@ -154,86 +154,131 @@
       </div>
     } @else if (selectedRoleId() && groups().length) {
       <!-- Header Action Bar -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs shrink-0">
-        <div class="flex flex-col gap-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-[17px] font-bold text-slate-800 leading-none truncate">
-              {{ selectedRole()?.roleName }} Permissions
-            </h1>
-            <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold tracking-wider uppercase bg-brand-50 text-brand-700 shrink-0">
-              {{ activeCount() }} / {{ totalCount() }} Enabled
+      <div class="flex flex-col gap-3.5 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs shrink-0">
+        <!-- Top Row: Title/Description & Action Buttons -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+          <!-- Title & Stats -->
+          <div class="flex flex-col gap-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <h1 class="text-base sm:text-[17px] font-bold text-slate-800 leading-none truncate">
+                {{ selectedRole()?.roleName }} Permissions
+              </h1>
+              <span class="px-2 py-0.5 rounded-full text-[9.5px] font-bold tracking-wider uppercase bg-brand-50 text-brand-700 shrink-0">
+                {{ activeCount() }} / {{ totalCount() }} Enabled
+              </span>
+            </div>
+            <span class="text-[11px] sm:text-[12px] text-slate-500 truncate mt-0.5">
+              {{ selectedRole()?.description || 'Configure role access permissions for system modules and features.' }}
             </span>
           </div>
-          <span class="text-[11px] sm:text-[12px] text-slate-500 truncate mt-0.5">
-            {{ selectedRole()?.description || 'Configure role access permissions for system modules and features.' }}
-          </span>
+
+          <!-- Action Buttons (Right) -->
+          <div class="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+            <!-- Expand/Collapse All Button -->
+            <button
+              (click)="toggleAllGroups()"
+              class="btn-secondary h-9 rounded-xl px-4 text-[12.5px] font-semibold gap-1.5 cursor-pointer flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 bg-white transition-all shadow-xs"
+            >
+              @if (allGroupsExpanded()) {
+                <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                </svg>
+                Collapse All
+              } @else {
+                <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+                Expand All
+              }
+            </button>
+
+            <!-- Save Permissions Button -->
+            <button
+              (click)="save()"
+              [disabled]="saving()"
+              class="btn-primary h-9 rounded-xl px-4.5 text-[12.5px] font-semibold gap-2 transition-all cursor-pointer shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 flex items-center justify-center shrink-0"
+              title="Save Permissions"
+            >
+              @if (saving()) {
+                <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving Permissions…
+              } @else {
+                <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Save Permissions
+              }
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-          <!-- Expand/Collapse All Button -->
-          <button
-            (click)="toggleAllGroups()"
-            class="btn-secondary h-9 rounded-xl px-4 text-[12.5px] font-semibold gap-1.5 cursor-pointer flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 bg-white transition-all shadow-xs"
-          >
-            @if (allGroupsExpanded()) {
-              <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-              </svg>
-              Collapse All
-            } @else {
-              <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-              </svg>
-              Expand All
-            }
-          </button>
+        <!-- Divider line -->
+        <div class="h-[1px] bg-slate-100 w-full shrink-0"></div>
 
-          <!-- Save Permissions Button -->
-          <button
-            (click)="save()"
-            [disabled]="saving()"
-            class="btn-primary h-9 rounded-xl px-4.5 text-[12.5px] font-semibold gap-2 transition-all cursor-pointer shadow-md shadow-brand-600/10 hover:shadow-brand-600/25 flex items-center justify-center shrink-0"
-            title="Save Permissions"
-          >
-            @if (saving()) {
-              <svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <!-- Bottom Row: Global Sections Search Bar -->
+        <div class="relative flex items-center w-full max-w-md">
+          <span class="absolute left-3.5 text-slate-400">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            [value]="permissionSearchQuery()"
+            (input)="permissionSearchQuery.set($any($event.target).value)"
+            placeholder="Search permission sections..."
+            class="w-full h-8.5 rounded-lg border border-slate-200 pl-8.5 pr-8 text-[12px] font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 transition-all bg-slate-50/50 hover:bg-slate-50"
+          />
+          @if (permissionSearchQuery()) {
+            <button
+              type="button"
+              (click)="permissionSearchQuery.set('')"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 transition-colors p-0.5 rounded-full hover:bg-slate-100 cursor-pointer flex items-center justify-center border-0 bg-transparent"
+            >
+              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Saving Permissions…
-            } @else {
-              <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              Save Permissions
-            }
-          </button>
+            </button>
+          }
         </div>
       </div>
 
       <!-- Scrollable Matrix Area -->
       <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-        <div class="flex flex-col md:flex-row gap-5 items-start">
-          
-          <!-- Left Column -->
-          <div class="flex-1 flex flex-col gap-5 w-full">
-            @for (group of groups(); track group.menuId; let idx = $index) {
-              @if (idx % 2 === 0) {
-                <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: group }"></ng-container>
-              }
-            }
+        @if (filteredGroups().length === 0) {
+          <div class="flex flex-col items-center justify-center py-20 text-center px-4 bg-white border border-slate-200/80 rounded-xl shadow-xs animate-fadeIn">
+            <svg class="h-10 w-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span class="text-sm font-bold text-slate-500">No permission sections found</span>
+            <span class="text-[11px] text-slate-400 mt-1">No groups match your query "{{ permissionSearchQuery() }}".</span>
           </div>
-
-          <!-- Right Column -->
-          <div class="flex-1 flex flex-col gap-5 w-full">
-            @for (group of groups(); track group.menuId; let idx = $index) {
-              @if (idx % 2 !== 0) {
-                <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: group }"></ng-container>
+        } @else {
+          <div class="flex flex-col md:flex-row gap-5 items-start">
+            
+            <!-- Left Column -->
+            <div class="flex-1 flex flex-col gap-5 w-full">
+              @for (group of filteredGroups(); track group.menuId; let idx = $index) {
+                @if (idx % 2 === 0) {
+                  <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: group }"></ng-container>
+                }
               }
-            }
-          </div>
+            </div>
 
-        </div>
+            <!-- Right Column -->
+            <div class="flex-1 flex flex-col gap-5 w-full">
+              @for (group of filteredGroups(); track group.menuId; let idx = $index) {
+                @if (idx % 2 !== 0) {
+                  <ng-container *ngTemplateOutlet="cardTpl; context: { $implicit: group }"></ng-container>
+                }
+              }
+            </div>
+
+          </div>
+        }
       </div>
 
       <!-- Card Template Definition -->
@@ -274,9 +319,19 @@
                 {{ group.menuName }}
               </h3>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-2.5 shrink-0">
+              <!-- Select All Tickmark (Checkbox Component) -->
+              <div class="mr-1 flex items-center justify-center" (click)="$event.stopPropagation()">
+                <app-checkbox
+                  [checked]="isAllSelected(group)"
+                  (checkedChange)="toggleAllGroupPermissions(group)"
+                  [indeterminate]="isSomeSelected(group)"
+                  title="Select / Deselect all in this section"
+                />
+              </div>
+
               <span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full shrink-0">
-                {{ group.actions.length }} Actions
+                {{ activeCountForGroup(group) }} / {{ group.actions.length }} Enabled
               </span>
               <!-- Chevron Icon -->
               <svg
@@ -291,10 +346,9 @@
               </svg>
             </div>
           </header>
-
           <!-- Actions List -->
           @if (expandedGroups()[group.menuId]) {
-            <div class="flex-1 divide-y divide-slate-100">
+            <div class="flex-1 divide-y divide-slate-100 flex flex-col">
               @for (action of group.actions; track action.menuActionId) {
                 <div class="flex items-center justify-between p-3.5 hover:bg-slate-50/50 transition-colors gap-3">
                   <div class="flex items-center gap-2.5 min-w-0">
@@ -309,20 +363,20 @@
                       } @else if (action.actionName.toLowerCase().startsWith('edit') || action.actionName.toLowerCase().startsWith('update') || action.actionName.toLowerCase().includes('change') || action.actionName.toLowerCase().includes('allocation') || action.actionName.toLowerCase().includes('addedit')) {
                         <div class="flex h-5 w-5 items-center justify-center rounded bg-amber-50 text-amber-600 shadow-2xs" title="Edit permissions">
                           <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                           </svg>
                         </div>
                       } @else if (action.actionName.toLowerCase().startsWith('delete') || action.actionName.toLowerCase().startsWith('remove')) {
                         <div class="flex h-5 w-5 items-center justify-center rounded bg-rose-50 text-rose-600 shadow-2xs" title="Delete permissions">
-                          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </div>
                       } @else {
                         <div class="flex h-5 w-5 items-center justify-center rounded bg-blue-50 text-blue-600 shadow-2xs" title="View permissions">
-                          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         </div>
                       }
@@ -332,16 +386,12 @@
                     </span>
                   </div>
 
-                  <!-- iOS Slider Switch Toggle -->
-                  <label class="relative inline-flex cursor-pointer items-center shrink-0 select-none">
-                    <input
-                      type="checkbox"
-                      class="peer sr-only"
-                      [checked]="action.isActive"
-                      (change)="toggle(action)"
-                    />
-                    <div class="h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
-                  </label>
+                  <!-- Custom Checkbox Toggle -->
+                  <app-checkbox
+                    [checked]="action.isActive"
+                    (checkedChange)="toggle(action)"
+                    title="Toggle permission"
+                  />
                 </div>
               }
             </div>

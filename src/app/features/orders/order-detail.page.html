@@ -115,7 +115,7 @@
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Order Info</span>
             @let sClass = statusClass(d.order?.data?.[0]?.itemstatus || '');
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1 border border-current/15" [class]="sClass">
+            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1 border border-current/15 whitespace-nowrap" [class]="sClass">
               <span class="h-1.2 w-1.2 rounded-full shrink-0 animate-pulse" 
                 [class.bg-emerald-500]="sClass.includes('emerald')"
                 [class.bg-rose-500]="sClass.includes('rose')"
@@ -344,7 +344,7 @@
                         </td>
                         <td class="px-5 py-3">
                           @let itClass = statusClass(it.orderStatus);
-                          <span class="rounded-full px-2 py-0.5 text-[10.5px] font-bold inline-flex items-center gap-1 border border-current/15" [class]="itClass">
+                          <span class="rounded-full px-2 py-0.5 text-[10.5px] font-bold inline-flex items-center gap-1 border border-current/15 whitespace-nowrap" [class]="itClass">
                             <span class="h-1 w-1 rounded-full shrink-0" 
                               [class.bg-emerald-500]="itClass.includes('emerald')"
                               [class.bg-rose-500]="itClass.includes('rose')"
