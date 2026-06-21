@@ -6,14 +6,14 @@ import { Tabs, TabItem } from '../../shared/ui/tabs/tabs';
 import { DataTable, Column } from '../../shared/ui/data-table/data-table';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../shared/ui/confirm/confirm.service';
-import { DatePicker } from '../../shared/ui/date-picker/date-picker';
+import { DateRangePicker } from '../../shared/ui/date-range-picker/date-range-picker';
 import { OrdersService } from './orders.service';
 import { OrderListItem, RefundItem, ReturnItem } from './order.models';
 import { TooltipService } from '../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-orders-list-page',
-  imports: [Tabs, DataTable, DatePicker, FormsModule],
+  imports: [Tabs, DataTable, DateRangePicker, FormsModule],
   templateUrl: './orders-list.page.html',
 })
 export class OrdersListPage {

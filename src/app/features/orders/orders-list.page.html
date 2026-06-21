@@ -111,23 +111,13 @@
           </div>
         </div>
 
-        <!-- From Date -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">From Date</label>
-          <app-date-picker
-            [ngModel]="fromDate()"
-            (ngModelChange)="fromDate.set($event)"
-            placeholder="Select start date"
-          />
-        </div>
-
-        <!-- To Date -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">To Date</label>
-          <app-date-picker
-            [ngModel]="toDate()"
-            (ngModelChange)="toDate.set($event)"
-            placeholder="Select end date"
+        <!-- Date Range -->
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Range</label>
+          <app-date-range-picker
+            [(startDate)]="fromDate"
+            [(endDate)]="toDate"
+            placeholder="Select date range"
           />
         </div>
       </div>

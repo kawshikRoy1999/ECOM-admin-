@@ -10,6 +10,7 @@ import { InvoiceGenerate } from './invoice-generate';
 import { DeliveryPersonOption, InvoiceTracking, ItemRateQty, OrderDetail, OrderItem } from './order.models';
 import { Tabs, TabItem } from '../../shared/ui/tabs/tabs';
 import { Select } from '../../shared/ui/select/select';
+import { TooltipService } from '../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-order-detail-page',
@@ -20,6 +21,7 @@ export class OrderDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(OrdersService);
   private readonly toast = inject(ToastService);
+  public readonly tooltip = inject(TooltipService);
 
   readonly tabs: TabItem[] = [
     { id: 'items', label: 'Items List' },
