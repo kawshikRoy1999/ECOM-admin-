@@ -7,55 +7,58 @@
   </div>
 
   <!-- ── Filter Bar ──────────────────────────────────────────────────────────── -->
-  <div class="fluent-card px-4 py-2.5 flex flex-col gap-2 shrink-0 relative z-20">
-    <!-- Single compact row: label + chips + buttons -->
-    <div class="flex items-center gap-3 flex-wrap">
-      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Period</span>
-      <div class="flex items-center gap-1.5 flex-wrap flex-1">
-        @for (p of periods; track p.id) {
-          <button
-            (click)="selectPeriod(p.id)"
-            class="px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-all cursor-pointer leading-none"
-            [class]="selectedPeriod() === p.id
-              ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
-              : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400 hover:text-brand-600'"
-          >{{ p.label }}</button>
-        }
+  <div class="fluent-card px-4 py-2.5 flex items-center gap-3 shrink-0 relative z-20 min-w-0">
+
+    <!-- Period label -->
+    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Period</span>
+
+    <!-- Chips — scrollable on mobile, no wrap -->
+    <div class="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-none min-w-0">
+      @for (p of periods; track p.id) {
+        <button
+          (click)="selectPeriod(p.id)"
+          class="px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-all cursor-pointer leading-none shrink-0"
+          [class]="selectedPeriod() === p.id
+            ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
+            : 'bg-white text-slate-600 border-slate-200 hover:border-brand-400 hover:text-brand-600'"
+        >{{ p.label }}</button>
+      }
+    </div>
+
+    <!-- Action buttons — always visible, never pushed off -->
+    <div class="flex items-center gap-2 shrink-0">
+      <button (click)="clearFilter()" class="btn-secondary h-7 px-3 text-[11.5px] font-bold cursor-pointer">Reset</button>
+      <button (click)="applyFilter()" class="btn-primary h-7 px-3 text-[11.5px] font-bold flex items-center gap-1.5 cursor-pointer">
+        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        Apply
+      </button>
+    </div>
+  </div>
+
+  <!-- Custom date row — expands below the bar when Custom is selected -->
+  @if (selectedPeriod() === 'custom') {
+    <div class="fluent-card px-4 py-3 flex flex-col sm:flex-row sm:items-end gap-3 shrink-0 relative z-10 animate-fadeIn">
+      <div class="flex flex-col gap-1.5 flex-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">From Date</label>
+        <app-date-picker [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" placeholder="Select start date"/>
+      </div>
+      <div class="flex flex-col gap-1.5 flex-1">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">To Date</label>
+        <app-date-picker [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" placeholder="Select end date"/>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <button (click)="clearFilter()" class="btn-secondary h-7 px-3 text-[11.5px] font-bold cursor-pointer">Reset</button>
-        <button (click)="applyFilter()" class="btn-primary h-7 px-3 text-[11.5px] font-bold flex items-center gap-1.5 cursor-pointer">
-          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+        <button (click)="clearFilter()" class="btn-secondary h-9 px-4 text-[12px] font-bold cursor-pointer">Clear</button>
+        <button (click)="applyFilter()" class="btn-primary h-9 px-4 text-[12px] font-bold flex items-center gap-1.5 cursor-pointer">
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
           Apply
         </button>
       </div>
     </div>
-
-    <!-- Custom date row — only visible when Custom chip is active -->
-    @if (selectedPeriod() === 'custom') {
-      <div class="flex flex-col sm:flex-row sm:items-end gap-3 pt-2 border-t border-slate-100 animate-fadeIn">
-        <div class="flex flex-col gap-1.5 flex-1">
-          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">From Date</label>
-          <app-date-picker [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" placeholder="Select start date"/>
-        </div>
-        <div class="flex flex-col gap-1.5 flex-1">
-          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">To Date</label>
-          <app-date-picker [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" placeholder="Select end date"/>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button (click)="clearFilter()" class="btn-secondary h-9 px-4 text-[12px] font-bold cursor-pointer">Clear</button>
-          <button (click)="applyFilter()" class="btn-primary h-9 px-4 text-[12px] font-bold flex items-center gap-1.5 cursor-pointer">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            Apply
-          </button>
-        </div>
-      </div>
-    }
-  </div>
+  }
 
   <!-- ── KPI Grid (8 cards, 4 per row on large screens) ─────────────────────── -->
   <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 shrink-0">
