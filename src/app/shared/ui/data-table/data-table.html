@@ -109,7 +109,7 @@
                     </div>
                   } @else if (isStatusColumn(col, cell(row, col))) {
                     <span
-                      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-inset"
+                      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-inset whitespace-nowrap"
                       [class]="statusClasses(cell(row, col)).bg + ' ' + statusClasses(cell(row, col)).text + ' ' + statusClasses(cell(row, col)).ring"
                     >
                       <span

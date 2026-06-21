@@ -10,47 +10,11 @@
 
   <!-- Filters Card -->
   <div class="fluent-card p-4 flex flex-col gap-4 shrink-0 relative z-20">
-    <!-- Primary Filter Bar -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-      <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Customer Name -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Customer Name</label>
-          <div class="relative flex items-center">
-            <span class="absolute left-3.5 text-slate-400">
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </span>
-            <input
-              [value]="cName()"
-              (input)="cName.set($any($event.target).value)"
-              placeholder="Search customer name..."
-              class="w-full !pl-9.5 !pr-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-9"
-            />
-          </div>
-        </div>
-
-        <!-- Order Number -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Order Number</label>
-          <div class="relative flex items-center">
-            <span class="absolute left-3.5 text-slate-400">
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-              </svg>
-            </span>
-            <input
-              [value]="orderno()"
-              (input)="orderno.set($any($event.target).value)"
-              placeholder="Search order number..."
-              class="w-full !pl-9.5 !pr-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-9"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
+    <!-- Top Row: Section Label and Action Buttons -->
+    <div class="flex items-center justify-between gap-3 w-full shrink-0">
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Search Filters</span>
+      
+      <!-- Action Buttons (Right) -->
       <div class="flex items-center gap-2 shrink-0">
         <button
           (click)="showAdvanced.set(!showAdvanced())"
@@ -68,6 +32,48 @@
           </svg>
           Apply
         </button>
+      </div>
+    </div>
+
+    <!-- Divider line -->
+    <div class="h-[1px] bg-slate-100/80 w-full shrink-0"></div>
+
+    <!-- Bottom Row: Filter Inputs -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+      <!-- Customer Name -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Customer Name</label>
+        <div class="relative flex items-center">
+          <span class="absolute left-3.5 text-slate-400">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </span>
+          <input
+            [value]="cName()"
+            (input)="cName.set($any($event.target).value)"
+            placeholder="Search customer name..."
+            class="w-full !pl-9.5 !pr-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-9"
+          />
+        </div>
+      </div>
+
+      <!-- Order Number -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Order Number</label>
+        <div class="relative flex items-center">
+          <span class="absolute left-3.5 text-slate-400">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+            </svg>
+          </span>
+          <input
+            [value]="orderno()"
+            (input)="orderno.set($any($event.target).value)"
+            placeholder="Search order number..."
+            class="w-full !pl-9.5 !pr-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-9"
+          />
+        </div>
       </div>
     </div>
 
