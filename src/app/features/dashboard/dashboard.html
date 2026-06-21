@@ -8,11 +8,7 @@
 
   <!-- ── Filter Bar ──────────────────────────────────────────────────────────── -->
   <div class="fluent-card px-4 py-2.5 flex items-center gap-3 shrink-0 relative z-20 min-w-0">
-
-    <!-- Period label -->
     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0">Period</span>
-
-    <!-- Chips — scrollable on mobile, no wrap -->
     <div class="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-none min-w-0">
       @for (p of periods; track p.id) {
         <button
@@ -24,8 +20,6 @@
         >{{ p.label }}</button>
       }
     </div>
-
-    <!-- Action buttons — always visible, never pushed off -->
     <div class="flex items-center gap-2 shrink-0">
       <button (click)="clearFilter()" class="btn-secondary h-7 px-3 text-[11.5px] font-bold cursor-pointer">Reset</button>
       <button (click)="applyFilter()" class="btn-primary h-7 px-3 text-[11.5px] font-bold flex items-center gap-1.5 cursor-pointer">
@@ -37,7 +31,7 @@
     </div>
   </div>
 
-  <!-- Custom date row — expands below the bar when Custom is selected -->
+  <!-- Custom date row -->
   @if (selectedPeriod() === 'custom') {
     <div class="fluent-card px-4 py-3 flex flex-col sm:flex-row sm:items-end gap-3 shrink-0 relative z-10 animate-fadeIn">
       <div class="flex flex-col gap-1.5 flex-1">
@@ -60,217 +54,357 @@
     </div>
   }
 
-  <!-- ── KPI Grid (8 cards, 4 per row on large screens) ─────────────────────── -->
-  <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 shrink-0">
-    @for (kpi of kpis; track kpi.label) {
-      <div class="fluent-card p-3.5 flex flex-col gap-2.5 min-w-0 group/kpi">
-        <div class="flex items-center justify-between gap-2">
-          <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-300 group-hover/kpi:scale-110" [class]="kpi.iconBg">
-            <svg class="h-4 w-4" [class]="kpi.iconColor" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="kpi.icon"/>
-            </svg>
+  <!-- ── Loading State ───────────────────────────────────────────────────────── -->
+  @if (loading()) {
+    <div class="fluent-card p-8 flex flex-col items-center justify-center gap-3 shrink-0">
+      <div class="h-8 w-8 rounded-full border-[3px] border-brand-200 border-t-brand-600 animate-spin"></div>
+      <p class="text-[12px] text-slate-400 font-medium">Loading dashboard data…</p>
+    </div>
+  }
+
+  <!-- ── Error State ─────────────────────────────────────────────────────────── -->
+  @if (!loading() && error()) {
+    <div class="fluent-card p-5 flex items-center gap-3 border-rose-200 bg-rose-50/30 shrink-0">
+      <svg class="h-5 w-5 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      <p class="text-[12.5px] text-rose-700 font-medium flex-1">{{ error() }}</p>
+      <button (click)="applyFilter()" class="btn-secondary text-[11.5px] h-7 px-3 cursor-pointer shrink-0">Retry</button>
+    </div>
+  }
+
+  <!-- ── Dashboard Content (only shown when data loaded) ─────────────────────── -->
+  @if (!loading() && !error() && data(); as d) {
+
+    <!-- Period label badge -->
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Showing:</span>
+      <span class="text-[10.5px] font-bold text-brand-700 bg-brand-50 border border-brand-100 px-2.5 py-0.5 rounded-full">
+        {{ d.period.label }} &nbsp;·&nbsp; {{ d.period.from }} → {{ d.period.to }}
+      </span>
+    </div>
+
+    <!-- ── KPI Grid ─────────────────────────────────────────────────────────── -->
+    @if (kpis(); as k) {
+      <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 shrink-0">
+
+        <!-- Total Revenue -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-emerald-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            @if (trends()?.revenue; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
           </div>
-          @if (kpi.trend > 0) {
-            <span class="text-[9.5px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap">
-              ↑ {{ kpi.trend }}%
-            </span>
-          } @else if (kpi.trend < 0) {
-            <span class="text-[9.5px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap">
-              ↓ {{ kpi.trend | number:'1.1-1' }}%
-            </span>
-          }
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight truncate">₹ {{ k.totalRevenue | number:'1.0-0' }}</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Total Revenue</p>
+            <p class="text-[9px] text-slate-400 truncate">This period</p>
+          </div>
         </div>
-        <div class="min-w-0">
-          <p class="text-[14px] font-bold text-slate-800 leading-tight truncate">{{ kpi.value }}</p>
-          <p class="text-[10px] font-semibold text-slate-500 mt-0.5 uppercase tracking-wide leading-none truncate">{{ kpi.label }}</p>
-          <p class="text-[9.5px] text-slate-400 mt-0.5 truncate">{{ kpi.sub }}</p>
+
+        <!-- Total Orders -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-brand-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            </div>
+            @if (trends()?.orders; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
+          </div>
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight">{{ k.totalOrders | number }}</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Total Orders</p>
+            <p class="text-[9px] text-slate-400">{{ k.pendingOrders }} pending</p>
+          </div>
         </div>
+
+        <!-- Active Customers -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-violet-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+            @if (trends()?.customers; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
+          </div>
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight">{{ k.activeCustomers | number }}</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Customers</p>
+            <p class="text-[9px] text-slate-400">{{ k.newCustomersToday }} new today</p>
+          </div>
+        </div>
+
+        <!-- AOV -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-amber-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            @if (trends()?.avgOrderValue; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
+          </div>
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight truncate">₹ {{ k.avgOrderValue | number:'1.0-0' }}</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Avg. Order Value</p>
+            <p class="text-[9px] text-slate-400">Per transaction</p>
+          </div>
+        </div>
+
+        <!-- Delivered Rate -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-emerald-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            @if (trends()?.deliveredRate; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
+          </div>
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight">{{ k.deliveredRate | number:'1.1-1' }}%</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Delivered Rate</p>
+            <p class="text-[9px] text-slate-400">{{ k.deliveredCount }} of {{ k.totalOrders }}</p>
+          </div>
+        </div>
+
+        <!-- Return Rate -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-rose-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+            </div>
+            @if (trends()?.returnRate; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
+          </div>
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight">{{ k.returnRate | number:'1.1-1' }}%</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Return Rate</p>
+            <p class="text-[9px] text-slate-400">{{ k.returnCount }} returned</p>
+          </div>
+        </div>
+
+        <!-- Active Offers -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-orange-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+            </div>
+            @if (trends()?.activeOffers; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
+          </div>
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight">{{ k.activeOffers }}</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Active Offers</p>
+            <p class="text-[9px] text-slate-400">{{ k.expiringOffers }} expiring soon</p>
+          </div>
+        </div>
+
+        <!-- Stock Alerts -->
+        <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
+          <div class="flex items-center justify-between gap-1">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 bg-red-50 transition-transform duration-300 group-hover/kpi:scale-110">
+              <svg class="h-4 w-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            @if (trends()?.stockAlerts; as t) {
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0" [class]="trendClass(t.direction)">
+                {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}%
+              </span>
+            }
+          </div>
+          <div>
+            <p class="text-[13px] font-bold text-slate-800 leading-tight">{{ k.stockAlerts }}</p>
+            <p class="text-[9.5px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Stock Alerts</p>
+            <p class="text-[9px] text-slate-400">Low inventory items</p>
+          </div>
+        </div>
+
       </div>
     }
-  </div>
 
-  <!-- ── Main Charts Row ─────────────────────────────────────────────────────── -->
-  <div class="grid gap-4 grid-cols-1 lg:grid-cols-3">
-
-    <!-- Revenue Trend (spans 2 cols) -->
-    <div class="fluent-card p-4 lg:col-span-2 flex flex-col gap-3" style="height:280px">
-      <div class="flex items-center justify-between shrink-0">
-        <div>
-          <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Revenue & Orders Trend</h3>
-          <p class="text-[10px] text-slate-400 font-medium">Full-year monthly comparison</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">+18.4% YoY</span>
-        </div>
-      </div>
-      <div class="flex-1 min-h-0 relative">
-        <canvas #revenueChart></canvas>
-      </div>
-    </div>
-
-    <!-- Order Distribution -->
-    <div class="fluent-card p-4 flex flex-col gap-3" style="height:280px">
-      <div class="shrink-0">
-        <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Order Status Split</h3>
-        <p class="text-[10px] text-slate-400 font-medium">1,247 total orders this period</p>
-      </div>
-      <!-- Doughnut centre total label -->
-      <div class="flex-1 min-h-0 relative">
-        <canvas #statusChart></canvas>
-        <div class="absolute inset-0 flex items-center" style="padding-right: 42%">
-          <div class="text-center w-full">
-            <p class="text-[18px] font-black text-slate-800 leading-none">1,247</p>
-            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Orders</p>
+    <!-- ── Charts Row ────────────────────────────────────────────────────────── -->
+    <div class="grid gap-4 grid-cols-1 lg:grid-cols-3">
+      <div class="fluent-card p-4 lg:col-span-2 flex flex-col gap-3" style="height:280px">
+        <div class="flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Revenue & Orders Trend</h3>
+            <p class="text-[10px] text-slate-400 font-medium">{{ d.period.label }} breakdown</p>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Secondary Row: Weekly + Recent Orders ───────────────────────────────── -->
-  <div class="grid gap-4 grid-cols-1 lg:grid-cols-3">
-
-    <!-- Weekly Order Bars -->
-    <div class="fluent-card p-4 flex flex-col gap-3" style="height:280px">
-      <div class="flex items-center justify-between shrink-0">
-        <div>
-          <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">This Week's Orders</h3>
-          <p class="text-[10px] text-slate-400 font-medium">Daily volume — current week</p>
-        </div>
-        <span class="text-[10px] font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full">305 total</span>
-      </div>
-      <div class="flex-1 min-h-0 relative">
-        <canvas #weeklyChart></canvas>
-      </div>
-    </div>
-
-    <!-- Recent Orders Table (spans 2 cols) -->
-    <div class="fluent-card lg:col-span-2 flex flex-col overflow-hidden" style="height:280px">
-      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
-        <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Recent Orders</h3>
-        <span class="text-[10px] font-bold text-brand-600 cursor-pointer hover:underline">View all →</span>
-      </div>
-      <div class="overflow-auto flex-1 min-h-0 custom-scrollbar">
-        <table class="min-w-full text-[12px]">
-          <thead class="bg-slate-50/80 sticky top-0 z-10">
-            <tr class="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">
-              <th class="px-4 py-2 text-left">Order</th>
-              <th class="px-4 py-2 text-left">Customer</th>
-              <th class="px-4 py-2 text-left">Date</th>
-              <th class="px-4 py-2 text-right">Amount</th>
-              <th class="px-4 py-2 text-left">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            @for (o of recentOrders; track o.id) {
-              <tr class="hover:bg-slate-50/50 transition-colors">
-                <td class="px-4 py-2 font-mono text-[10.5px] text-brand-700 font-bold whitespace-nowrap">{{ o.id.split('/').slice(-1)[0] }}</td>
-                <td class="px-4 py-2 text-slate-700 font-semibold whitespace-nowrap">{{ o.customer }}</td>
-                <td class="px-4 py-2 text-slate-400 whitespace-nowrap">{{ o.date }}</td>
-                <td class="px-4 py-2 text-right font-bold text-slate-800 font-mono whitespace-nowrap">₹ {{ o.amount | number:'1.2-2' }}</td>
-                <td class="px-4 py-2">
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border {{ statusBadge(o.status) }}">
-                    <span class="h-1.5 w-1.5 rounded-full shrink-0 {{ statusDot(o.status) }}"></span>
-                    {{ o.status }}
-                  </span>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Bottom Row: Top Products + Quick Stats ──────────────────────────────── -->
-  <div class="grid gap-4 grid-cols-1 lg:grid-cols-2">
-
-    <!-- Top Products -->
-    <div class="fluent-card p-4 flex flex-col gap-3">
-      <div class="flex items-center justify-between shrink-0">
-        <div>
-          <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Selling Products</h3>
-          <p class="text-[10px] text-slate-400 font-medium">By revenue contribution this month</p>
-        </div>
-        <span class="text-[10px] font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full">Top 5</span>
-      </div>
-      <div class="flex flex-col gap-3">
-        @for (p of topProducts; track p.name; let i = $index) {
-          <div class="flex items-center gap-3">
-            <!-- rank badge -->
-            <span class="h-6 w-6 rounded-md flex items-center justify-center text-[10px] font-black shrink-0"
-                  [class]="i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-100 text-slate-600' : i === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'">
-              {{ i + 1 }}
+          @if (trends()?.revenue; as t) {
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                  [class]="t.direction === 'up' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-rose-600 bg-rose-50 border-rose-100'">
+              {{ trendArrow(t.direction) }} {{ t.change | number:'1.0-1' }}% Revenue
             </span>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between gap-2 mb-1">
-                <div class="min-w-0">
-                  <p class="text-[12px] font-bold text-slate-800 truncate leading-tight">{{ p.name }}</p>
-                  <p class="text-[10px] text-slate-400 truncate">{{ p.variant }} · {{ p.sold }} sold</p>
-                </div>
-                <p class="text-[12px] font-black text-slate-800 shrink-0 font-mono">₹ {{ p.revenue | number:'1.0-0' }}</p>
-              </div>
-              <!-- progress bar -->
-              <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-700"
-                     [class]="i === 0 ? 'bg-brand-500' : i === 1 ? 'bg-emerald-500' : i === 2 ? 'bg-amber-500' : 'bg-slate-300'"
-                     [style.width.%]="p.share">
-                </div>
-              </div>
+          }
+        </div>
+        <div class="flex-1 min-h-0 relative"><canvas #revenueChart></canvas></div>
+      </div>
+
+      <div class="fluent-card p-4 flex flex-col gap-3" style="height:280px">
+        <div class="shrink-0">
+          <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Order Status Split</h3>
+          <p class="text-[10px] text-slate-400 font-medium">{{ d.kpis.totalOrders | number }} total orders</p>
+        </div>
+        <div class="flex-1 min-h-0 relative">
+          <canvas #statusChart></canvas>
+          <div class="absolute inset-0 flex items-center" style="padding-right:42%">
+            <div class="text-center w-full">
+              <p class="text-[18px] font-black text-slate-800 leading-none">{{ _orderTotal | number }}</p>
+              <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">Orders</p>
             </div>
           </div>
-        }
+        </div>
       </div>
     </div>
 
-    <!-- Quick Metrics + Fulfillment Scorecard -->
-    <div class="flex flex-col gap-3">
+    <!-- ── Weekly + Recent Orders ─────────────────────────────────────────────── -->
+    <div class="grid gap-4 grid-cols-1 lg:grid-cols-3">
 
-      <!-- 2×2 quick metric tiles -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="fluent-card p-4 flex flex-col gap-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cancellation Rate</p>
-          <p class="text-[22px] font-black text-slate-800 leading-tight">3.5%</p>
-          <p class="text-[10px] text-rose-500 font-semibold">↓ 0.8% vs last month</p>
+      <div class="fluent-card p-4 flex flex-col gap-3" style="height:280px">
+        <div class="flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">This Week's Orders</h3>
+            <p class="text-[10px] text-slate-400 font-medium">Daily volume</p>
+          </div>
+          <span class="text-[10px] font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full">
+            {{ weeklyTotal() }} total
+          </span>
         </div>
-        <div class="fluent-card p-4 flex flex-col gap-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg. Delivery Days</p>
-          <p class="text-[22px] font-black text-slate-800 leading-tight">2.4</p>
-          <p class="text-[10px] text-emerald-600 font-semibold">↑ 0.3 days faster</p>
-        </div>
-        <div class="fluent-card p-4 flex flex-col gap-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Repeat Customers</p>
-          <p class="text-[22px] font-black text-slate-800 leading-tight">41%</p>
-          <p class="text-[10px] text-emerald-600 font-semibold">↑ 5% this quarter</p>
-        </div>
-        <div class="fluent-card p-4 flex flex-col gap-1">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Refund Value</p>
-          <p class="text-[22px] font-black text-slate-800 leading-tight">₹ 8.2k</p>
-          <p class="text-[10px] text-amber-600 font-semibold">→ Stable vs last month</p>
-        </div>
+        <div class="flex-1 min-h-0 relative"><canvas #weeklyChart></canvas></div>
       </div>
 
-      <!-- Fulfillment SLA scorecard -->
-      <div class="fluent-card p-4 flex flex-col gap-3 flex-1">
-        <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Fulfillment SLA Scorecard</h3>
-        <div class="grid grid-cols-1 gap-2">
-          @for (item of [
-            { label: 'Orders Shipped on Time', value: 91, color: 'bg-emerald-500' },
-            { label: 'Invoice Generation',      value: 98, color: 'bg-brand-500'   },
-            { label: 'Delivery Confirmation',   value: 94, color: 'bg-violet-500'  },
-            { label: 'Customer Satisfaction',   value: 87, color: 'bg-amber-500'   }
-          ]; track item.label) {
-            <div class="flex items-center gap-2">
-              <p class="text-[11px] font-semibold text-slate-600 w-40 shrink-0">{{ item.label }}</p>
-              <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-700" [class]="item.color" [style.width.%]="item.value"></div>
+      <div class="fluent-card lg:col-span-2 flex flex-col overflow-hidden" style="height:280px">
+        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Recent Orders</h3>
+        </div>
+        <div class="overflow-auto flex-1 min-h-0 custom-scrollbar">
+          <table class="min-w-full text-[12px]">
+            <thead class="bg-slate-50/80 sticky top-0 z-10">
+              <tr class="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">
+                <th class="px-4 py-2 text-left">Order</th>
+                <th class="px-4 py-2 text-left">Customer</th>
+                <th class="px-4 py-2 text-left">Date</th>
+                <th class="px-4 py-2 text-right">Amount</th>
+                <th class="px-4 py-2 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (o of recentOrders(); track o.orderNo) {
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                  <td class="px-4 py-2 font-mono text-[10.5px] text-brand-700 font-bold whitespace-nowrap">
+                    #{{ o.orderNo.split('/').slice(-1)[0] }}
+                  </td>
+                  <td class="px-4 py-2 text-slate-700 font-semibold whitespace-nowrap">{{ o.customerName }}</td>
+                  <td class="px-4 py-2 text-slate-400 whitespace-nowrap text-[10.5px]">
+                    {{ o.orderDate | date:'d MMM y, h:mm a' }}
+                  </td>
+                  <td class="px-4 py-2 text-right font-bold text-slate-800 font-mono whitespace-nowrap">
+                    ₹ {{ o.total | number:'1.2-2' }}
+                  </td>
+                  <td class="px-4 py-2">
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border {{ orderStatusBadge(o.status) }}">
+                      <span class="h-1.5 w-1.5 rounded-full shrink-0 {{ orderStatusDot(o.status) }}"></span>
+                      {{ o.status }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Top Products + Quick Metrics ──────────────────────────────────────── -->
+    <div class="grid gap-4 grid-cols-1 lg:grid-cols-2">
+
+      <!-- Top Products -->
+      <div class="fluent-card p-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Selling Products</h3>
+            <p class="text-[10px] text-slate-400 font-medium">By units sold · {{ d.period.label }}</p>
+          </div>
+          <span class="text-[10px] font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full">Top 5</span>
+        </div>
+        <div class="flex flex-col gap-3">
+          @for (p of topProducts(); track p.productId; let i = $index) {
+            <div class="flex items-center gap-3">
+              <span class="h-6 w-6 rounded-md flex items-center justify-center text-[10px] font-black shrink-0"
+                    [class]="i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-100 text-slate-600' : i === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'">
+                {{ i + 1 }}
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <div class="min-w-0">
+                    <p class="text-[12px] font-bold text-slate-800 truncate leading-tight">{{ p.productName }}</p>
+                    <p class="text-[10px] text-slate-400 truncate">{{ p.variant }} · {{ p.unitsSold }} sold</p>
+                  </div>
+                  <p class="text-[11.5px] font-black text-slate-800 shrink-0 font-mono">₹ {{ p.revenue | number:'1.0-0' }}</p>
+                </div>
+                <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-700"
+                       [class]="i === 0 ? 'bg-brand-500' : i === 1 ? 'bg-emerald-500' : i === 2 ? 'bg-amber-500' : 'bg-slate-300'"
+                       [style.width.%]="p.sharePercent">
+                  </div>
+                </div>
               </div>
-              <span class="text-[11px] font-black text-slate-700 w-8 text-right shrink-0">{{ item.value }}%</span>
             </div>
           }
         </div>
       </div>
 
+      <!-- Quick Metrics + SLA Scorecard -->
+      <div class="flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-3">
+          @for (m of quickMetrics(); track m.label) {
+            <div class="fluent-card p-4 flex flex-col gap-1">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ m.label }}</p>
+              <p class="text-[20px] font-black text-slate-800 leading-tight">{{ m.value }}</p>
+              <p class="text-[10px] font-semibold {{ m.noteColor }}">{{ m.note }}</p>
+            </div>
+          }
+        </div>
+
+        <!-- SLA Scorecard -->
+        <div class="fluent-card p-4 flex flex-col gap-3 flex-1">
+          <h3 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">Fulfillment SLA Scorecard</h3>
+          <div class="flex flex-col gap-2.5">
+            @for (item of slaItems(); track item.label) {
+              <div class="flex items-center gap-2">
+                <p class="text-[11px] font-semibold text-slate-600 w-40 shrink-0">{{ item.label }}</p>
+                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-700" [class]="item.color" [style.width.%]="item.value"></div>
+                </div>
+                <span class="text-[11px] font-black text-slate-700 w-8 text-right shrink-0">{{ item.value }}%</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+
+  } <!-- end @if data -->
+
 </div>
