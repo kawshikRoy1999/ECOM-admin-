@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 
 import { ToastService } from '../../shared/ui/toast/toast.service';
@@ -13,7 +13,7 @@ import { Select } from '../../shared/ui/select/select';
 
 @Component({
   selector: 'app-order-detail-page',
-  imports: [RouterLink, FormsModule, InvoiceGenerate, DecimalPipe, Tabs, Select],
+  imports: [RouterLink, FormsModule, InvoiceGenerate, DecimalPipe, DatePipe, Tabs, Select],
   templateUrl: './order-detail.page.html',
 })
 export class OrderDetailPage {
@@ -38,6 +38,7 @@ export class OrderDetailPage {
   readonly viewingInvoice = signal(false);
   readonly deliveryPersons = signal<DeliveryPersonOption[]>([]);
   readonly assigningDelivery = signal(false);
+  readonly previewImageUrl = signal<string>('');
   // selected delivery person per invoiceId
   selectedDeliveryPerson: Record<number, string> = {};
 
@@ -125,11 +126,23 @@ export class OrderDetailPage {
   }
 
   /** Look up the rate/amount row for a given order item from order.data. */
-  rateFor(item: OrderItem, data?: ItemRateQty[]): ItemRateQty | undefined {
+  rateFor(item: OrderItem, data?: any[]): any | undefined {
     if (!data?.length) return undefined;
-    return data.find(
-      (r) => r.id === item.itemId && r.variantid === item.itemVariantId,
-    );
+    
+    // 1. Try matching both itemId and variantId exactly
+    const exactMatch = data.find((r) => {
+      const rId = r.id ?? r.itemId ?? r.itemid;
+      const rVariantId = r.variantid ?? r.variantId ?? r.itemVariantId;
+      return rId !== undefined && Number(rId) === Number(item.itemId) &&
+             rVariantId !== undefined && Number(rVariantId) === Number(item.itemVariantId);
+    });
+    if (exactMatch) return exactMatch;
+    
+    // 2. Fallback: match by itemId only (in case variant mappings are not populated or zeroed)
+    return data.find((r) => {
+      const rId = r.id ?? r.itemId ?? r.itemid;
+      return rId !== undefined && Number(rId) === Number(item.itemId);
+    });
   }
 
   /** Build delivery address string, skipping blanks. */
@@ -241,5 +254,21 @@ export class OrderDetailPage {
         },
         error: () => this.sendingTracking.set(false),
       });
+  }
+
+  logFromLabel(logFrom: string): string {
+    const s = logFrom ?? '';
+    if (s.includes('InvoiceStatus')) return 'Invoice Status';
+    if (s.includes('OrderLineStatus')) return 'Line Item';
+    if (s.includes('OrderStatus')) return 'Order Status';
+    return s.replace(/Log$/, '').replace(/([A-Z])/g, ' $1').trim();
+  }
+
+  logFromColorClass(logFrom: string): string {
+    const s = logFrom ?? '';
+    if (s.includes('InvoiceStatus')) return 'bg-brand-50 border-brand-100 text-brand-700';
+    if (s.includes('OrderLineStatus')) return 'bg-purple-50 border-purple-100 text-purple-700';
+    if (s.includes('OrderStatus')) return 'bg-indigo-50 border-indigo-100 text-indigo-700';
+    return 'bg-slate-50 border-slate-200 text-slate-650';
   }
 }
