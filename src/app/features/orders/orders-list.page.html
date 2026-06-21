@@ -147,7 +147,16 @@
         [fillHeight]="true"
       />
       <ng-template #orderActions let-row>
-        <button (click)="open(row)" class="text-[13px] font-bold text-brand-600 hover:text-brand-700 cursor-pointer">View</button>
+        <button (click)="open(row)"
+                (mouseenter)="tooltip.show($event, 'View Details', { info: 'View full invoice details and workflow history.', placement: 'left' })"
+                (mouseleave)="tooltip.hide()"
+                class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50 border border-slate-200/40 hover:border-brand-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
       </ng-template>
 
       <div class="flex items-center justify-between py-1 shrink-0">
@@ -194,7 +203,15 @@
         [fillHeight]="true"
       />
       <ng-template #refundActions let-row>
-        <button (click)="approveRefund(row)" class="text-[13px] font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer">Approve refund</button>
+        <button (click)="approveRefund(row)"
+                (mouseenter)="tooltip.show($event, 'Approve Refund', { info: 'Approve refund request and update transaction ledger.', placement: 'left' })"
+                (mouseleave)="tooltip.hide()"
+                class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 border border-slate-200/40 hover:border-emerald-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
       </ng-template>
     </div>
   }
@@ -212,7 +229,15 @@
         [fillHeight]="true"
       />
       <ng-template #returnActions let-row>
-        <button (click)="approveReturn(row)" class="text-[13px] font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer">Approve return</button>
+        <button (click)="approveReturn(row)"
+                (mouseenter)="tooltip.show($event, 'Approve Return', { info: 'Approve item returns and schedule return pickup.', placement: 'left' })"
+                (mouseleave)="tooltip.hide()"
+                class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 border border-slate-200/40 hover:border-emerald-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </button>
       </ng-template>
     </div>
   }

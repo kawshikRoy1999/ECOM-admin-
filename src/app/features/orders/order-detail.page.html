@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full lg:h-[calc(100vh-104px)] lg:max-h-[calc(100vh-104px)] lg:overflow-hidden gap-4 pb-4">
+<div class="flex flex-col h-full xl:h-[calc(100vh-104px)] xl:max-h-[calc(100vh-104px)] xl:overflow-hidden gap-4 pb-4">
   <div class="flex flex-col gap-0.5 shrink-0">
     <a routerLink="/orders" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700">← Back to orders</a>
     <h1 class="page-title">Order {{ detail()?.order?.orderNo || '' }}</h1>
@@ -6,10 +6,10 @@
 
   <!-- ── Loading State (Skeleton) ────────────────────────────────────────────── -->
   @if (loading()) {
-    <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 pb-5 lg:pb-0 overflow-hidden animate-pulse">
+    <div class="flex-1 min-h-0 flex flex-col xl:flex-row gap-5 pb-5 xl:pb-0 overflow-hidden animate-pulse">
       
       <!-- LEFT SIDEBAR SKELETON -->
-      <div class="w-full lg:w-[320px] shrink-0 flex flex-col gap-3 bg-white rounded-xl border border-slate-200 p-3.5 h-auto lg:h-full">
+      <div class="w-full xl:w-[320px] shrink-0 flex flex-col gap-3 bg-white rounded-xl border border-slate-200 p-3.5 h-auto xl:h-full">
         <!-- Order Info -->
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
@@ -105,10 +105,10 @@
   } @else if (detail(); as d) {
 
     <!-- Dual pane layout -->
-    <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 pb-5 lg:pb-0 overflow-y-auto lg:overflow-hidden">
+    <div class="flex-1 min-h-0 flex flex-col xl:flex-row gap-5 pb-5 xl:pb-0 overflow-y-auto xl:overflow-hidden">
       
       <!-- LEFT SIDEBAR: Summary & Contact -->
-      <div class="w-full lg:w-[320px] shrink-0 flex flex-col gap-3 bg-white rounded-xl border border-slate-200/80 p-3.5 h-auto lg:h-full lg:max-h-none overflow-y-auto shadow-xs custom-scrollbar">
+      <div class="w-full xl:w-[320px] shrink-0 flex flex-col gap-3 bg-white rounded-xl border border-slate-200/80 p-3.5 h-auto xl:h-full xl:max-h-none overflow-y-auto shadow-xs custom-scrollbar">
         
         <!-- Order Info -->
         <div class="flex flex-col gap-1.5 shrink-0">
@@ -271,14 +271,14 @@
       </div>
 
       <!-- RIGHT PANEL: Tabbed Workspace -->
-      <div class="flex-1 flex flex-col gap-4 h-auto min-h-0 lg:h-full lg:overflow-hidden">
+      <div class="flex-1 flex flex-col gap-4 h-auto min-h-0 xl:h-full xl:overflow-hidden">
         <!-- Tabs Switcher -->
         <div class="shrink-0">
           <app-tabs [tabs]="tabs" [active]="activeTab()" (activeChange)="activeTab.set($event)" />
         </div>
 
         <!-- Tab contents wrapper -->
-        <div class="flex-1 flex flex-col min-h-0 lg:overflow-hidden">
+        <div class="flex-1 flex flex-col min-h-0 xl:overflow-hidden">
           
           <!-- TAB 1: Items List -->
           @if (activeTab() === 'items') {
@@ -515,7 +515,7 @@
 
           <!-- TAB 3: Payments & Activity Log -->
           @if (activeTab() === 'history') {
-            <div class="flex-1 flex flex-col lg:flex-row gap-4 h-full lg:overflow-hidden min-h-0">
+            <div class="flex-1 flex flex-col lg:flex-row gap-4 h-auto xl:h-full xl:overflow-hidden min-h-0">
               
               <!-- Payments Card -->
               <div class="flex-1 flex flex-col bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden h-full">

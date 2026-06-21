@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 
 import { AuthService } from '../core/auth/auth.service';
+import { TooltipService } from '../shared/ui/tooltip.service';
 
 interface NavItem {
   label: string;
@@ -21,23 +22,13 @@ export class AdminLayout {
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
 
+  private readonly tooltip = inject(TooltipService);
+
   readonly displayName = this.auth.displayName;
   readonly logoUrl = this.auth.logoUrl;
   readonly sidebarOpen = signal(false);
   readonly lgScreen = signal(false);
-  readonly tooltipState = signal<{
-    visible: boolean;
-    label: string;
-    info?: string;
-    left: number;
-    top: number;
-  }>({
-    visible: false,
-    label: '',
-    info: '',
-    left: 0,
-    top: 0
-  });
+  readonly tooltipState = this.tooltip.state;
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -114,40 +105,16 @@ export class AdminLayout {
     this.hideTooltip();
   }
 
-  private tooltipTimeout?: any;
-
   showTooltip(event: MouseEvent, item: NavItem): void {
     // Only show tooltips when the sidebar is collapsed (sidebarOpen is false)
     if (this.sidebarOpen()) {
       return;
     }
-    if (this.tooltipTimeout) {
-      clearTimeout(this.tooltipTimeout);
-    }
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const left = 56; // Left offset when sidebar is collapsed (w-12 / 48px + 8px gap)
-    const top = rect.top + rect.height / 2;
-    
-    // Soothing 150ms delay to filter fast sweeps
-    this.tooltipTimeout = setTimeout(() => {
-      this.tooltipState.set({
-        visible: true,
-        label: item.label,
-        info: item.info,
-        left: left,
-        top: top
-      });
-    }, 150);
+    this.tooltip.show(event, item.label, { info: item.info, placement: 'right', customLeft: 56 });
   }
 
   hideTooltip(): void {
-    if (this.tooltipTimeout) {
-      clearTimeout(this.tooltipTimeout);
-      this.tooltipTimeout = undefined;
-    }
-    // Set visible: false but preserve coordinates for smooth transition exit
-    this.tooltipState.update(state => ({ ...state, visible: false }));
+    this.tooltip.hide();
   }
 
   logout(): void {
