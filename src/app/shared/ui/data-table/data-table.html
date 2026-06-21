@@ -108,14 +108,8 @@
                       <img [src]="cleanImageUrl(cell(row, col))" class="h-full w-full object-cover animate-fadeIn" alt="item" />
                     </div>
                   } @else if (isStatusColumn(col, cell(row, col))) {
-                    <span
-                      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ring-inset whitespace-nowrap"
-                      [class]="statusClasses(cell(row, col)).bg + ' ' + statusClasses(cell(row, col)).text + ' ' + statusClasses(cell(row, col)).ring"
-                    >
-                      <span
-                        class="h-1.5 w-1.5 rounded-full mr-1.5"
-                        [class]="statusClasses(cell(row, col)).dot"
-                      ></span>
+                    <span class="status-chip {{ statusClass(cell(row, col)) }}">
+                      <span class="dot"></span>
                       {{ cell(row, col) }}
                     </span>
                   } @else if (cell(row, col) === '✓') {

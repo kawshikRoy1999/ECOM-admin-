@@ -13,9 +13,8 @@ import { Component, input, model } from '@angular/core';
         [disabled]="disabled()"
         (change)="onToggle($event)"
       />
-      <!-- Styled Custom Box -->
       <div
-        class="flex h-4.5 w-4.5 items-center justify-center rounded-md border transition-all duration-300 ease-out select-none shadow-3xs"
+        class="flex h-4.5 w-4.5 items-center justify-center rounded-md border transition-all duration-300 ease-out select-none shadow-2xs"
         [class.bg-brand-50]="checked() || indeterminate()"
         [class.border-brand-300]="checked() || indeterminate()"
         [class.bg-white]="!checked() && !indeterminate()"

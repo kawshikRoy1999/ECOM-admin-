@@ -425,9 +425,9 @@
                   <td class="px-4 py-2 text-right font-bold text-slate-800 font-mono whitespace-nowrap">
                     ₹ {{ o.total | number:'1.2-2' }}
                   </td>
-                  <td class="px-4 py-2">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border {{ orderStatusBadge(o.status) }}">
-                      <span class="h-1.5 w-1.5 rounded-full shrink-0 {{ orderStatusDot(o.status) }}"></span>
+                  <td class="px-4 py-2 whitespace-nowrap">
+                    <span class="status-chip {{ orderStatusClass(o.status) }}">
+                      <span class="dot"></span>
                       {{ o.status }}
                     </span>
                   </td>

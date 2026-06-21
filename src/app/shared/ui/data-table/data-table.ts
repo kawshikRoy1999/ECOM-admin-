@@ -81,8 +81,8 @@ export class DataTable<T extends object> {
     );
   }
 
-  statusClasses(val: string): { bg: string; text: string; dot: string; ring: string } {
-    const value = val.toLowerCase();
+  statusClass(val: string): string {
+    const value = (val ?? '').toLowerCase();
     // Green / Positive
     if (
       value === 'active' ||
@@ -93,12 +93,7 @@ export class DataTable<T extends object> {
       value.includes('completed') ||
       value.includes('accept')
     ) {
-      return {
-        bg: 'bg-emerald-50',
-        text: 'text-emerald-700',
-        dot: 'bg-emerald-500',
-        ring: 'ring-emerald-600/10'
-      };
+      return 'success';
     }
     // Red / Negative / Error
     if (
@@ -108,12 +103,7 @@ export class DataTable<T extends object> {
       value.includes('fail') ||
       value.includes('refunded')
     ) {
-      return {
-        bg: 'bg-rose-50',
-        text: 'text-rose-700',
-        dot: 'bg-rose-500',
-        ring: 'ring-rose-600/10'
-      };
+      return 'danger';
     }
     // Amber / Warning / In-Progress
     if (
@@ -126,20 +116,10 @@ export class DataTable<T extends object> {
       value.includes('return') ||
       value.includes('refund')
     ) {
-      return {
-        bg: 'bg-amber-50',
-        text: 'text-amber-700',
-        dot: 'bg-amber-500',
-        ring: 'ring-amber-600/10'
-      };
+      return 'warning';
     }
     // Gray / Neutral
-    return {
-      bg: 'bg-slate-50',
-      text: 'text-slate-600',
-      dot: 'bg-slate-400',
-      ring: 'ring-slate-500/10'
-    };
+    return 'neutral';
   }
 
   isImageColumn(col: Column<T>, val: any): boolean {

@@ -115,12 +115,8 @@
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Order Info</span>
             @let sClass = statusClass(d.order?.data?.[0]?.itemstatus || '');
-            <span class="rounded-full px-2 py-0.5 text-[10px] font-bold inline-flex items-center gap-1 border border-current/15 whitespace-nowrap" [class]="sClass">
-              <span class="h-1.2 w-1.2 rounded-full shrink-0 animate-pulse" 
-                [class.bg-emerald-500]="sClass.includes('emerald')"
-                [class.bg-rose-500]="sClass.includes('rose')"
-                [class.bg-amber-500]="sClass.includes('amber')"
-                [class.bg-slate-400]="sClass.includes('slate')"></span>
+            <span class="status-chip {{ sClass }}">
+              <span class="dot animate-pulse"></span>
               {{ d.order?.data?.[0]?.itemstatus || 'Placed' }}
             </span>
           </div>
@@ -193,8 +189,8 @@
             @let balance = (d.order?.netPayableAmt || 0) - (d.customerPaidAmount || 0);
             <div class="flex items-center justify-between text-[12.5px] font-bold mt-1 p-1.5 rounded-lg border transition-all" 
               [class]="balance > 0 
-                ? 'bg-rose-50/50 border-rose-100 text-rose-700 shadow-3xs' 
-                : 'bg-emerald-50/50 border-emerald-100 text-emerald-700 shadow-3xs'">
+                ? 'bg-rose-50/50 border-rose-100 text-rose-700 shadow-2xs' 
+                : 'bg-emerald-50/50 border-emerald-100 text-emerald-700 shadow-2xs'">
               <span>Balance Due</span>
               <span class="font-mono">{{ balance | number:'1.2-2' }}</span>
             </div>
@@ -206,7 +202,7 @@
         <!-- Customer & Delivery Card -->
         <div class="flex flex-col gap-1.5 shrink-0">
           <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Customer & Delivery</span>
-          <div class="flex flex-col gap-2.5 mt-0.5 text-[12px] bg-slate-50/30 border border-slate-200/50 rounded-xl p-3 shadow-3xs">
+          <div class="flex flex-col gap-2.5 mt-0.5 text-[12px] bg-slate-50/30 border border-slate-200/50 rounded-xl p-3 shadow-2xs">
             <!-- Name & Info -->
             <div class="flex items-center gap-2 pb-2 border-b border-slate-200/40">
               <div class="h-6.5 w-6.5 rounded-full bg-brand-100/70 border border-brand-200 flex items-center justify-center text-brand-700 font-bold text-[10.5px] uppercase shrink-0">
@@ -306,7 +302,7 @@
                       <tr class="hover:bg-slate-50/40 transition-colors">
                         <td class="px-5 py-3 w-12 min-w-[48px]">
                           @if (it.imagePath) {
-                            <img [src]="it.imagePath" alt="" class="h-10 w-10 min-w-10 min-h-10 rounded-lg object-cover border border-slate-200/65 shadow-3xs cursor-zoom-in hover:opacity-90 transition-all duration-200" (click)="previewImageUrl.set(it.imagePath)"
+                            <img [src]="it.imagePath" alt="" class="h-10 w-10 min-w-10 min-h-10 rounded-lg object-cover border border-slate-200/65 shadow-2xs cursor-zoom-in hover:opacity-90 transition-all duration-200" (click)="previewImageUrl.set(it.imagePath)"
                               (mouseenter)="tooltip.show($event, 'Click to zoom', { info: 'Enlarge image in a high-resolution preview lightbox.', placement: 'right' })"
                               (mouseleave)="tooltip.hide()" />
                           } @else {
@@ -326,7 +322,7 @@
                               <span class="bg-slate-50 border border-slate-200/60 text-[9.5px] text-slate-500 px-1.5 py-0.5 rounded font-mono font-medium">{{ it.unitName }}</span>
                             }
                             @if (it.invoiceNumber) {
-                              <span class="bg-brand-50/80 border border-brand-100 text-[9.5px] text-brand-700 px-1.5 py-0.5 rounded font-mono font-bold shadow-3xs">Inv: {{ it.invoiceNumber }}</span>
+                              <span class="bg-brand-50/80 border border-brand-100 text-[9.5px] text-brand-700 px-1.5 py-0.5 rounded font-mono font-bold shadow-2xs">Inv: {{ it.invoiceNumber }}</span>
                             }
                           </div>
                           
@@ -344,12 +340,8 @@
                         </td>
                         <td class="px-5 py-3">
                           @let itClass = statusClass(it.orderStatus);
-                          <span class="rounded-full px-2 py-0.5 text-[10.5px] font-bold inline-flex items-center gap-1 border border-current/15 whitespace-nowrap" [class]="itClass">
-                            <span class="h-1 w-1 rounded-full shrink-0" 
-                              [class.bg-emerald-500]="itClass.includes('emerald')"
-                              [class.bg-rose-500]="itClass.includes('rose')"
-                              [class.bg-amber-500]="itClass.includes('amber')"
-                              [class.bg-slate-400]="itClass.includes('slate')"></span>
+                          <span class="status-chip {{ itClass }}">
+                            <span class="dot"></span>
                             {{ it.orderStatus }}
                           </span>
                           @if (it.invoiceLineItemStatus && it.invoiceLineItemStatus !== it.orderStatus) {
@@ -474,7 +466,7 @@
                   <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Assign Delivery Persons</span>
                   <div class="flex flex-col gap-3">
                     @for (inv of d.invoiceTrackingDetail; track inv.invoiceId) {
-                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/30 px-4 py-3 shadow-3xs">
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/30 px-4 py-3 shadow-2xs">
                         <div class="min-w-0">
                           <p class="text-[13px] font-bold text-slate-800 font-mono leading-snug">{{ inv.invoiceNumber }}</p>
                           <p class="text-[11px] text-slate-400 mt-0.5">Date: {{ inv.invoiceDate }}</p>

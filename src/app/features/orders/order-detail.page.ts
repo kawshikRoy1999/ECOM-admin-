@@ -154,13 +154,13 @@ export class OrderDetailPage {
 
   statusClass(status: string): string {
     const s = (status ?? '').toLowerCase();
-    if (s.includes('deliver') || s.includes('complet'))
-      return 'bg-emerald-50 text-emerald-700';
-    if (s.includes('cancel') || s.includes('refund') || s.includes('return'))
-      return 'bg-rose-50 text-rose-700';
-    if (s.includes('partial') || s.includes('invoic'))
-      return 'bg-amber-50 text-amber-700';
-    return 'bg-slate-100 text-slate-600';
+    if (s.includes('deliver') || s.includes('complet') || s.includes('success'))
+      return 'success';
+    if (s.includes('cancel') || s.includes('refund') || s.includes('return') || s.includes('fail'))
+      return 'danger';
+    if (s.includes('partial') || s.includes('invoic') || s.includes('pending') || s.includes('placed') || s.includes('process') || s.includes('dispatch') || s.includes('ready'))
+      return 'warning';
+    return 'neutral';
   }
 
   saveStatus(): void {
