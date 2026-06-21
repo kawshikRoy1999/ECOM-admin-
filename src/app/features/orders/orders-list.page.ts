@@ -9,6 +9,7 @@ import { ConfirmService } from '../../shared/ui/confirm/confirm.service';
 import { DatePicker } from '../../shared/ui/date-picker/date-picker';
 import { OrdersService } from './orders.service';
 import { OrderListItem, RefundItem, ReturnItem } from './order.models';
+import { TooltipService } from '../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-orders-list-page',
@@ -20,6 +21,7 @@ export class OrdersListPage {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  public readonly tooltip = inject(TooltipService);
 
   readonly tabs: TabItem[] = [
     { id: '', label: 'All Orders' },

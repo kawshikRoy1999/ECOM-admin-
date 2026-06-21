@@ -62,7 +62,7 @@
       <div class="h-5 w-48 bg-slate-200 rounded-full mb-1"></div>
 
       <!-- KPI Grid Skeleton -->
-      <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8">
+      <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-8">
         @for (i of [1,2,3,4,5,6,7,8]; track i) {
           <div class="fluent-card p-3.5 flex flex-col gap-3">
             <div class="flex items-center justify-between">
@@ -193,7 +193,7 @@
 
     <!-- ── KPI Grid ─────────────────────────────────────────────────────────── -->
     @if (kpis(); as k) {
-      <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 shrink-0">
+      <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 shrink-0">
 
         <!-- Total Revenue -->
         <div class="fluent-card p-3.5 flex flex-col gap-2 group/kpi">
