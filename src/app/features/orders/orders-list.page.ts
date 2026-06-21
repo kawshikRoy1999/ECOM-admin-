@@ -56,7 +56,6 @@ export class OrdersListPage {
     { key: 'custOrdNo', header: 'Order #' },
     { key: 'orderDateStr', header: 'Date' },
     { key: 'firstName', header: 'Customer', format: (o) => [o.firstName, o.lastName].filter(Boolean).join(' ') },
-    { key: 'city', header: 'City' },
     { key: 'phone', header: 'Phone' },
     { key: 'total', header: 'Total', align: 'right', format: (o) => Number(o.total ?? 0).toFixed(2) },
     { key: 'statusName', header: 'Status' },
