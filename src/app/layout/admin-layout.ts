@@ -59,7 +59,7 @@ export class AdminLayout {
     {
       group: 'Access Control',
       items: [
-        { label: 'Users', path: '/access/users', icon: '', info: 'Manage administrative user accounts and credentials.' },
+        { label: 'Users kawshik', path: '/access/users', icon: '', info: 'Manage administrative user accounts and credentials.' },
         { label: 'Roles', path: '/access/roles', icon: '', info: 'Configure user access roles and responsibilities.' },
         { label: 'Permissions', path: '/access/permissions', icon: '', info: 'Assign module permissions and access control matrices.' },
       ],
