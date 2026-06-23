@@ -26,7 +26,20 @@ export class UsersService {
   save(
     user: Pick<
       AdminUser,
-      'userId' | 'email' | 'userName' | 'firstName' | 'middleName' | 'lastName' | 'phone'
+      | 'userId'
+      | 'email'
+      | 'userName'
+      | 'firstName'
+      | 'middleName'
+      | 'lastName'
+      | 'phone'
+      | 'address'
+      | 'address2'
+      | 'city'
+      | 'state'
+      | 'country'
+      | 'postalCode'
+      | 'imagePath'
     > & { isActive: boolean; password: string },
   ): Observable<SaveUserResponse> {
     const body: SaveUserRequest = {
@@ -39,6 +52,13 @@ export class UsersService {
       MiddleName: user.middleName ?? '',
       LastName: user.lastName,
       Phone: user.phone ?? '',
+      Address1: user.address ?? '',
+      Address2: user.address2 ?? '',
+      City: user.city ?? '',
+      State: user.state ?? '',
+      Country: user.country ?? '',
+      Zip: user.postalCode ?? '',
+      ImagePath: user.imagePath ?? '',
       IsActive: user.isActive,
       CreatedBy: this.auth.userId(),
       ModifiedBy: this.auth.userId(),

@@ -8,11 +8,11 @@ import { Component, input, output } from '@angular/core';
   selector: 'app-modal',
   template: `
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-[2px] p-4"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 backdrop-blur-[2px] p-4 animate-fadeIn"
       (click)="close.emit()"
     >
       <div
-        class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200/50"
+        class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200/50 animate-scaleIn"
         [class]="widthClass()"
         (click)="$event.stopPropagation()"
       >
