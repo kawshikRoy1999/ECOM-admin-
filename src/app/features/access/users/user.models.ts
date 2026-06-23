@@ -13,6 +13,13 @@ export interface AdminUser {
   phone?: string | null;
   imagePath?: string | null;
   isActive?: boolean | null;
+  // Address (response model uses `address`/`postalCode`; request uses Address1/Zip)
+  address?: string | null;
+  address2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
 }
 
 export interface UserRoleOption {
@@ -48,6 +55,13 @@ export interface SaveUserRequest {
   MiddleName: string;
   LastName: string;
   Phone: string;
+  Address1: string;
+  Address2: string;
+  City: string;
+  State: string;
+  Country: string;
+  Zip: string;
+  ImagePath: string;
   IsActive: boolean;
   CreatedBy: string;
   ModifiedBy: string;

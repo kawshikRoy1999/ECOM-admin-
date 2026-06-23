@@ -60,123 +60,234 @@
   @if (modalOpen()) {
     <app-modal
       [title]="editingId() ? 'Edit User details' : 'Create New User'"
-      widthClass="max-w-xl"
+      widthClass="max-w-4xl"
       (close)="modalOpen.set(false)"
     >
-      <form [formGroup]="form" (ngSubmit)="save()" class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-        <!-- Username -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Username</label>
-          <input
-            formControlName="UserName"
-            placeholder="jdoe"
-            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13.5px] h-9.5"
-            [class.!border-red-500]="form.controls.UserName.touched && form.controls.UserName.invalid"
-          />
-          @if (form.controls.UserName.touched && form.controls.UserName.invalid) {
-            <p class="text-[11px] text-red-500 font-semibold flex items-center gap-1 mt-0.5">Required</p>
-          }
+      <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col md:flex-row gap-6">
+        <!-- LEFT SIDEBAR: Avatar & Status & Roles (w-full md:w-[280px] shrink-0) -->
+        <div class="w-full md:w-[260px] shrink-0 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-slate-100 pb-5 md:pb-0 md:pr-6">
+          <!-- Profile image -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Profile Image</label>
+            <app-image-upload [(value)]="imagePath" entityType="Users" entitySubType="Profile" />
+          </div>
+
+          <!-- Active Status Toggle -->
+          <div class="bg-slate-50/50 border border-slate-200/40 rounded-xl p-3 mt-1">
+            <label class="flex items-center gap-3 cursor-pointer select-none group">
+              <app-checkbox
+                [checked]="form.controls.IsActive.value"
+                (checkedChange)="form.controls.IsActive.setValue($event)"
+              />
+              <div class="flex flex-col">
+                <span class="text-[12.5px] font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Account Enabled</span>
+                <span class="text-[10px] text-slate-400">Permit administrative access</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Assigned Roles -->
+          <div class="flex flex-col gap-2 bg-slate-50/50 border border-slate-200/40 rounded-xl p-3 flex-1 min-h-0">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Assigned Roles</span>
+            @if (roleOptions().length) {
+              <div class="flex flex-col gap-2.5 mt-1 overflow-y-auto max-h-[180px] custom-scrollbar">
+                @for (role of roleOptions(); track role.roleId) {
+                  <label class="flex items-center gap-3 cursor-pointer select-none group">
+                    <app-checkbox
+                      [checked]="isRoleSelected(role.roleId)"
+                      (checkedChange)="toggleRole(role.roleId, $event)"
+                    />
+                    <span class="text-[12.5px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">{{ role.roleName }}</span>
+                  </label>
+                }
+              </div>
+            } @else {
+              <p class="text-[11px] text-slate-400 font-medium">No roles available.</p>
+            }
+          </div>
         </div>
 
-        <!-- Email -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Email Address</label>
-          <input
-            formControlName="Email"
-            type="email"
-            placeholder="john.doe@example.com"
-            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13.5px] h-9.5"
-            [class.!border-red-500]="form.controls.Email.touched && form.controls.Email.invalid"
-          />
-          @if (form.controls.Email.touched && form.controls.Email.invalid) {
-            <p class="text-[11px] text-red-500 font-semibold flex items-center gap-1 mt-0.5">Valid email address required</p>
-          }
-        </div>
-
-        <!-- First Name -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">First Name</label>
-          <input
-            formControlName="FirstName"
-            placeholder="John"
-            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13.5px] h-9.5"
-            [class.!border-red-500]="form.controls.FirstName.touched && form.controls.FirstName.invalid"
-          />
-          @if (form.controls.FirstName.touched && form.controls.FirstName.invalid) {
-            <p class="text-[11px] text-red-500 font-semibold flex items-center gap-1 mt-0.5">Required</p>
-          }
-        </div>
-
-        <!-- Last Name -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Last Name</label>
-          <input
-            formControlName="LastName"
-            placeholder="Doe"
-            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13.5px] h-9.5"
-          />
-        </div>
-
-        <!-- Phone -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Phone</label>
-          <input
-            formControlName="Phone"
-            type="tel"
-            placeholder="+1 (555) 000-0000"
-            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13.5px] h-9.5"
-          />
-        </div>
-
-        <!-- Password -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
-            Password @if (editingId()) { <span class="font-normal text-slate-400 normal-case italic">(optional)</span> }
-          </label>
-          <input
-            type="password"
-            formControlName="Password"
-            placeholder="••••••••"
-            class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[13.5px] h-9.5"
-            [class.!border-red-500]="form.controls.Password.touched && form.controls.Password.invalid"
-          />
-          @if (form.controls.Password.touched && form.controls.Password.invalid) {
-            <p class="text-[11px] text-red-500 font-semibold flex items-center gap-1 mt-0.5">Required</p>
-          }
-        </div>
-
-        <!-- Active Status Toggle -->
-        <div class="sm:col-span-2 pt-2">
-          <label class="flex w-fit items-center gap-3 cursor-pointer select-none group">
-            <input
-              type="checkbox"
-              formControlName="IsActive"
-              class="h-4.5 w-4.5 rounded-md border-slate-300 text-brand-600 focus:ring-brand-600/20 focus:ring-offset-0 transition-colors cursor-pointer"
-            />
-            <span class="text-[13.5px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Account enabled and active</span>
-          </label>
-        </div>
-
-        <!-- Assigned Roles -->
-        <div class="sm:col-span-2 flex flex-col gap-2 border-t border-slate-100 pt-4 mt-2">
-          <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Assigned Roles</label>
-          @if (roleOptions().length) {
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 mt-1">
-              @for (role of roleOptions(); track role.roleId) {
-                <label class="flex items-center gap-3 cursor-pointer select-none group">
-                  <input
-                    type="checkbox"
-                    [checked]="isRoleSelected(role.roleId)"
-                    (change)="toggleRole(role.roleId, $any($event.target).checked)"
-                    class="h-4.5 w-4.5 rounded-md border-slate-300 text-brand-600 focus:ring-brand-600/20 focus:ring-offset-0 transition-colors"
-                  />
-                  <span class="text-[13px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">{{ role.roleName }}</span>
-                </label>
-              }
+        <!-- RIGHT PANEL: Input Fields (flex-1) -->
+        <div class="flex-1 flex flex-col gap-4">
+          <!-- Section: Personal Info -->
+          <div class="flex flex-col gap-3">
+            <div class="border-b border-slate-100 pb-1 shrink-0">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Personal & Contact Details</span>
             </div>
-          } @else {
-            <p class="text-[12px] text-slate-400 font-medium">No roles available. Create roles first.</p>
-          }
+
+            <!-- Row 1: Username & Email -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Username -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Username</label>
+                <input
+                  formControlName="UserName"
+                  placeholder="jdoe"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                  [class.!border-red-500]="form.controls.UserName.touched && form.controls.UserName.invalid"
+                />
+                @if (form.controls.UserName.touched && form.controls.UserName.invalid) {
+                  <p class="text-[10px] text-red-500 font-semibold mt-0.5">Required</p>
+                }
+              </div>
+
+              <!-- Email -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Email Address</label>
+                <input
+                  formControlName="Email"
+                  type="email"
+                  placeholder="john.doe@example.com"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                  [class.!border-red-500]="form.controls.Email.touched && form.controls.Email.invalid"
+                />
+                @if (form.controls.Email.touched && form.controls.Email.invalid) {
+                  <p class="text-[10px] text-red-500 font-semibold mt-0.5">Valid email address required</p>
+                }
+              </div>
+            </div>
+
+            <!-- Row 2: First Name, Middle Name, Last Name -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <!-- First Name -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">First Name</label>
+                <input
+                  formControlName="FirstName"
+                  placeholder="John"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                  [class.!border-red-500]="form.controls.FirstName.touched && form.controls.FirstName.invalid"
+                />
+                @if (form.controls.FirstName.touched && form.controls.FirstName.invalid) {
+                  <p class="text-[10px] text-red-500 font-semibold mt-0.5">Required</p>
+                }
+              </div>
+
+              <!-- Middle Name -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Middle Name</label>
+                <input
+                  formControlName="MiddleName"
+                  placeholder="(optional)"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+
+              <!-- Last Name -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Last Name</label>
+                <input
+                  formControlName="LastName"
+                  placeholder="Doe"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+            </div>
+
+            <!-- Row 3: Phone & Password -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Phone -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Phone</label>
+                <input
+                  formControlName="Phone"
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+
+              <!-- Password -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">
+                  Password @if (editingId()) { <span class="font-normal text-slate-400 normal-case italic">(optional)</span> }
+                </label>
+                <input
+                  type="password"
+                  formControlName="Password"
+                  placeholder="••••••••"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                  [class.!border-red-500]="form.controls.Password.touched && form.controls.Password.invalid"
+                />
+                @if (form.controls.Password.touched && form.controls.Password.invalid) {
+                  <p class="text-[10px] text-red-500 font-semibold mt-0.5">Required</p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Section: Address Info -->
+          <div class="flex flex-col gap-3 mt-1">
+            <div class="border-b border-slate-100 pb-1 shrink-0">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Address & Location Details</span>
+            </div>
+
+            <!-- Row 4: Address Line 1 & Address Line 2 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Address Line 1 -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Address Line 1</label>
+                <input
+                  formControlName="Address1"
+                  placeholder="Street address"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+
+              <!-- Address Line 2 -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Address Line 2</label>
+                <input
+                  formControlName="Address2"
+                  placeholder="Apartment, suite, etc. (optional)"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+            </div>
+
+            <!-- Row 5: City, State, Country, Zip -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <!-- City -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">City</label>
+                <input
+                  formControlName="City"
+                  placeholder="City"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+
+              <!-- State -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">State</label>
+                <input
+                  formControlName="State"
+                  placeholder="State"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+
+              <!-- Country -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Country</label>
+                <input
+                  formControlName="Country"
+                  placeholder="Country"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+
+              <!-- Zip -->
+              <div class="flex flex-col gap-1">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Zip Code</label>
+                <input
+                  formControlName="Zip"
+                  placeholder="ZIP"
+                  class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </form>
 

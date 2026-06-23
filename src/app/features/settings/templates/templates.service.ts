@@ -102,10 +102,13 @@ export class TemplatesService {
       PrimaryText: s.primaryText,
       SecondaryText: s.secondaryText,
       TertiaryText: s.tertiaryText,
-      SectionBackgroundColor: s.sectionBackgroundColor,
+      // NOTE: gateway property is misspelled "SectionBackgrounColor" (no 'd').
+      // Sending the correctly-spelled key silently drops the value.
+      SectionBackgrounColor: s.sectionBackgroundColor,
       IsActive: s.isActive,
       CompanyId: this.auth.companyId(),
       CreatedBy: this.auth.userId(),
+      UpdatedBy: this.auth.userId(),
     });
   }
 
