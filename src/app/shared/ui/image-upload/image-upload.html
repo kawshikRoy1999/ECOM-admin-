@@ -23,8 +23,10 @@
         </div>
       } @else if (value()) {
         <!-- Inner image container to enforce rounded corners without cropping the overflow remove button -->
-        <div class="h-full w-full rounded-xl overflow-hidden">
-          <img [src]="value()" alt="Preview" class="h-full w-full object-cover" />
+        <div class="h-full w-full rounded-xl overflow-hidden bg-slate-50/50 flex items-center justify-center">
+          <img [src]="previewUrl() || value()" alt="Preview" class="h-full w-full"
+            [class.object-cover]="fit() === 'cover'"
+            [class.object-contain]="fit() === 'contain'" />
         </div>
         
         <!-- Overflowing red remove badge -->

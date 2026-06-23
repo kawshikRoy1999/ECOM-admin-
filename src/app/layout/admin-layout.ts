@@ -78,6 +78,12 @@ export class AdminLayout {
       ],
     },
     {
+      group: 'Reports',
+      items: [
+        { label: 'Batch Report', path: '/reports/batch', icon: '', info: 'Item-wise stock and batch report with filters.' },
+      ],
+    },
+    {
       group: 'Store Setup',
       items: [
         { label: 'Locations', path: '/settings/locations', icon: '', info: 'Configure warehouses, coordinates, and storage bins.' },
@@ -96,6 +102,7 @@ export class AdminLayout {
     {
       group: 'System Settings',
       items: [
+        { label: 'Company', path: '/settings/company', icon: '', info: 'Edit company profile, contact, tax, and branding.' },
         { label: 'Notifications', path: '/settings/notifications', icon: '', info: 'Set up SMTP mail and SMS gateways.' },
         { label: 'Social Links', path: '/settings/social', icon: '', info: 'Set storefront social profiles and contact details.' },
         { label: 'Order Statuses', path: '/settings/statuses', icon: '', info: 'Customize order status labels and cancellation reasons.' },

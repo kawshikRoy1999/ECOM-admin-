@@ -1,0 +1,191 @@
+<div class="flex flex-col gap-4 w-full h-full lg:h-[calc(100vh-96px)] lg:overflow-hidden pb-4">
+  <!-- Header -->
+  <div class="flex flex-col gap-0.5 shrink-0">
+    <p class="page-subtitle uppercase tracking-wider text-[10px] font-bold text-slate-400">Reports</p>
+    <h1 class="page-title">Item-wise Batch Report</h1>
+  </div>
+
+  <!-- Filters -->
+  <div class="fluent-card p-4 relative z-20">
+    <!-- Sliding Progress Bar Loader -->
+    <div
+      class="absolute top-0 left-0 right-0 h-0.5 bg-brand-100 overflow-hidden z-30 transition-all duration-300 rounded-t-xl"
+      [class.opacity-100]="loading()"
+      [class.opacity-0]="!loading()"
+      [class.pointer-events-none]="!loading()"
+    >
+      <div class="h-full bg-brand-600 w-1/3 animate-progress-slide rounded-full"></div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Category</label>
+        <app-select
+          [options]="categories()"
+          labelKey="name"
+          valueKey="id"
+          [value]="selCategoryId()"
+          (valueChange)="onCategoryChange($event)"
+          defaultLabel="- Select Category -"
+          [defaultValue]="0"
+          [searchable]="true"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Item</label>
+        <app-select
+          [options]="items()"
+          labelKey="name"
+          valueKey="id"
+          [value]="selItemId()"
+          (valueChange)="onItemChange($event)"
+          defaultLabel="- Select Item -"
+          [defaultValue]="0"
+          [searchable]="true"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Variant</label>
+        <app-select
+          [options]="variants()"
+          labelKey="name"
+          valueKey="id"
+          [value]="selVariantId()"
+          (valueChange)="onVariantChange($event)"
+          defaultLabel="- Select Variant -"
+          [defaultValue]="0"
+          [searchable]="true"
+        />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Search Item</label>
+        <input
+          [ngModel]="search"
+          (ngModelChange)="onSearchInput($event)"
+          (keyup.enter)="searchReport()"
+          placeholder="Name / code / batch…"
+          class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+        />
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          (click)="clearFilters()"
+          class="btn-secondary h-8.5 px-3.5 text-[12px] font-semibold rounded-xl cursor-pointer transition-all flex-1"
+        >
+          Clear
+        </button>
+        <button
+          (click)="searchReport()"
+          class="btn-primary h-8.5 px-4 text-[12px] font-semibold rounded-xl gap-1.5 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all flex-1"
+        >
+          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          Search
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="fluent-card overflow-hidden relative flex-1 min-h-0 flex flex-col">
+    <div class="overflow-auto relative custom-scrollbar flex-1 min-h-0">
+      <table class="min-w-full divide-y divide-slate-100 text-[13px]">
+        <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs text-[10.5px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-100 shadow-xs">
+          <tr>
+            <th class="pl-5 pr-2 py-3.5 text-left w-16 min-w-[64px] bg-slate-50/95"></th>
+            <th class="px-5 py-3.5 text-left bg-slate-50/95">Item</th>
+            <th class="px-5 py-3.5 text-left bg-slate-50/95">Item Code</th>
+            <th class="px-5 py-3.5 text-left bg-slate-50/95">Batch Code</th>
+            <th class="px-5 py-3.5 text-right bg-slate-50/95">MRP</th>
+            <th class="px-5 py-3.5 text-right bg-slate-50/95">Price</th>
+            <th class="px-5 py-3.5 text-right bg-slate-50/95">Physical Qty</th>
+            <th class="px-5 py-3.5 text-right bg-slate-50/95">Reserved Qty</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 bg-white">
+          @if (loading()) {
+            <!-- Skeleton Loading State -->
+            @for (row of [1,2,3,4,5]; track $index) {
+              <tr class="border-b border-slate-50 last:border-none animate-pulse">
+                <td class="pl-5 pr-2 py-3"><div class="h-9 w-9 bg-slate-200/80 rounded-lg"></div></td>
+                <td class="px-5 py-3"><div class="h-3.5 bg-slate-200/80 rounded-md w-3/4"></div></td>
+                <td class="px-5 py-3"><div class="h-3 bg-slate-200/80 rounded-md w-1/2"></div></td>
+                <td class="px-5 py-3"><div class="h-3 bg-slate-200/80 rounded-md w-1/3"></div></td>
+                <td class="px-5 py-3"><div class="h-3 bg-slate-200/80 rounded-md w-12 ml-auto"></div></td>
+                <td class="px-5 py-3"><div class="h-3.5 bg-slate-200/80 rounded-md w-14 ml-auto"></div></td>
+                <td class="px-5 py-3"><div class="h-3.5 bg-slate-200/80 rounded-md w-8 ml-auto"></div></td>
+                <td class="px-5 py-3"><div class="h-3.5 bg-slate-200/80 rounded-md w-8 ml-auto"></div></td>
+              </tr>
+            }
+          } @else {
+            @for (r of rows(); track r.batchId) {
+              <tr class="transition-colors hover:bg-slate-50/50 group animate-fadeIn" [style.animation-delay]="$index * 30 + 'ms'">
+                <td class="pl-5 pr-2 py-2.5 w-16 min-w-[64px] shrink-0">
+                  @if (r.imageUrl) {
+                    <img [src]="r.imageUrl" alt="" class="h-9 w-9 rounded-lg object-cover border border-slate-200 bg-slate-50 transition-all hover:scale-105 shrink-0 block" onerror="this.style.display='none'" />
+                  } @else {
+                    <div class="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                      <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  }
+                </td>
+                <td class="px-5 py-2.5 font-semibold text-slate-800">{{ r.name }}</td>
+                <td class="px-5 py-2.5 text-slate-550 font-semibold font-mono text-[12px]">{{ r.itemCode }}</td>
+                <td class="px-5 py-2.5 text-slate-600 font-semibold font-mono text-[12px]">{{ r.batchCode }}</td>
+                <td class="px-5 py-2.5 text-right text-slate-500 font-medium font-mono text-[12.5px]">{{ r.mrp | number:'1.2-2' }}</td>
+                <td class="px-5 py-2.5 text-right font-bold text-slate-850 font-mono text-[13px]">{{ r.price | number:'1.2-2' }}</td>
+                <td [class.text-slate-455]="!(r.physicalQty)" [class.text-slate-800]="r.physicalQty" class="px-5 py-2.5 text-right font-semibold font-mono text-[12.5px]">{{ r.physicalQty ?? 0 }}</td>
+                <td [class.text-amber-600]="r.reservedQty" [class.text-slate-400]="!r.reservedQty" class="px-5 py-2.5 text-right font-bold font-mono text-[12.5px]">{{ r.reservedQty ?? 0 }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="8" class="px-5 py-14 text-center text-slate-400 font-medium text-[13px]">No data found. Adjust filters and search.</td></tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination footer -->
+    <div class="flex items-center justify-between flex-wrap gap-3 border-t border-slate-100 px-5 py-3 bg-slate-50/50 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rows per page</span>
+        <select
+          [ngModel]="pageSize()"
+          (ngModelChange)="changePageSize($event)"
+          class="h-8 rounded-xl border border-slate-200 px-2.5 text-[12.5px] font-semibold text-slate-600 bg-white hover:bg-slate-50 focus:border-brand-600 focus:outline-none transition-all cursor-pointer shadow-2xs"
+        >
+          @for (s of pageSizes; track s) {
+            <option [ngValue]="s">{{ s }}</option>
+          }
+        </select>
+      </div>
+      @if (result(); as res) {
+        <div class="flex items-center gap-4">
+          <span class="text-[11.5px] font-bold text-slate-550 bg-slate-100/70 border border-slate-200/40 rounded-lg px-2.5 py-1 shrink-0">
+            {{ res.recordFrom }}–{{ res.recordTo }} of {{ res.totalRecord }}
+          </span>
+          <div class="flex items-center gap-1.5">
+            <button
+              (click)="prevPage()"
+              [disabled]="pageNumber() <= 1"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs animate-fadeIn"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <span class="text-[12px] font-bold text-slate-600 px-1">{{ pageNumber() }} / {{ totalPages() || 1 }}</span>
+            <button
+              (click)="nextPage()"
+              [disabled]="pageNumber() >= totalPages()"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs animate-fadeIn"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+

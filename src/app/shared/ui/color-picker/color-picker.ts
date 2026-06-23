@@ -18,6 +18,8 @@ export class ColorPicker implements ControlValueAccessor {
 
   readonly label = input<string>('');
   readonly placeholder = input<string>('#000000');
+  readonly showInput = input<boolean>(true);
+  readonly align = input<'left' | 'right'>('left');
 
   readonly value = signal<string>('#000000');
   readonly isOpen = signal(false);
