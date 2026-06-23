@@ -201,6 +201,30 @@
         </div>
 
         <div class="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <!-- Sync to Store (materialize targeting rules into store items) -->
+          @if (selectedOfferId()! > 0) {
+            <button
+              (click)="syncToStore()"
+              [disabled]="syncing()"
+              (mouseenter)="tooltip.show($event, 'Sync to Store', { info: 'Synchronize targeting rules and discount campaigns directly to active inventory items in the store database.', placement: 'left' })"
+              (mouseleave)="tooltip.hide()"
+              class="btn-secondary h-9 rounded-xl px-4 text-[12.5px] font-semibold gap-1.5 cursor-pointer flex items-center justify-center border border-slate-200 text-slate-700 hover:bg-slate-50 bg-white transition-all shadow-xs disabled:opacity-60"
+            >
+              @if (syncing()) {
+                <svg class="h-4 w-4 animate-spin text-slate-500" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Syncing…
+              } @else {
+                <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Sync to Store
+              }
+            </button>
+          }
+
           <!-- Toggle Active/Inactive Button (Only for saved/non-expired offers) -->
           @if (selectedOfferId()! > 0 && !selectedOffer()?.isExpired) {
             <button

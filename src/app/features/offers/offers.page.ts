@@ -6,6 +6,7 @@ import { ImageUpload } from '../../shared/ui/image-upload/image-upload';
 import { DatePicker } from '../../shared/ui/date-picker/date-picker';
 import { Select } from '../../shared/ui/select/select';
 import { ToastService } from '../../shared/ui/toast/toast.service';
+import { TooltipService } from '../../shared/ui/tooltip.service';
 import { OffersService } from './offers.service';
 import {
   ActiveRule,
@@ -25,10 +26,12 @@ export class OffersPage {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(OffersService);
   private readonly toast = inject(ToastService);
+  public readonly tooltip = inject(TooltipService);
 
   readonly offers = signal<OfferListItem[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly syncing = signal(false);
   readonly loadingDetails = signal(false);
   readonly selectedOfferId = signal<number | null>(null);
 
@@ -374,6 +377,19 @@ export class OffersPage {
         },
         error: () => this.saving.set(false),
       });
+  }
+
+  syncToStore(): void {
+    const id = this.selectedOfferId();
+    if (!id) return;
+    this.syncing.set(true);
+    this.service.syncToStore(id).subscribe({
+      next: () => {
+        this.syncing.set(false);
+        this.toast.success('Offer synced to store.');
+      },
+      error: () => this.syncing.set(false),
+    });
   }
 
   toggleActive(): void {
