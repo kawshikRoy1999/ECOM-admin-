@@ -28,6 +28,7 @@
   --animate-float-delayed: float 6s ease-in-out infinite 3s;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-mesh-slow: mesh 20s ease infinite;
+  --animate-progress-slide: progress-slide 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 
   @keyframes float {
     0%, 100% {
@@ -44,6 +45,15 @@
     }
     50% {
       background-position: 100% 50%;
+    }
+  }
+
+  @keyframes progress-slide {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
     }
   }
 }
@@ -189,6 +199,20 @@
   .status-chip.neutral .dot {
     @apply bg-slate-400;
   }
+
+  /* Reusable Collapsible Drawer for smooth height transitions */
+  .collapsible-drawer {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out, visibility 0.3s;
+    opacity: 0;
+    visibility: hidden;
+  }
+  .collapsible-drawer.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 /* Custom Elegant Scrollbars (Sleek floating thumb - placed globally outside layers) */
@@ -270,7 +294,7 @@
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.15s ease-out forwards;
+  animation: fadeIn 0.15s ease-out both;
 }
 
 @keyframes scaleIn {

@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { debounceTime, skip } from 'rxjs/operators';
 
 import { Tabs, TabItem } from '../../shared/ui/tabs/tabs';
 import { DataTable, Column } from '../../shared/ui/data-table/data-table';
@@ -88,6 +90,21 @@ export class OrdersListPage {
 
   constructor() {
     this.load();
+
+    // Auto-apply filters when any search input changes (debounced by 400ms)
+    toObservable(computed(() => ({
+      cName: this.cName(),
+      orderno: this.orderno(),
+      custphone: this.custphone(),
+      pinCode: this.pinCode(),
+      fromDate: this.fromDate(),
+      toDate: this.toDate(),
+    }))).pipe(
+      skip(1), // Skip initial evaluation
+      debounceTime(400)
+    ).subscribe(() => {
+      this.applyFilters();
+    });
   }
 
   changeTab(id: string): void {
