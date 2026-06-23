@@ -81,8 +81,20 @@ export class OffersPage {
 
   constructor() {
     this.load();
-    this.service.categoryOptions().subscribe({ next: (o) => this.categoryOptions.set(o) });
-    this.service.brandOptions().subscribe({ next: (o) => this.brandOptions.set(o) });
+    // After the option caches arrive, re-resolve any rule names still missing
+    // (handles the race where an offer is selected before these finish loading).
+    this.service.categoryOptions().subscribe({
+      next: (o) => {
+        this.categoryOptions.set(o);
+        this.resolveRuleNames();
+      },
+    });
+    this.service.brandOptions().subscribe({
+      next: (o) => {
+        this.brandOptions.set(o);
+        this.resolveRuleNames();
+      },
+    });
 
     this.variantSearch$
       .pipe(
@@ -151,12 +163,16 @@ export class OffersPage {
         this.bannerUrl.set(o?.bannerImageUrl ?? '');
         this.isGroupOffer.set(o?.isGroupOffer ?? true);
         this.rules.set(
-          (d?.criteria ?? []).map((c) => ({
-            type: c.criteriaType as RuleType,
-            id: c.criteriaValueId,
-            name: c.criteriaValueName,
-          })),
+          (d?.criteria ?? []).map((c) => {
+            const type = this.normalizeRuleType(c.criteriaType);
+            const id = c.criteriaValueId;
+            // gateway often returns no name (or name === id) — resolve below
+            const raw = (c.criteriaValueName ?? '').toString().trim();
+            const name = !raw || raw === String(id) ? '' : raw;
+            return { type, id, name } as ActiveRule;
+          }),
         );
+        this.resolveRuleNames();
         this.form.reset({
           offerName: o?.offerName ?? '',
           discountPercentage: o?.discountPercentage ?? 0,
@@ -168,6 +184,75 @@ export class OffersPage {
       },
       error: () => this.loadingDetails.set(false),
     });
+  }
+
+  /** Normalize gateway criteria type strings to our RuleType union. */
+  private normalizeRuleType(type: string): RuleType {
+    const t = (type ?? '').toLowerCase();
+    if (t === 'categoryid' || t === 'category') return 'Category';
+    if (t === 'subcategoryid' || t === 'subcategory') return 'SubCategory';
+    if (t === 'brandid' || t === 'brand') return 'Brand';
+    return 'Variant';
+  }
+
+  /**
+   * Fill in display names for staged rules that came back without one.
+   * Category/Brand resolve from the cached option lists; Variants via the batch
+   * report; SubCategories by fetching each category's subcategory tree.
+   * Mirrors the .NET ResolveMissingNames().
+   */
+  private resolveRuleNames(): void {
+    const missing = (r: ActiveRule) => !r.name || r.name === String(r.id);
+    if (!this.rules().some(missing)) return;
+
+    // 1. Category / Brand — synchronous, from the loaded caches.
+    this.rules.update((list) =>
+      list.map((r) => {
+        if (!missing(r)) return r;
+        if (r.type === 'Category') {
+          const c = this.categoryOptions().find((o) => o.id === r.id);
+          if (c) return { ...r, name: c.name };
+        } else if (r.type === 'Brand') {
+          const b = this.brandOptions().find((o) => o.id === r.id);
+          if (b) return { ...r, name: b.name };
+        }
+        return r;
+      }),
+    );
+
+    // 2. Variants — one batch-report call, filter by id.
+    const variantIds = this.rules().filter((r) => r.type === 'Variant' && missing(r)).map((r) => r.id);
+    if (variantIds.length) {
+      this.service.resolveVariants(variantIds).subscribe({
+        next: (variants) => {
+          this.rules.update((list) =>
+            list.map((r) => {
+              if (r.type !== 'Variant' || !missing(r)) return r;
+              const v = variants.find((x) => x.id === r.id);
+              return v ? { ...r, name: v.text, imageUrl: v.imageUrl } : r;
+            }),
+          );
+        },
+      });
+    }
+
+    // 3. SubCategories — fetch each category's subcategory tree and match.
+    const scMissing = this.rules().some((r) => r.type === 'SubCategory' && missing(r));
+    if (scMissing) {
+      for (const cat of this.categoryOptions()) {
+        this.service.subcategories(cat.id).subscribe({
+          next: (nodes) => {
+            this.rules.update((list) =>
+              list.map((r) => {
+                if (r.type !== 'SubCategory' || !missing(r)) return r;
+                const n = nodes.find((x) => x.id === r.id);
+                return n ? { ...r, name: n.name } : r;
+              }),
+            );
+          },
+        });
+      }
+    }
   }
 
   openCreate(): void {

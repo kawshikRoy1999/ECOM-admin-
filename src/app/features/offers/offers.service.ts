@@ -138,6 +138,34 @@ export class OffersService {
       );
   }
 
+  /**
+   * Resolve display names/images for a set of variant ids (used when editing an
+   * offer — the gateway returns criteria without names). Mirrors the .NET
+   * GetVariantsByIds: pull a big batch-report page and filter by id locally.
+   */
+  resolveVariants(ids: number[]): Observable<VariantResult[]> {
+    if (!ids.length) return new Observable((s) => { s.next([]); s.complete(); });
+    return this.api
+      .post<{ batchReportList?: Record<string, unknown>[] }>('ProductManagement/GetBatchReport', {
+        CompanyId: this.auth.companyId(),
+        SearchCriteria: '',
+        Pagenumber: 1,
+        RecordPerPage: 1000,
+        categoryId: '0',
+      })
+      .pipe(
+        map((data) =>
+          (data?.batchReportList ?? [])
+            .filter((item) => ids.includes(Number(item['variantId'] ?? 0)))
+            .map((item) => ({
+              id: Number(item['variantId'] ?? 0),
+              text: `${item['name'] ?? ''} [${item['itemCode'] ?? ''}] ${item['batchCode'] ?? ''}`.trim(),
+              imageUrl: String(item['imageUrl'] ?? ''),
+            })),
+        ),
+      );
+  }
+
   /** Tolerant id/name extraction since these list shapes vary. */
   private toOptions(rows: unknown[], idKeys: string[], nameKeys: string[]): CriteriaOption[] {
     return (rows ?? []).map((r) => {
