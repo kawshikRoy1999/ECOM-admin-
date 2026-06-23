@@ -108,7 +108,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           setTimeout(() => this.buildCharts(), 50);
         },
         error: (err) => {
-          this.error.set(err?.message ?? 'Failed to load dashboard data.');
+          const msg = err?.error?.message || 'Unable to load dashboard data. Please check your connection and try again.';
+          this.error.set(msg);
           this.loading.set(false);
         },
       });
