@@ -58,6 +58,14 @@ export class OffersService {
     });
   }
 
+  /** Resolve & materialize the offer's targeting rules into store items. */
+  syncToStore(offerId: number): Observable<unknown> {
+    return this.api.post('ProductManagement/EnginePopulateResolvedItems', {
+      OfferId: offerId,
+      CompanyId: this.auth.companyId(),
+    });
+  }
+
   toggle(offerId: number, activate: boolean): Observable<unknown> {
     return this.api.post('ProductManagement/AdminToggleOfferStatus', {
       OfferId: offerId,
