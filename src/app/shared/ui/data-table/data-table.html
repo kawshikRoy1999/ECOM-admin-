@@ -79,7 +79,7 @@
           </tr>
         } @else {
           @for (row of filtered(); track $index) {
-            <tr class="transition-colors hover:bg-slate-50/50 group">
+            <tr class="transition-colors hover:bg-slate-50/50 group animate-fadeIn" [style.animation-delay]="$index * 30 + 'ms'">
               @for (col of columns(); track col.key) {
                 <td [class]="'px-5 py-3 text-slate-700 font-medium ' + alignClass(col)">
                   @if (isReturnImageList(col, row[col.key])) {
