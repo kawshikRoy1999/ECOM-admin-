@@ -207,11 +207,14 @@
     transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out, visibility 0.3s;
     opacity: 0;
     visibility: hidden;
+    overflow: hidden;
   }
   .collapsible-drawer.open {
     grid-template-rows: 1fr;
     opacity: 1;
     visibility: visible;
+    overflow: visible;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out, visibility 0.3s, overflow 0s 0.3s;
   }
 }
 
