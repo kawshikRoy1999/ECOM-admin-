@@ -1,0 +1,231 @@
+<div class="flex flex-col gap-4 w-full pb-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between shrink-0">
+    <div class="flex flex-col gap-0.5">
+      <p class="page-subtitle uppercase tracking-wider text-[10px] font-bold text-slate-400">Settings</p>
+      <h1 class="page-title">Company Information</h1>
+    </div>
+    @if (activeTab() === 'company') {
+      <button
+        (click)="save()"
+        [disabled]="saving() || loading()"
+        class="btn-primary h-8.5 px-4 text-[12px] font-semibold rounded-xl gap-1.5 shrink-0 disabled:opacity-60 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all"
+      >
+        {{ saving() ? 'Saving…' : 'Save Changes' }}
+      </button>
+    }
+  </div>
+
+  <!-- Tabs -->
+  <div class="shrink-0">
+    <app-tabs [tabs]="tabs" [(active)]="activeTab" />
+  </div>
+
+  @if (activeTab() === 'units') {
+    <app-business-units />
+  } @else if (loading()) {
+    <p class="py-16 text-center text-sm text-slate-400">Loading company details…</p>
+  } @else if (company(); as c) {
+    <form [formGroup]="form" (ngSubmit)="save()" class="flex flex-col gap-4">
+
+      <!-- Account Information -->
+      <div class="fluent-card p-4">
+        <p class="text-[10.5px] font-bold text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3.5 pl-0.5">Account Information</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Business Type</label>
+            <input [value]="c.businessType" disabled class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl bg-slate-100/60 text-slate-400 cursor-not-allowed select-none text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Name <span class="text-red-500">*</span></label>
+            <input formControlName="name" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+              [class.!border-red-500]="form.controls.name.touched && form.controls.name.invalid" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Short Name</label>
+            <input [value]="c.shortName" disabled class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl bg-slate-100/60 text-slate-400 cursor-not-allowed select-none text-[12.5px] h-8.5" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="fluent-card p-4">
+        <p class="text-[10.5px] font-bold text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3.5 pl-0.5">Location</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Address 1</label>
+            <input formControlName="address1" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Address 2</label>
+            <input formControlName="address2" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Pin / Zip</label>
+            <input formControlName="pin" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-1">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">District</label>
+            <input formControlName="districtCode" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">State</label>
+            <input formControlName="stateCode" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Country</label>
+            <input [value]="c.countryCode" disabled class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl bg-slate-100/60 text-slate-400 cursor-not-allowed select-none text-[12.5px] h-8.5" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="fluent-card p-4">
+        <p class="text-[10.5px] font-bold text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3.5 pl-0.5">Contact Details</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Admin Phone <span class="text-red-500">*</span></label>
+            <input formControlName="adminPhone" type="tel" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+              [class.!border-red-500]="form.controls.adminPhone.touched && form.controls.adminPhone.invalid" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Service Phone</label>
+            <input formControlName="servicePhone" type="tel" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Admin Email <span class="text-red-500">*</span></label>
+            <input formControlName="adminEmail" type="email" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5"
+              [class.!border-red-500]="form.controls.adminEmail.touched && form.controls.adminEmail.invalid" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Service Email</label>
+            <input formControlName="serviceEmail" type="email" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Secondary Email</label>
+            <input formControlName="secondaryEmail" type="email" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Tax + Currency -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Tax info -->
+        <div class="fluent-card p-4">
+          <p class="text-[10.5px] font-bold text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3.5 pl-0.5">Tax Information</p>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="flex flex-col gap-1 col-span-3 lg:col-span-3">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">GST Number</label>
+              <input formControlName="gstNumber" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+            </div>
+            <div class="flex flex-col gap-1 col-span-3 lg:col-span-3">
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">PAN Number</label>
+              <input formControlName="panNumber" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Currency -->
+        <div class="fluent-card p-4">
+          <p class="text-[10.5px] font-bold text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3.5 pl-0.5">Currency</p>
+          <div class="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+              <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Code</span>
+              <span class="text-[13.5px] font-bold text-slate-700 pl-0.5">{{ c.currencyCode || '—' }}</span>
+            </div>
+            <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+              <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Symbol</span>
+              <span class="text-[13.5px] font-bold text-slate-700 pl-0.5" [innerHTML]="c.currencySymbol || '—'"></span>
+            </div>
+            <div class="flex flex-col gap-1 col-span-2 lg:col-span-2">
+              <span class="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Country</span>
+              <span class="text-[13.5px] font-bold text-slate-700 pl-0.5">{{ c.countryCode || '—' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Setup / OTP -->
+      <div class="fluent-card p-4">
+        <p class="text-[10.5px] font-bold text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3.5 pl-0.5">Delivery Setup</p>
+        <div class="flex flex-col gap-3">
+          <label class="flex items-center gap-3 cursor-pointer select-none w-fit group">
+            <app-checkbox [checked]="form.controls.otpRequired.value" (checkedChange)="form.controls.otpRequired.setValue($event)" />
+            <span class="text-[13px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">OTP based authentication required</span>
+          </label>
+          @if (form.controls.otpRequired.value) {
+            <div class="flex flex-wrap gap-x-8 gap-y-2 pl-7.5 pt-0.5">
+              <label class="flex items-center gap-3 cursor-pointer select-none group">
+                <app-checkbox [checked]="form.controls.otpCOD.value" (checkedChange)="form.controls.otpCOD.setValue($event)" />
+                <span class="text-[12.5px] font-medium text-slate-650 group-hover:text-slate-850 transition-colors">COD</span>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer select-none group">
+                <app-checkbox [checked]="form.controls.otpOnlinePayment.value" (checkedChange)="form.controls.otpOnlinePayment.setValue($event)" />
+                <span class="text-[12.5px] font-medium text-slate-650 group-hover:text-slate-850 transition-colors">Online Payment</span>
+              </label>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Branding / Others -->
+      <div class="fluent-card p-4">
+        <p class="text-[10.5px] font-bold text-slate-450 uppercase tracking-wider border-b border-slate-100 pb-2 mb-3.5 pl-0.5">Branding & Others</p>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+          <div class="flex flex-col gap-1 col-span-3 lg:col-span-3">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Website</label>
+            <input formControlName="website" placeholder="https://…" class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px] h-8.5" />
+          </div>
+          <div class="flex flex-col gap-1 col-span-3 lg:col-span-3">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Image File Path</label>
+            <input [value]="c.imageFilePath" disabled class="w-full !px-3.5 !py-1 border border-slate-200 !rounded-xl bg-slate-100/60 text-slate-400 cursor-not-allowed select-none text-[12.5px] h-8.5" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
+          <!-- Logo -->
+          <div class="flex flex-col gap-2 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Logo</label>
+            <input [value]="logoFileName()" (input)="logoFileName.set($any($event.target).value)"
+              placeholder="logo.png" class="w-full !px-3 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12px] h-8.5" />
+            <app-image-upload [(value)]="logoFileName" [previewUrl]="previewUrl(logoFileName())" fit="contain" entityType="Company" entitySubType="Logo" label="" />
+          </div>
+          <!-- Favicon -->
+          <div class="flex flex-col gap-2 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Favicon</label>
+            <input [value]="favIconFileName()" (input)="favIconFileName.set($any($event.target).value)"
+              placeholder="favicon.png" class="w-full !px-3 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12px] h-8.5" />
+            <app-image-upload [(value)]="favIconFileName" [previewUrl]="previewUrl(favIconFileName())" fit="contain" entityType="Company" entitySubType="Favicon" label="" />
+          </div>
+          <!-- Footer -->
+          <div class="flex flex-col gap-2 col-span-2 lg:col-span-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Footer</label>
+            <input [value]="footerFileName()" (input)="footerFileName.set($any($event.target).value)"
+              placeholder="footer.png" class="w-full !px-3 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 placeholder:text-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12px] h-8.5" />
+            <app-image-upload [(value)]="footerFileName" [previewUrl]="previewUrl(footerFileName())" fit="contain" entityType="Company" entitySubType="Footer" label="" />
+          </div>
+        </div>
+
+        <div class="flex items-center gap-6 border-t border-slate-100 pt-4 mt-5">
+          <label class="flex items-center gap-3 cursor-pointer select-none group w-fit">
+            <app-checkbox [checked]="form.controls.pinRequired.value" (checkedChange)="form.controls.pinRequired.setValue($event)" />
+            <span class="text-[12.5px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">PIN Required</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer select-none group w-fit">
+            <app-checkbox [checked]="form.controls.isActive.value" (checkedChange)="form.controls.isActive.setValue($event)" />
+            <span class="text-[12.5px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Is Active</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button (click)="save()" type="button" [disabled]="saving()" class="btn-primary h-9 px-6 text-[13px] font-semibold rounded-xl disabled:opacity-60 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all">
+          {{ saving() ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <p class="py-16 text-center text-sm text-slate-400">Could not load company details.</p>
+  }
+</div>

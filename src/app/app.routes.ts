@@ -102,6 +102,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/statuses/statuses.page').then((m) => m.StatusesPage),
       },
+      {
+        path: 'settings/company',
+        loadComponent: () =>
+          import('./features/settings/company/company.page').then((m) => m.CompanyPage),
+      },
+      {
+        path: 'reports/batch',
+        loadComponent: () =>
+          import('./features/reports/batch-report/batch-report.page').then(
+            (m) => m.BatchReportPageComponent,
+          ),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

@@ -23,6 +23,8 @@ export class ImageUpload {
   readonly entitySubType = input<string>('');
   readonly label = input<string>('Image');
   readonly accept = input<string>('image/*');
+  readonly previewUrl = input<string>('');
+  readonly fit = input<'cover' | 'contain'>('cover');
 
   readonly uploading = signal(false);
   readonly progress = signal(0);
