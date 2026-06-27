@@ -1,0 +1,323 @@
+<div class="flex flex-col gap-4 w-full h-full lg:h-[calc(100vh-96px)] overflow-y-auto lg:overflow-hidden pb-4">
+  <!-- Header -->
+  <div class="flex flex-col gap-0.5 shrink-0">
+    <p class="page-subtitle uppercase tracking-wider text-[10px] font-bold text-slate-400">Catalog</p>
+    <div class="flex items-center gap-2.5">
+      <h1 class="page-title">Reviews moderation</h1>
+      @if (reviews().length > 0) {
+        <span class="text-[11px] font-bold text-slate-400 bg-slate-100 border border-slate-200/50 px-2.5 py-0.5 rounded-full mt-1.5 shrink-0 animate-fadeIn">
+          {{ reviews().length }} found
+        </span>
+      }
+    </div>
+  </div>
+
+  <!-- Workspace Grid (Two Columns) -->
+  <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 items-stretch">
+    
+    <!-- LEFT PANEL: Reviews Inbox Navigator -->
+    <div class="w-full lg:w-[380px] shrink-0 flex flex-col min-h-0 fluent-card p-4 bg-white relative z-20">
+      
+      <!-- Filters Header -->
+      <div class="flex flex-col gap-3 border-b border-slate-100 pb-3 mb-3 shrink-0">
+        
+        <!-- Category Filter Select -->
+        <div class="flex flex-col gap-1 w-full">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Category</label>
+          <app-select
+            [options]="categories()"
+            labelKey="name"
+            valueKey="id"
+            [value]="selCategoryId()"
+            (valueChange)="selCategoryId.set($event); load()"
+            defaultLabel="- All Categories -"
+            [defaultValue]="0"
+            [searchable]="true"
+          />
+        </div>
+
+        <!-- Status Filter Segment Switch -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Moderation Status</label>
+          <div class="flex rounded-xl bg-slate-100 p-1 select-none">
+            @for (s of statusOptions; track s.id) {
+              <button
+                (click)="setStatusFilter(s.id)"
+                class="flex-1 text-center py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer"
+                [class.bg-white]="statusFilter() === s.id"
+                [class.text-brand-700]="statusFilter() === s.id"
+                [class.shadow-2xs]="statusFilter() === s.id"
+                [class.text-slate-500]="statusFilter() !== s.id"
+                [class.hover:text-slate-800]="statusFilter() !== s.id"
+              >
+                {{ s.name }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Master Checkbox & Selection Stats -->
+        <div class="flex items-center justify-between px-1.5 pt-1">
+          <div class="flex items-center gap-2">
+            <label class="flex items-center gap-2 cursor-pointer select-none group">
+              <input
+                type="checkbox"
+                [checked]="allSelected()"
+                (change)="toggleSelectAll($any($event.target).checked)"
+                (mouseenter)="tooltip.show($event, 'Select All', { info: 'Select all currently visible reviews for bulk moderation.' })"
+                (mouseleave)="tooltip.hide()"
+                class="h-4 w-4 rounded border-slate-300 accent-brand-600 cursor-pointer"
+              />
+              <span class="text-[12px] font-semibold text-slate-600 group-hover:text-slate-800 transition-colors">Select Page</span>
+            </label>
+            <span class="text-[11px] text-slate-400">({{ reviews().length }} total)</span>
+          </div>
+          @if (selectedIds().size > 0) {
+            <span class="text-[10px] font-bold text-brand-700 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-md animate-fadeIn">
+              {{ selectedIds().size }} Selected
+            </span>
+          }
+        </div>
+      </div>
+
+      <!-- Scrollable Inbox List -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 py-1 flex flex-col gap-2 min-h-0">
+        @if (loading() && reviews().length === 0) {
+          @for (x of [1,2,3,4]; track $index) {
+            <div class="flex gap-3 px-3 py-3 border border-slate-100 rounded-xl animate-pulse">
+              <div class="h-4 w-4 bg-slate-200 rounded mt-0.5"></div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="h-3.5 bg-slate-200 rounded w-1/3"></div>
+                <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+                <div class="h-3 bg-slate-200 rounded w-5/6"></div>
+              </div>
+            </div>
+          }
+        } @else {
+          @for (r of reviews(); track r.ratingId) {
+            <div
+              (click)="selectReview(r)"
+              class="flex gap-3 px-3 py-3 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50/50 hover:border-slate-300 hover:shadow-xs transition-all cursor-pointer relative group"
+              [class.!border-brand-300]="selectedReview()?.ratingId === r.ratingId && selectedIds().size <= 1"
+              [class.!bg-brand-50/15]="selectedReview()?.ratingId === r.ratingId && selectedIds().size <= 1"
+              [class.bg-brand-50/5]="isSelected(r.ratingId)"
+              [class.border-brand-200]="isSelected(r.ratingId)"
+            >
+              <!-- Checkbox selection -->
+              <div class="shrink-0 pt-0.5" (click)="$event.stopPropagation()">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(r.ratingId)"
+                  (change)="toggleSelect(r.ratingId, $any($event.target).checked, $event)"
+                  class="h-4 w-4 rounded border-slate-300 accent-brand-600 cursor-pointer"
+                />
+              </div>
+
+              <!-- Content details -->
+              <div class="flex-1 min-w-0 flex flex-col gap-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[12.5px] font-bold text-slate-800 truncate">{{ r.customerName }}</span>
+                  <span class="text-[10px] text-slate-400 font-medium shrink-0">{{ r.createdDate | date:'yyyy-MM-dd' }}</span>
+                </div>
+
+                <!-- Star Rating -->
+                <div class="flex items-center gap-0.5">
+                  @for (on of stars(r.rating); track $index) {
+                    <svg class="h-3 w-3" [class]="on ? 'text-amber-400' : 'text-slate-200'" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  }
+                </div>
+
+                <!-- Reviewed Product -->
+                <span class="text-[11.5px] font-semibold text-slate-500 truncate mt-0.5">
+                  {{ r.name }}
+                </span>
+
+                <!-- Content snippet -->
+                <p class="text-[12px] text-slate-450 line-clamp-2 mt-0.5 leading-relaxed">
+                  {{ r.review }}
+                </p>
+              </div>
+
+              <!-- Status Dot indicator on top-right -->
+              <span
+                class="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full"
+                [class.bg-emerald-500]="r.reviewStatus === REVIEW_APPROVED"
+                [class.bg-red-500]="r.reviewStatus === REVIEW_REJECTED"
+                [class.bg-amber-400]="r.reviewStatus === REVIEW_PENDING"
+              ></span>
+            </div>
+          } @empty {
+            <div class="py-16 text-center text-slate-400 text-[12.5px] font-semibold">No reviews matching the filters.</div>
+          }
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Contextual Workspace Details -->
+    <div class="flex-1 flex flex-col min-h-0 fluent-card p-5 bg-white relative">
+      
+      <!-- BULK MODERATION STATE -->
+      @if (selectedIds().size > 1) {
+        <div class="flex-1 flex flex-col items-center justify-center text-center p-8 animate-fadeIn">
+          <div class="h-28 w-28 bg-brand-50 border border-brand-100 rounded-full flex items-center justify-center text-brand-600 shadow-2xs mb-4">
+            <svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          
+          <h3 class="text-[16px] font-bold text-slate-700">Bulk Review Moderation</h3>
+          <p class="text-[13px] text-slate-500 max-w-sm mt-1.5 leading-normal">
+            You have selected <span class="font-bold text-brand-700">{{ selectedIds().size }} reviews</span> for bulk moderation. Choose an action below to apply to all selected reviews.
+          </p>
+
+          <div class="flex items-center gap-3 mt-6">
+            <button
+              (click)="updateSelected(REVIEW_APPROVED)"
+              [disabled]="updating()"
+              class="btn-primary h-9 px-6 text-[12.5px] font-bold rounded-xl gap-2 shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/25 !bg-emerald-600 hover:!bg-emerald-700 cursor-pointer disabled:opacity-60 transition-all"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Approve All Selected
+            </button>
+            <button
+              (click)="updateSelected(REVIEW_REJECTED)"
+              [disabled]="updating()"
+              class="btn-secondary h-9 px-6 text-[12.5px] font-bold rounded-xl gap-2 border-red-200 hover:border-red-300 !text-red-650 hover:!bg-red-50/50 cursor-pointer disabled:opacity-60 transition-all"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Reject All Selected
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- SINGLE DETAIL REVIEW PREVIEW -->
+      @else if (selectedReview(); as r) {
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-6 min-h-0 animate-fadeIn">
+          
+          <!-- Header Product Details -->
+          <div class="flex items-start justify-between border-b border-slate-100 pb-4 flex-wrap gap-3">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reviewed Item</span>
+              <h2 class="text-[15px] font-bold text-slate-800 leading-snug">{{ r.name }}</h2>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[11px] font-mono text-slate-500 bg-slate-50 border border-slate-150/60 px-1.5 py-0.5 rounded-md">
+                  Code: {{ r.itemCode }}
+                </span>
+                <span class="text-[11px] text-slate-400">Submitted on {{ r.createdDate | date:'yyyy-MM-dd HH:mm' }}</span>
+              </div>
+            </div>
+
+            <!-- Status Badges -->
+            <div>
+              @switch (r.reviewStatus) {
+                @case (REVIEW_APPROVED) {
+                  <span class="inline-flex items-center px-3 py-1 rounded-xl text-[12px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-250 shrink-0">
+                    Approved
+                  </span>
+                }
+                @case (REVIEW_REJECTED) {
+                  <span class="inline-flex items-center px-3 py-1 rounded-xl text-[12px] font-bold bg-red-50 text-red-700 border border-red-250 shrink-0">
+                    Rejected
+                  </span>
+                }
+                @default {
+                  <span class="inline-flex items-center px-3 py-1 rounded-xl text-[12px] font-bold bg-amber-50 text-amber-700 border border-amber-250 shrink-0">
+                    Pending Moderation
+                  </span>
+                }
+              }
+            </div>
+          </div>
+
+          <!-- Reviewer Profile Card -->
+          <div class="flex items-center gap-3 bg-slate-50/40 rounded-2xl border border-slate-150/45 p-4 shrink-0">
+            <div class="h-10 w-10 bg-brand-50 border border-brand-100 rounded-full flex items-center justify-center text-brand-600 text-[14px] font-bold shrink-0">
+              {{ r.customerName[0] | uppercase }}
+            </div>
+            <div class="flex flex-col min-w-0">
+              <span class="text-[13px] font-bold text-slate-800 truncate">{{ r.customerName }}</span>
+              <span class="text-[11.5px] text-slate-450 mt-0.5">Verified Purchase Customer</span>
+            </div>
+          </div>
+
+          <!-- Star Score -->
+          <div class="flex flex-col gap-1.5 shrink-0 pl-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Customer Rating</span>
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1">
+                @for (on of stars(r.rating); track $index) {
+                  <svg class="h-5 w-5" [class]="on ? 'text-amber-400' : 'text-slate-200'" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                }
+              </div>
+              <span class="text-[14px] font-extrabold text-slate-800 mt-0.5">{{ r.rating | number:'1.1-1' }} / 5.0</span>
+            </div>
+          </div>
+
+          <!-- Review Text Quote Block -->
+          <div class="flex flex-col gap-1.5 pl-1 flex-1">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Review Comments</span>
+            <div class="bg-slate-50 border-l-4 border-brand-500 rounded-r-2xl p-4 text-[14px] text-slate-700 italic leading-relaxed whitespace-pre-line select-text">
+              "{{ r.review }}"
+            </div>
+          </div>
+
+          <!-- Moderation Actions -->
+          <div class="flex items-center gap-3 border-t border-slate-100 pt-4 shrink-0">
+            @if (r.reviewStatus !== REVIEW_APPROVED) {
+              <button
+                (click)="updateOne(r, REVIEW_APPROVED)"
+                [disabled]="updating()"
+                (mouseenter)="tooltip.show($event, 'Approve Review', { info: 'Approve this review. It will become visible on the product detail page.' })"
+                (mouseleave)="tooltip.hide()"
+                class="btn-primary h-9 px-6 text-[12.5px] font-bold rounded-xl gap-2 shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/25 !bg-emerald-600 hover:!bg-emerald-700 cursor-pointer disabled:opacity-60 transition-all flex items-center"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Approve Review
+              </button>
+            }
+            @if (r.reviewStatus !== REVIEW_REJECTED) {
+              <button
+                (click)="updateOne(r, REVIEW_REJECTED)"
+                [disabled]="updating()"
+                (mouseenter)="tooltip.show($event, 'Reject Review', { info: 'Reject this review. It will be hidden from the storefront website.' })"
+                (mouseleave)="tooltip.hide()"
+                class="btn-secondary h-9 px-5 text-[12.5px] font-semibold rounded-xl gap-2 border-red-200 hover:border-red-300 !text-red-650 hover:!bg-red-50/50 cursor-pointer disabled:opacity-60 transition-all flex items-center"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Reject Review
+              </button>
+            }
+          </div>
+
+        </div>
+      } @else {
+        <!-- Fallback Empty State -->
+        <div class="flex-1 flex flex-col items-center justify-center text-center p-8 animate-fadeIn">
+          <div class="h-28 w-28 bg-slate-50 border border-slate-150/40 rounded-full flex items-center justify-center text-slate-350 shadow-2xs mb-4">
+            <svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+            </svg>
+          </div>
+          <h3 class="text-[15px] font-bold text-slate-700">Inbox Empty</h3>
+          <p class="text-[12.5px] text-slate-450 max-w-xs mt-1.5 leading-normal">
+            No reviews match the selected filters. Change the category or moderation status.
+          </p>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>
