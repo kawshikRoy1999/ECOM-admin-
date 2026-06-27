@@ -124,6 +124,11 @@ export const routes: Routes = [
         redirectTo: 'catalog/categories',
         pathMatch: 'full',
       },
+      {
+        path: 'catalog/reviews',
+        loadComponent: () =>
+          import('./features/catalog/reviews/review.page').then((m) => m.ReviewPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
