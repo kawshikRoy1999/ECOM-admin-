@@ -160,7 +160,14 @@
                 @if (cat.expanded) {
                   <div class="pl-4 border-l border-slate-100 ml-5 flex flex-col gap-1 mt-1">
                     @if (cat.loading) {
-                      <div class="text-[11.5px] text-slate-400 py-1 pl-4">Loading subs...</div>
+                      <div class="flex flex-col gap-1 py-1 px-3.5 animate-pulse">
+                        @for (x of [1,2]; track $index) {
+                          <div class="flex items-center gap-2 py-0.5">
+                            <div class="h-3 w-3 bg-slate-200 rounded"></div>
+                            <div class="h-4 bg-slate-200 rounded w-1/3"></div>
+                          </div>
+                        }
+                      </div>
                     } @else {
                       @for (sub of cat.children; track sub.id) {
                         <div class="flex flex-col">
@@ -234,7 +241,12 @@
                           @if (sub.expanded) {
                             <div class="pl-4 border-l border-slate-100 ml-4.5 flex flex-col gap-1 mt-1">
                               @if (sub.loading) {
-                                <div class="text-[11px] text-slate-400 py-1 pl-4">Loading...</div>
+                                <div class="flex flex-col gap-1 py-1 px-3.5 animate-pulse">
+                                  <div class="flex items-center gap-2 py-0.5">
+                                    <div class="h-3 w-3 bg-slate-200 rounded"></div>
+                                    <div class="h-3.5 bg-slate-200 rounded w-1/4"></div>
+                                  </div>
+                                </div>
                               } @else {
                                 @for (subsub of sub.children; track subsub.id) {
                                   <!-- Leaf node -->

@@ -5,6 +5,7 @@ import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
 import { Modal } from '../../../shared/ui/modal/modal';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { TooltipService } from '../../../shared/ui/tooltip.service';
 import { RolesService } from './roles.service';
 import { EMPTY_GUID, Role } from './role.models';
 
@@ -18,6 +19,7 @@ export class RolesPage {
   private readonly service = inject(RolesService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  public readonly tooltip = inject(TooltipService);
 
   readonly rows = signal<Role[]>([]);
   readonly loading = signal(false);
