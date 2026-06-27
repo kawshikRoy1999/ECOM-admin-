@@ -45,3 +45,25 @@ export interface OptionValue {
   value: string;
   displayOrder: number;
 }
+
+/** A unified tree node structure for Category -> Sub-category -> Sub-sub-category tree. */
+export interface TreeNode {
+  id: string;
+  type: 'category' | 'subcategory' | 'subsubcategory';
+  name: string;
+  isActive: boolean;
+  returnWindowInDays: number;
+  nonReturnable: boolean;
+  businessUnitId?: number | null;
+  imageName?: string;
+  iconImage?: string;
+  sortOrder?: number;
+  categoryId: number;
+  subCategoryId?: number;
+  parentSubCategoryId?: number;
+  expanded: boolean;
+  loaded: boolean;
+  loading: boolean;
+  children: TreeNode[];
+}
+
