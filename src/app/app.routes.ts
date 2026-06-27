@@ -114,6 +114,11 @@ export const routes: Routes = [
             (m) => m.BatchReportPageComponent,
           ),
       },
+      {
+        path: 'catalog/categories',
+        loadComponent: () =>
+          import('./features/catalog/category/category.page').then((m) => m.CategoryPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
