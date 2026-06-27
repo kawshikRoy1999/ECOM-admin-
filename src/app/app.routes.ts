@@ -119,6 +119,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/catalog/category/category.page').then((m) => m.CategoryPage),
       },
+      {
+        path: 'catalog/brands',
+        redirectTo: 'catalog/categories',
+        pathMatch: 'full',
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

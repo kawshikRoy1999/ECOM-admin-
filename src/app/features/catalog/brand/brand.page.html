@@ -1,0 +1,101 @@
+<div class="flex flex-col gap-4 w-full pb-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between flex-wrap gap-3 shrink-0">
+    <div class="flex flex-col gap-0.5">
+      <p class="page-subtitle uppercase tracking-wider text-[10px] font-bold text-slate-400">Catalog</p>
+      <h1 class="page-title">Brands</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="relative">
+        <input [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Search brands…"
+          class="h-8.5 w-48 !pl-8.5 !pr-3.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[12.5px]" />
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+      </div>
+      <button (click)="openCreate()" class="btn-primary h-8.5 px-3.5 text-[12px] font-semibold rounded-xl gap-1.5 shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+        New Brand
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      @for (x of [1,2,3,4]; track $index) {
+        <div class="fluent-card p-4 animate-pulse flex flex-col gap-3">
+          <div class="h-24 bg-slate-200/70 rounded-xl"></div>
+          <div class="h-4 bg-slate-200/70 rounded w-2/3"></div>
+          <div class="h-3 bg-slate-100 rounded w-full"></div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      @for (b of filtered(); track b.brandId) {
+        <div class="fluent-card overflow-hidden flex flex-col hover:shadow-md transition-all">
+          <!-- Banner / logo preview -->
+          <div class="h-24 bg-slate-50 border-b border-slate-100 relative flex items-center justify-center">
+            @if (b.bannerFileName) {
+              <img [src]="b.bannerFileName" alt="" class="h-full w-full object-cover" onerror="this.style.display='none'" />
+            }
+            @if (b.logoFileName) {
+              <img [src]="b.logoFileName" alt="" class="absolute h-12 w-12 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-sm" onerror="this.style.display='none'" />
+            } @else if (!b.bannerFileName) {
+              <svg class="h-8 w-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5a2 2 0 011.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A2 2 0 014 8V3a2 2 0 012-2z" /></svg>
+            }
+          </div>
+          <div class="p-4 flex flex-col gap-2 flex-1">
+            <span class="font-bold text-[14px] text-slate-800 truncate">{{ b.name }}</span>
+            @if (b.notes) { <p class="text-[11.5px] text-slate-400 line-clamp-2">{{ b.notes }}</p> }
+            <div class="flex items-center justify-between border-t border-slate-100 pt-2.5 mt-auto">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <app-checkbox [checked]="b.isActive" (checkedChange)="toggle(b)" />
+                <span class="text-[11.5px] font-semibold" [class]="b.isActive ? 'text-emerald-600' : 'text-slate-400'">{{ b.isActive ? 'Visible' : 'Hidden' }}</span>
+              </label>
+              <button (click)="openEdit(b)" class="flex h-7.5 items-center gap-1 rounded-lg px-2.5 text-[11.5px] font-semibold text-brand-600 hover:bg-brand-50 transition-colors">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full py-16 text-center text-slate-400">No brands yet. Click "New Brand" to create one.</div>
+      }
+    </div>
+  }
+
+  <!-- Modal -->
+  @if (modalOpen()) {
+    <app-modal [title]="editingId() ? 'Edit Brand' : 'New Brand'" widthClass="max-w-lg" (close)="modalOpen.set(false)">
+      <form [formGroup]="form" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Name <span class="text-red-500">*</span></label>
+          <input formControlName="name" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50"
+            [class.!border-red-500]="form.controls.name.touched && form.controls.name.invalid" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Notes</label>
+          <textarea formControlName="notes" rows="2" class="rounded-xl border border-slate-200 px-3 py-2 text-[13px] bg-slate-50/50 resize-none"></textarea>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-slate-100 pt-4">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Logo</label>
+            <app-image-upload [(value)]="logo" entityType="Brands" entitySubType="Logo" label="" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Banner</label>
+            <app-image-upload [(value)]="banner" entityType="Brands" entitySubType="Banner" label="" />
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Promo</label>
+            <app-image-upload [(value)]="promo" entityType="Brands" entitySubType="Promo" label="" />
+          </div>
+        </div>
+      </form>
+      <div footer class="flex justify-end gap-2">
+        <button (click)="modalOpen.set(false)" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
+        <button (click)="save()" [disabled]="saving()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl min-w-[90px] disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save' }}</button>
+      </div>
+    </app-modal>
+  }
+</div>

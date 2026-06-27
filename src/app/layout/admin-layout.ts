@@ -67,7 +67,7 @@ export class AdminLayout {
     {
       group: 'Catalog',
       items: [
-        { label: 'Categories', path: '/catalog/categories', icon: '', info: 'Manage categories, sub-categories, and hierarchy.' },
+        { label: 'Categories & Brands', path: '/catalog/categories', icon: '', info: 'Manage categories hierarchy and product brands.' },
       ],
     },
     {
