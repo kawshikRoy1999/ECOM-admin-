@@ -9,8 +9,10 @@ import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { CategoryService } from './category.service';
+import { BrandService } from '../brand/brand.service';
 import { CategoryOptions } from './category-options';
 import { BusinessUnitOption, Category, SubCategory, TreeNode } from './category.models';
+import { Brand } from '../brand/brand.models';
 
 @Component({
   selector: 'app-category-page',
@@ -20,6 +22,7 @@ import { BusinessUnitOption, Category, SubCategory, TreeNode } from './category.
 export class CategoryPage {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(CategoryService);
+  private readonly brandService = inject(BrandService);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
   public readonly tooltip = inject(TooltipService);
@@ -27,16 +30,25 @@ export class CategoryPage {
   readonly loading = signal(false);
   readonly saving = signal(false);
 
+  // Tab State
+  readonly activeTab = signal<'categories' | 'brands'>('categories');
+
+  // Categories signals
   readonly treeNodes = signal<TreeNode[]>([]);
   readonly businessUnits = signal<BusinessUnitOption[]>([]);
-
   readonly selectedNode = signal<TreeNode | null>(null);
   readonly parentNode = signal<TreeNode | null>(null);
-  readonly createMode = signal<'root' | 'child' | null>(null);
-
   readonly search = signal('');
 
-  // Options modal (works at category / sub / sub-sub level)
+  // Brands signals
+  readonly brands = signal<Brand[]>([]);
+  readonly brandSearch = signal('');
+  readonly selectedBrand = signal<Brand | null>(null);
+
+  // createMode can be 'root' | 'child' | 'brand'
+  readonly createMode = signal<'root' | 'child' | 'brand' | null>(null);
+
+  // Options modal state
   readonly optionsOpen = signal(false);
   readonly optionsCategoryId = signal(0);
   readonly optionsSubCategoryId = signal(0);
@@ -45,6 +57,11 @@ export class CategoryPage {
   // Category image uploaders
   readonly catImage = signal(''); // banner
   readonly catIcon = signal(''); // icon/logo
+
+  // Brand image uploaders
+  readonly brandLogo = signal('');
+  readonly brandBanner = signal('');
+  readonly brandPromo = signal('');
 
   readonly catForm = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
@@ -61,6 +78,11 @@ export class CategoryPage {
     isActive: [true],
   });
 
+  readonly brandForm = this.fb.nonNullable.group({
+    name: ['', [Validators.required]],
+    notes: [''],
+  });
+
   readonly filteredTreeNodes = computed(() => {
     const q = this.search().toLowerCase().trim();
     const list = this.treeNodes();
@@ -68,12 +90,25 @@ export class CategoryPage {
     return list.filter((n) => n.name.toLowerCase().includes(q));
   });
 
+  readonly filteredBrands = computed(() => {
+    const q = this.brandSearch().toLowerCase().trim();
+    const list = this.brands();
+    if (!q) return list;
+    return list.filter((b) => b.name?.toLowerCase().includes(q));
+  });
+
   constructor() {
     this.loadCategories();
+    this.loadBrands();
     this.service.businessUnits().subscribe({ next: (b) => this.businessUnits.set(b) });
   }
 
-  // --- Tree Operations ---
+  switchTab(tab: 'categories' | 'brands'): void {
+    this.activeTab.set(tab);
+    this.cancelSelection();
+  }
+
+  // --- Category Tree Operations ---
   loadCategories(): void {
     this.loading.set(true);
     this.service.list().subscribe({
@@ -169,8 +204,7 @@ export class CategoryPage {
   }
 
   selectNode(node: TreeNode): void {
-    this.createMode.set(null);
-    this.parentNode.set(null);
+    this.cancelSelection();
     this.selectedNode.set(node);
 
     if (node.type === 'category') {
@@ -193,10 +227,87 @@ export class CategoryPage {
     }
   }
 
+  // --- Brand Operations ---
+  loadBrands(): void {
+    this.loading.set(true);
+    this.brandService.list().subscribe({
+      next: (rows) => {
+        this.brands.set(rows);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
+  }
+
+  selectBrand(b: Brand): void {
+    this.cancelSelection();
+    this.selectedBrand.set(b);
+    this.brandLogo.set(b.logoFileName || '');
+    this.brandBanner.set(b.bannerFileName || '');
+    this.brandPromo.set(b.promoFileName || '');
+    this.brandForm.reset({
+      name: b.name,
+      notes: b.notes ?? '',
+    });
+  }
+
+  openCreateBrand(): void {
+    this.cancelSelection();
+    this.createMode.set('brand');
+    this.brandLogo.set('');
+    this.brandBanner.set('');
+    this.brandPromo.set('');
+    this.brandForm.reset({ name: '', notes: '' });
+  }
+
+  saveBrand(): void {
+    if (this.brandForm.invalid) {
+      this.brandForm.markAllAsTouched();
+      return;
+    }
+    this.saving.set(true);
+    const v = this.brandForm.getRawValue();
+    const brandId = this.createMode() === 'brand' ? 0 : this.selectedBrand()!.brandId;
+    this.brandService
+      .save({
+        brandId,
+        name: v.name,
+        notes: v.notes,
+        logoFileName: this.brandLogo(),
+        bannerFileName: this.brandBanner(),
+        promoFileName: this.brandPromo(),
+        isActive: true,
+      })
+      .subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.toast.success(brandId ? 'Brand updated.' : 'Brand created.');
+          this.cancelSelection();
+          this.loadBrands();
+        },
+        error: () => this.saving.set(false),
+      });
+  }
+
+  toggleBrandNode(b: Brand, event?: Event): void {
+    event?.stopPropagation();
+    this.brandService.toggle(b.brandId, !b.isActive).subscribe({
+      next: () => {
+        this.brands.update((list) =>
+          list.map((x) => (x.brandId === b.brandId ? { ...x, isActive: !x.isActive } : x)),
+        );
+        this.toast.success(b.isActive ? 'Brand hidden.' : 'Brand visible.');
+        const selected = this.selectedBrand();
+        if (selected && selected.brandId === b.brandId) {
+          this.selectedBrand.set({ ...selected, isActive: !b.isActive });
+        }
+      },
+    });
+  }
+
   // --- CRUD Initiators ---
   openCreateCategory(): void {
-    this.selectedNode.set(null);
-    this.parentNode.set(null);
+    this.cancelSelection();
     this.createMode.set('root');
     this.catImage.set('');
     this.catIcon.set('');
@@ -205,7 +316,7 @@ export class CategoryPage {
 
   addChildNode(parent: TreeNode, event?: Event): void {
     event?.stopPropagation();
-    this.selectedNode.set(null);
+    this.cancelSelection();
     this.parentNode.set(parent);
     this.createMode.set('child');
     this.subForm.reset({
@@ -224,6 +335,7 @@ export class CategoryPage {
   cancelSelection(): void {
     this.selectedNode.set(null);
     this.parentNode.set(null);
+    this.selectedBrand.set(null);
     this.createMode.set(null);
   }
 
@@ -333,7 +445,7 @@ export class CategoryPage {
     if (!ok) return;
 
     if (node.type === 'category') {
-      return; // Root categories can only be hidden in this system
+      return;
     }
 
     this.service.deleteSubCategory(node.subCategoryId!).subscribe({
@@ -348,22 +460,6 @@ export class CategoryPage {
   // --- Helper Methods ---
   buName(id: number | null): string {
     return this.businessUnits().find((b) => b.businessUnitId === id)?.unitName ?? '';
-  }
-
-  // --- Options (category / sub / sub-sub level) ---
-  openCategoryOptions(node: TreeNode, event?: Event): void {
-    event?.stopPropagation();
-    this.optionsCategoryId.set(node.categoryId);
-    this.optionsSubCategoryId.set(0);
-    this.optionsContext.set(node.name);
-    this.optionsOpen.set(true);
-  }
-
-  openSubOptions(node: TreeNode): void {
-    this.optionsCategoryId.set(node.categoryId);
-    this.optionsSubCategoryId.set(node.subCategoryId!);
-    this.optionsContext.set(node.name);
-    this.optionsOpen.set(true);
   }
 
   private refreshNodeChildren(node: TreeNode): void {
@@ -412,5 +508,21 @@ export class CategoryPage {
       if (found) return found;
     }
     return null;
+  }
+
+  // --- Options (category / sub / sub-sub level) ---
+  openCategoryOptions(node: TreeNode, event?: Event): void {
+    event?.stopPropagation();
+    this.optionsCategoryId.set(node.categoryId);
+    this.optionsSubCategoryId.set(0);
+    this.optionsContext.set(node.name);
+    this.optionsOpen.set(true);
+  }
+
+  openSubOptions(node: TreeNode): void {
+    this.optionsCategoryId.set(node.categoryId);
+    this.optionsSubCategoryId.set(node.subCategoryId!);
+    this.optionsContext.set(node.name);
+    this.optionsOpen.set(true);
   }
 }

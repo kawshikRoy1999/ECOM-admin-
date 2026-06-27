@@ -1,125 +1,369 @@
-<div class="flex flex-col gap-4 w-full pb-6">
+<div class="flex flex-col gap-4 w-full h-full lg:h-[calc(100vh-96px)] overflow-y-auto lg:overflow-hidden pb-4">
   <!-- Header -->
   <div class="flex flex-col gap-0.5 shrink-0">
     <p class="page-subtitle uppercase tracking-wider text-[10px] font-bold text-slate-400">Catalog</p>
-    <h1 class="page-title">Categories Configuration</h1>
+    <h1 class="page-title">Categories & Brands</h1>
   </div>
 
   <!-- Studio Workspace (Two Columns) -->
   <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-4 items-stretch">
     
-    <!-- LEFT PANEL: Tree Navigator -->
-    <div class="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col fluent-card p-4 bg-white lg:sticky lg:top-4 lg:h-[calc(100vh-140px)] z-20">
-      <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-3 shrink-0">
-        <div class="relative flex-1">
-          <input
-            [ngModel]="search()"
-            (ngModelChange)="search.set($event)"
-            (mouseenter)="tooltip.show($event, 'Search Categories', { info: 'Type to dynamically filter root categories in the tree sidebar below.' })"
-            (mouseleave)="tooltip.hide()"
-            placeholder="Search categories…"
-            class="h-8.5 w-full !pl-8.5 !pr-3.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px]"
-          />
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
+    <!-- LEFT PANEL: Navigator -->
+    <div class="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col min-h-0 fluent-card p-4 bg-white relative z-20">
+      
+      <!-- Tab Switcher Segment -->
+      <div class="flex rounded-xl bg-slate-100 p-1 mb-3 shrink-0 select-none">
         <button
-          (click)="openCreateCategory()"
-          (mouseenter)="tooltip.show($event, 'New Category', { info: 'Create a new top-level category at the root of the catalog hierarchy.' })"
-          (mouseleave)="tooltip.hide()"
-          class="btn-primary h-8.5 !px-3 text-[12px] font-semibold !rounded-xl gap-1.5 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all shrink-0"
-          title="Create Root Category"
+          (click)="switchTab('categories')"
+          class="flex-1 text-center py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer"
+          [class.bg-white]="activeTab() === 'categories'"
+          [class.text-brand-700]="activeTab() === 'categories'"
+          [class.shadow-2xs]="activeTab() === 'categories'"
+          [class.text-slate-550]="activeTab() !== 'categories'"
+          [class.hover:text-slate-800]="activeTab() !== 'categories'"
         >
-          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-          Category
+          Categories
+        </button>
+        <button
+          (click)="switchTab('brands')"
+          class="flex-1 text-center py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer"
+          [class.bg-white]="activeTab() === 'brands'"
+          [class.text-brand-700]="activeTab() === 'brands'"
+          [class.shadow-2xs]="activeTab() === 'brands'"
+          [class.text-slate-550]="activeTab() !== 'brands'"
+          [class.hover:text-slate-800]="activeTab() !== 'brands'"
+        >
+          Brands
         </button>
       </div>
 
-      <!-- Tree Nodes List -->
-      <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 py-1 flex flex-col gap-1.5 min-h-0">
-        @if (loading() && treeNodes().length === 0) {
-          <!-- Skeleton list loading -->
-          @for (x of [1,2,3,4,5]; track $index) {
-            <div class="flex items-center gap-2 px-3 py-2 animate-pulse">
-              <div class="h-4 w-4 bg-slate-200 rounded"></div>
-              <div class="h-6 w-6 bg-slate-200 rounded-lg"></div>
-              <div class="h-3.5 bg-slate-200 rounded w-1/2"></div>
-            </div>
-          }
-        } @else {
-          @for (cat of filteredTreeNodes(); track cat.id) {
-            <div class="flex flex-col">
-              <!-- Category Node Row -->
-              <div
-                (click)="selectNode(cat)"
-                class="flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer group text-[13px] font-semibold border border-transparent"
-                [class.bg-brand-50]="selectedNode()?.id === cat.id"
-                [class.text-brand-700]="selectedNode()?.id === cat.id"
-                [class.border-brand-100]="selectedNode()?.id === cat.id"
-                [class.hover:bg-slate-50]="selectedNode()?.id !== cat.id"
-                [class.text-slate-650]="selectedNode()?.id !== cat.id"
-              >
-                <div class="flex items-center gap-2 min-w-0 flex-1">
-                  <!-- Chevron Expand/Collapse -->
-                  <button
-                    (click)="toggleExpand(cat, $event)"
-                    class="h-5 w-5 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 rounded transition-colors shrink-0"
-                  >
-                    @if (cat.loading) {
-                      <svg class="animate-spin h-3.5 w-3.5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+      <!-- CATEGORIES TAB SIDEBAR NAVIGATOR -->
+      @if (activeTab() === 'categories') {
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-3 shrink-0 animate-fadeIn">
+          <div class="relative flex-1">
+            <input
+              [ngModel]="search()"
+              (ngModelChange)="search.set($event)"
+              (mouseenter)="tooltip.show($event, 'Search Categories', { info: 'Type to dynamically filter root categories in the tree sidebar below.' })"
+              (mouseleave)="tooltip.hide()"
+              placeholder="Search categories…"
+              class="h-8.5 w-full !pl-8.5 !pr-3.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px]"
+            />
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <button
+            (click)="openCreateCategory()"
+            (mouseenter)="tooltip.show($event, 'New Category', { info: 'Create a new top-level category at the root of the catalog hierarchy.' })"
+            (mouseleave)="tooltip.hide()"
+            class="btn-primary h-8.5 !px-3 text-[12px] font-semibold !rounded-xl gap-1.5 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all shrink-0"
+            title="Create Root Category"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Category
+          </button>
+        </div>
+
+        <!-- Tree Nodes List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 py-1 flex flex-col gap-1.5 min-h-0 animate-fadeIn">
+          @if (loading() && treeNodes().length === 0) {
+            @for (x of [1,2,3,4,5]; track $index) {
+              <div class="flex items-center gap-2 px-3 py-2 animate-pulse">
+                <div class="h-4 w-4 bg-slate-200 rounded"></div>
+                <div class="h-6 w-6 bg-slate-200 rounded-lg"></div>
+                <div class="h-3.5 bg-slate-200 rounded w-1/2"></div>
+              </div>
+            }
+          } @else {
+            @for (cat of filteredTreeNodes(); track cat.id) {
+              <div class="flex flex-col">
+                <!-- Category Node Row -->
+                <div
+                  (click)="selectNode(cat)"
+                  class="flex items-center justify-between px-3 py-2 rounded-xl transition-all cursor-pointer group text-[13px] font-semibold border border-transparent"
+                  [class.bg-brand-50]="selectedNode()?.id === cat.id"
+                  [class.text-brand-700]="selectedNode()?.id === cat.id"
+                  [class.border-brand-100]="selectedNode()?.id === cat.id"
+                  [class.hover:bg-slate-50]="selectedNode()?.id !== cat.id"
+                  [class.text-slate-650]="selectedNode()?.id !== cat.id"
+                >
+                  <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <!-- Chevron Expand/Collapse -->
+                    <button
+                      (click)="toggleExpand(cat, $event)"
+                      class="h-5 w-5 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 rounded transition-colors shrink-0"
+                    >
+                      @if (cat.loading) {
+                        <svg class="animate-spin h-3.5 w-3.5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      } @else {
+                        <svg
+                          class="h-3.5 w-3.5 transform transition-transform duration-150"
+                          [class.rotate-90]="cat.expanded"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          stroke-width="2.5"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      }
+                    </button>
+
+                    <!-- Icon (Banner thumbnail / default folder) -->
+                    @if (cat.imageName) {
+                      <img [src]="cat.imageName" alt="" class="h-6 w-6 rounded-lg object-cover border border-slate-200 bg-slate-50 shrink-0" />
                     } @else {
-                      <svg
-                        class="h-3.5 w-3.5 transform transition-transform duration-150"
-                        [class.rotate-90]="cat.expanded"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        stroke-width="2.5"
-                      >
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                      <svg class="h-5 w-5 text-brand-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
                     }
-                  </button>
 
-                  <!-- Icon (Banner thumbnail / default folder) -->
-                  @if (cat.imageName) {
-                    <img [src]="cat.imageName" alt="" class="h-6 w-6 rounded-lg object-cover border border-slate-200 bg-slate-50 shrink-0" />
-                  } @else {
-                    <svg class="h-5 w-5 text-brand-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                    </svg>
-                  }
+                    <span class="truncate flex-1" [class.opacity-60]="!cat.isActive">{{ cat.name }}</span>
+                  </div>
 
-                  <span class="truncate flex-1" [class.opacity-60]="!cat.isActive">{{ cat.name }}</span>
+                  <!-- Hover/Active Inline Actions -->
+                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+                    <button
+                      (click)="addChildNode(cat, $event)"
+                      (mouseenter)="tooltip.show($event, 'Add Subcategory', { info: 'Create a nested sub-category directly under this category.' })"
+                      (mouseleave)="tooltip.hide()"
+                      class="h-6.5 w-6.5 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 transition-colors"
+                      title="Add Subcategory"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                    </button>
+                    <button
+                      (click)="toggleCategoryNode(cat, $event)"
+                      (mouseenter)="tooltip.show($event, 'Toggle Visibility', { info: 'Show or hide this category and all its children on the storefront.' })"
+                      (mouseleave)="tooltip.hide()"
+                      class="h-6.5 w-6.5 flex items-center justify-center rounded-lg transition-colors"
+                      [class.text-emerald-600]="cat.isActive"
+                      [class.hover:bg-emerald-50]="cat.isActive"
+                      [class.text-slate-400]="!cat.isActive"
+                      [class.hover:bg-slate-200/60]="!cat.isActive"
+                      title="Toggle Visibility"
+                    >
+                      @if (cat.isActive) {
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      } @else {
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                      }
+                    </button>
+                  </div>
                 </div>
 
-                <!-- Hover/Active Inline Actions -->
+                <!-- Sub-categories Children -->
+                @if (cat.expanded) {
+                  <div class="pl-4 border-l border-slate-100 ml-5 flex flex-col gap-1 mt-1">
+                    @if (cat.loading) {
+                      <div class="text-[11.5px] text-slate-400 py-1 pl-4">Loading subs...</div>
+                    } @else {
+                      @for (sub of cat.children; track sub.id) {
+                        <div class="flex flex-col">
+                          <!-- Subcategory Node Row -->
+                          <div
+                            (click)="selectNode(sub)"
+                            class="flex items-center justify-between px-3 py-1.5 rounded-lg transition-all cursor-pointer group text-[12.5px] font-semibold border border-transparent"
+                            [class.bg-brand-50]="selectedNode()?.id === sub.id"
+                            [class.text-brand-700]="selectedNode()?.id === sub.id"
+                            [class.border-brand-100]="selectedNode()?.id === sub.id"
+                            [class.hover:bg-slate-50]="selectedNode()?.id !== sub.id"
+                            [class.text-slate-600]="selectedNode()?.id !== sub.id"
+                          >
+                            <div class="flex items-center gap-2 min-w-0 flex-1">
+                              <!-- Chevron Expand/Collapse -->
+                              <button
+                                (click)="toggleExpand(sub, $event)"
+                                class="h-4.5 w-4.5 flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-100 rounded transition-colors shrink-0"
+                              >
+                                @if (sub.loading) {
+                                  <svg class="animate-spin h-3 w-3 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                } @else {
+                                  <svg
+                                    class="h-3 w-3 transform transition-transform duration-150"
+                                    [class.rotate-90]="sub.expanded"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2.5"
+                                  >
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                  </svg>
+                                }
+                              </button>
+
+                              <!-- Sub folder Icon -->
+                              <svg class="h-4.5 w-4.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                              </svg>
+
+                              <span class="truncate flex-1" [class.opacity-60]="!sub.isActive">{{ sub.name }}</span>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+                              <button
+                                (click)="addChildNode(sub, $event)"
+                                (mouseenter)="tooltip.show($event, 'Add Sub-subcategory', { info: 'Create a leaf sub-sub-category nested under this sub-category.' })"
+                                (mouseleave)="tooltip.hide()"
+                                class="h-6 w-6 flex items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 transition-colors"
+                                title="Add Sub-subcategory"
+                              >
+                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                              </button>
+                              <button
+                                (click)="deleteNode(sub, $event)"
+                                (mouseenter)="tooltip.show($event, 'Delete Subcategory', { info: 'Permanently remove this sub-category and its contents from the catalog.' })"
+                                (mouseleave)="tooltip.hide()"
+                                class="h-6 w-6 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 transition-colors"
+                                title="Delete Subcategory"
+                              >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- Sub-sub-categories Children -->
+                          @if (sub.expanded) {
+                            <div class="pl-4 border-l border-slate-100 ml-4.5 flex flex-col gap-1 mt-1">
+                              @if (sub.loading) {
+                                <div class="text-[11px] text-slate-400 py-1 pl-4">Loading...</div>
+                              } @else {
+                                @for (subsub of sub.children; track subsub.id) {
+                                  <!-- Leaf node -->
+                                  <div
+                                    (click)="selectNode(subsub)"
+                                    class="flex items-center justify-between px-3 py-1 rounded-md transition-all cursor-pointer group text-[12px] font-medium border border-transparent"
+                                    [class.bg-brand-50]="selectedNode()?.id === subsub.id"
+                                    [class.text-brand-700]="selectedNode()?.id === subsub.id"
+                                    [class.border-brand-100]="selectedNode()?.id === subsub.id"
+                                    [class.hover:bg-slate-50]="selectedNode()?.id !== subsub.id"
+                                    [class.text-slate-500]="selectedNode()?.id !== subsub.id"
+                                  >
+                                    <div class="flex items-center gap-2 min-w-0 flex-1 pl-4.5">
+                                      <!-- Leaf Icon (Bullet tag) -->
+                                      <svg class="h-3.5 w-3.5 text-slate-350 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.5 1.5 0 002.122 0l4.318-4.318a1.5 1.5 0 000-2.122L11.16 3.659A2.25 2.25 0 009.568 3z" />
+                                      </svg>
+                                      <span class="truncate flex-1" [class.opacity-60]="!subsub.isActive">{{ subsub.name }}</span>
+                                    </div>
+
+                                    <!-- Delete leaf button -->
+                                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+                                      <button
+                                        (click)="deleteNode(subsub, $event)"
+                                        (mouseenter)="tooltip.show($event, 'Delete Sub-subcategory', { info: 'Permanently remove this leaf sub-sub-category from the catalog.' })"
+                                        (mouseleave)="tooltip.hide()"
+                                        class="h-5.5 w-5.5 flex items-center justify-center rounded text-red-500 hover:bg-red-50 transition-colors"
+                                        title="Delete Sub-subcategory"
+                                      >
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                } @empty {
+                                  <div class="text-[11px] text-slate-400 py-1 pl-4">No sub-sub categories yet.</div>
+                                }
+                              }
+                            </div>
+                          }
+                        </div>
+                      } @empty {
+                        <div class="text-[11px] text-slate-400 py-1 pl-4">No sub-categories yet.</div>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            } @empty {
+              <div class="py-16 text-center text-slate-400 text-[12.5px] font-semibold">No categories found.</div>
+            }
+          }
+        </div>
+      }
+
+      <!-- BRANDS TAB SIDEBAR NAVIGATOR -->
+      @else {
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-3 shrink-0 animate-fadeIn">
+          <div class="relative flex-1">
+            <input
+              [ngModel]="brandSearch()"
+              (ngModelChange)="brandSearch.set($event)"
+              (mouseenter)="tooltip.show($event, 'Search Brands', { info: 'Type to dynamically filter catalog brands.' })"
+              (mouseleave)="tooltip.hide()"
+              placeholder="Search brands…"
+              class="h-8.5 w-full !pl-8.5 !pr-3.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 hover:bg-slate-50 transition-all text-[12.5px]"
+            />
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <button
+            (click)="openCreateBrand()"
+            (mouseenter)="tooltip.show($event, 'New Brand', { info: 'Create a new catalog brand record.' })"
+            (mouseleave)="tooltip.hide()"
+            class="btn-primary h-8.5 !px-3 text-[12px] font-semibold !rounded-xl gap-1.5 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all shrink-0"
+            title="Create Brand"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Brand
+          </button>
+        </div>
+
+        <!-- Brands List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 py-1 flex flex-col gap-1.5 min-h-0 animate-fadeIn">
+          @if (loading() && brands().length === 0) {
+            @for (x of [1,2,3,4,5]; track $index) {
+              <div class="flex items-center gap-2.5 px-3 py-2.5 animate-pulse">
+                <div class="h-6 w-6 bg-slate-200 rounded-lg"></div>
+                <div class="h-3.5 bg-slate-200 rounded w-2/3"></div>
+              </div>
+            }
+          } @else {
+            @for (b of filteredBrands(); track b.brandId) {
+              <div
+                (click)="selectBrand(b)"
+                class="flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer group text-[13px] font-semibold border border-transparent"
+                [class.bg-brand-50]="selectedBrand()?.brandId === b.brandId"
+                [class.text-brand-700]="selectedBrand()?.brandId === b.brandId"
+                [class.border-brand-100]="selectedBrand()?.brandId === b.brandId"
+                [class.hover:bg-slate-50]="selectedBrand()?.brandId !== b.brandId"
+                [class.text-slate-655]="selectedBrand()?.brandId !== b.brandId"
+              >
+                <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                  @if (b.logoFileName) {
+                    <img [src]="b.logoFileName" alt="" class="h-6 w-6 rounded-lg object-cover border border-slate-200 bg-slate-50 shrink-0" onerror="this.style.display='none'" />
+                  } @else {
+                    <div class="h-6 w-6 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 text-slate-400">
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.5 1.5 0 002.122 0l4.318-4.318a1.5 1.5 0 000-2.122L11.16 3.659A2.25 2.25 0 009.568 3z" />
+                      </svg>
+                    </div>
+                  }
+                  <span class="truncate flex-1" [class.opacity-60]="!b.isActive">{{ b.name }}</span>
+                </div>
+
+                <!-- Hover actions (toggle visibility) -->
                 <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                   <button
-                    (click)="addChildNode(cat, $event)"
-                    (mouseenter)="tooltip.show($event, 'Add Subcategory', { info: 'Create a nested sub-category directly under this category.' })"
-                    (mouseleave)="tooltip.hide()"
-                    class="h-6.5 w-6.5 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 transition-colors"
-                    title="Add Subcategory"
-                  >
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                  </button>
-                  <button
-                    (click)="toggleCategoryNode(cat, $event)"
-                    (mouseenter)="tooltip.show($event, 'Toggle Visibility', { info: 'Show or hide this category and all its children on the storefront.' })"
+                    (click)="toggleBrandNode(b, $event)"
+                    (mouseenter)="tooltip.show($event, 'Toggle Visibility', { info: 'Show or hide this brand on the storefront.' })"
                     (mouseleave)="tooltip.hide()"
                     class="h-6.5 w-6.5 flex items-center justify-center rounded-lg transition-colors"
-                    [class.text-emerald-600]="cat.isActive"
-                    [class.hover:bg-emerald-50]="cat.isActive"
-                    [class.text-slate-400]="!cat.isActive"
-                    [class.hover:bg-slate-200/60]="!cat.isActive"
+                    [class.text-emerald-600]="b.isActive"
+                    [class.hover:bg-emerald-50]="b.isActive"
+                    [class.text-slate-400]="!b.isActive"
+                    [class.hover:bg-slate-200/60]="!b.isActive"
                     title="Toggle Visibility"
                   >
-                    @if (cat.isActive) {
+                    @if (b.isActive) {
                       <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                     } @else {
                       <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
@@ -127,142 +371,18 @@
                   </button>
                 </div>
               </div>
-
-              <!-- Sub-categories Children -->
-              @if (cat.expanded) {
-                <div class="pl-4 border-l border-slate-100 ml-5 flex flex-col gap-1 mt-1">
-                  @if (cat.loading) {
-                    <div class="text-[11.5px] text-slate-400 py-1 pl-4">Loading subs...</div>
-                  } @else {
-                    @for (sub of cat.children; track sub.id) {
-                      <div class="flex flex-col">
-                        <!-- Subcategory Node Row -->
-                        <div
-                          (click)="selectNode(sub)"
-                          class="flex items-center justify-between px-3 py-1.5 rounded-lg transition-all cursor-pointer group text-[12.5px] font-semibold border border-transparent"
-                          [class.bg-brand-50]="selectedNode()?.id === sub.id"
-                          [class.text-brand-700]="selectedNode()?.id === sub.id"
-                          [class.border-brand-100]="selectedNode()?.id === sub.id"
-                          [class.hover:bg-slate-50]="selectedNode()?.id !== sub.id"
-                          [class.text-slate-600]="selectedNode()?.id !== sub.id"
-                        >
-                          <div class="flex items-center gap-2 min-w-0 flex-1">
-                            <!-- Chevron Expand/Collapse -->
-                            <button
-                              (click)="toggleExpand(sub, $event)"
-                              class="h-4.5 w-4.5 flex items-center justify-center text-slate-400 hover:text-slate-650 hover:bg-slate-100 rounded transition-colors shrink-0"
-                            >
-                              @if (sub.loading) {
-                                <svg class="animate-spin h-3 w-3 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                              } @else {
-                                <svg
-                                  class="h-3 w-3 transform transition-transform duration-150"
-                                  [class.rotate-90]="sub.expanded"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                  stroke-width="2.5"
-                                >
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                </svg>
-                              }
-                            </button>
-
-                            <!-- Sub folder Icon -->
-                            <svg class="h-4.5 w-4.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                            </svg>
-
-                            <span class="truncate flex-1" [class.opacity-60]="!sub.isActive">{{ sub.name }}</span>
-                          </div>
-
-                          <!-- Actions -->
-                          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                            <button
-                              (click)="addChildNode(sub, $event)"
-                              (mouseenter)="tooltip.show($event, 'Add Sub-subcategory', { info: 'Create a leaf sub-sub-category nested under this sub-category.' })"
-                              (mouseleave)="tooltip.hide()"
-                              class="h-6 w-6 flex items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 transition-colors"
-                              title="Add Sub-subcategory"
-                            >
-                              <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                            </button>
-                            <button
-                              (click)="deleteNode(sub, $event)"
-                              (mouseenter)="tooltip.show($event, 'Delete Subcategory', { info: 'Permanently remove this sub-category and its contents from the catalog.' })"
-                              (mouseleave)="tooltip.hide()"
-                              class="h-6 w-6 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 transition-colors"
-                              title="Delete Subcategory"
-                            >
-                              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
-                          </div>
-                        </div>
-
-                        <!-- Sub-sub-categories Children -->
-                        @if (sub.expanded) {
-                          <div class="pl-4 border-l border-slate-100 ml-4.5 flex flex-col gap-1 mt-1">
-                            @if (sub.loading) {
-                              <div class="text-[11px] text-slate-400 py-1 pl-4">Loading...</div>
-                            } @else {
-                              @for (subsub of sub.children; track subsub.id) {
-                                <!-- Leaf node -->
-                                <div
-                                  (click)="selectNode(subsub)"
-                                  class="flex items-center justify-between px-3 py-1 rounded-md transition-all cursor-pointer group text-[12px] font-medium border border-transparent"
-                                  [class.bg-brand-50]="selectedNode()?.id === subsub.id"
-                                  [class.text-brand-700]="selectedNode()?.id === subsub.id"
-                                  [class.border-brand-100]="selectedNode()?.id === subsub.id"
-                                  [class.hover:bg-slate-50]="selectedNode()?.id !== subsub.id"
-                                  [class.text-slate-500]="selectedNode()?.id !== subsub.id"
-                                >
-                                  <div class="flex items-center gap-2 min-w-0 flex-1 pl-4.5">
-                                    <!-- Leaf Icon (Bullet tag) -->
-                                    <svg class="h-3.5 w-3.5 text-slate-350 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.5 1.5 0 002.122 0l4.318-4.318a1.5 1.5 0 000-2.122L11.16 3.659A2.25 2.25 0 009.568 3z" />
-                                    </svg>
-                                    <span class="truncate flex-1" [class.opacity-60]="!subsub.isActive">{{ subsub.name }}</span>
-                                  </div>
-
-                                  <!-- Delete leaf button -->
-                                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                                    <button
-                                      (click)="deleteNode(subsub, $event)"
-                                      (mouseenter)="tooltip.show($event, 'Delete Sub-subcategory', { info: 'Permanently remove this leaf sub-sub-category from the catalog.' })"
-                                      (mouseleave)="tooltip.hide()"
-                                      class="h-5.5 w-5.5 flex items-center justify-center rounded text-red-500 hover:bg-red-50 transition-colors"
-                                      title="Delete Sub-subcategory"
-                                    >
-                                      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                    </button>
-                                  </div>
-                                </div>
-                              } @empty {
-                                <div class="text-[11px] text-slate-400 py-1 pl-4">No sub-sub categories yet.</div>
-                              }
-                            }
-                          </div>
-                        }
-                      </div>
-                    } @empty {
-                      <div class="text-[11px] text-slate-400 py-1 pl-4">No sub-categories yet.</div>
-                    }
-                  }
-                </div>
-              }
-            </div>
-          } @empty {
-            <div class="py-16 text-center text-slate-400 text-[12.5px] font-semibold">No categories found.</div>
+            } @empty {
+              <div class="py-16 text-center text-slate-400 text-[12.5px] font-semibold">No brands found.</div>
+            }
           }
-        }
-      </div>
+        </div>
+      }
     </div>
 
     <!-- RIGHT PANEL: Contextual Form Editor -->
     <div class="flex-1 flex flex-col min-h-0 fluent-card p-5 bg-white relative">
+      
+      <!-- CATEGORY NODE EDITOR -->
       @if (selectedNode(); as node) {
         <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-5 min-h-0">
           
@@ -360,7 +480,13 @@
               </div>
               <div class="flex flex-col gap-1.5">
                 <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Return Window (days)</label>
-                <input type="number" formControlName="returnWindowInDays" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all" />
+                <input
+                  type="number"
+                  formControlName="returnWindowInDays"
+                  (mouseenter)="tooltip.show($event, 'Return Window', { info: 'Specify how many days after purchase customers can request returns for items in this category.' })"
+                  (mouseleave)="tooltip.hide()"
+                  class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all"
+                />
               </div>
 
               <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex flex-col gap-3">
@@ -369,7 +495,11 @@
                   <span class="text-[13px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Active & Visible on Store</span>
                 </label>
                 
-                <label class="flex items-center gap-2.5 cursor-pointer select-none group w-fit">
+                <label
+                  (mouseenter)="tooltip.show($event, 'Non-Returnable Category', { info: 'Mark items in this category as non-refundable and non-returnable (e.g. hygiene products, perishables).' })"
+                  (mouseleave)="tooltip.hide()"
+                  class="flex items-center gap-2.5 cursor-pointer select-none group w-fit"
+                >
                   <app-checkbox [checked]="subForm.controls.nonReturnable.value" (checkedChange)="subForm.controls.nonReturnable.setValue($event)" />
                   <span class="text-[13px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Non-Returnable Category</span>
                 </label>
@@ -384,7 +514,62 @@
           }
 
         </div>
-      } @else if (createMode(); as mode) {
+      }
+
+      <!-- BRAND NODE EDITOR -->
+      @else if (selectedBrand(); as brand) {
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-5 min-h-0">
+          
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex flex-col gap-0.5">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Editing Brand</span>
+              <span class="text-[13px] font-bold text-slate-800">{{ brand.name }}</span>
+            </div>
+          </div>
+
+          <!-- FORM: Brand Editor -->
+          <form [formGroup]="brandForm" (ngSubmit)="saveBrand()" class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
+            <div class="sm:col-span-2 flex flex-col gap-1.5">
+              <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Brand Name *</label>
+              <input formControlName="name" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all"
+                [class.!border-red-500]="brandForm.controls.name.touched && brandForm.controls.name.invalid" />
+            </div>
+
+            <div class="sm:col-span-2 flex flex-col gap-1.5">
+              <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Description Notes</label>
+              <textarea formControlName="notes" rows="2" class="rounded-xl border border-slate-200 p-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all resize-none"></textarea>
+            </div>
+
+            <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex flex-col sm:flex-row gap-5">
+              <div class="flex-1 flex flex-col gap-1.5">
+                <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Brand Logo</label>
+                <app-image-upload [(value)]="brandLogo" [previewUrl]="brandLogo()" fit="contain" />
+              </div>
+              <div class="flex-1 flex flex-col gap-1.5">
+                <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Cover Banner</label>
+                <app-image-upload [(value)]="brandBanner" [previewUrl]="brandBanner()" fit="cover" />
+              </div>
+            </div>
+
+            <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex flex-col gap-1.5">
+              <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Promo Banner</label>
+              <app-image-upload [(value)]="brandPromo" [previewUrl]="brandPromo()" fit="cover" />
+            </div>
+
+            <!-- Actions -->
+            <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex gap-2 justify-end">
+              <button type="button" (click)="cancelSelection()" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
+              <button type="submit" [disabled]="saving()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save Changes' }}</button>
+            </div>
+          </form>
+
+        </div>
+      }
+
+      <!-- CATEGORY CREATION WORKSPACE -->
+      @else if (createMode() === 'root' || createMode() === 'child') {
+        @let mode = createMode();
         <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-5 min-h-0">
           
           <!-- Path Breadcrumb Header -->
@@ -407,7 +592,13 @@
               </div>
               <div class="flex flex-col gap-1.5">
                 <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Return Window (days)</label>
-                <input type="number" formControlName="returnWindowInDays" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all" />
+                <input
+                  type="number"
+                  formControlName="returnWindowInDays"
+                  (mouseenter)="tooltip.show($event, 'Return Window', { info: 'Specify how many days after purchase customers can request returns for items in this category.' })"
+                  (mouseleave)="tooltip.hide()"
+                  class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all"
+                />
               </div>
               <div class="flex flex-col gap-1.5">
                 <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Storefront Business Unit</label>
@@ -434,7 +625,11 @@
               </div>
 
               <div class="sm:col-span-2 border-t border-slate-100 pt-4">
-                <label class="flex items-center gap-2.5 cursor-pointer select-none group w-fit">
+                <label
+                  (mouseenter)="tooltip.show($event, 'Non-Returnable Category', { info: 'Mark items in this category as non-refundable and non-returnable (e.g. hygiene products, perishables).' })"
+                  (mouseleave)="tooltip.hide()"
+                  class="flex items-center gap-2.5 cursor-pointer select-none group w-fit"
+                >
                   <app-checkbox [checked]="catForm.controls.nonReturnable.value" (checkedChange)="catForm.controls.nonReturnable.setValue($event)" />
                   <span class="text-[13px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Non-Returnable Category</span>
                 </label>
@@ -462,7 +657,13 @@
               </div>
               <div class="flex flex-col gap-1.5">
                 <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Return Window (days)</label>
-                <input type="number" formControlName="returnWindowInDays" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all" />
+                <input
+                  type="number"
+                  formControlName="returnWindowInDays"
+                  (mouseenter)="tooltip.show($event, 'Return Window', { info: 'Specify how many days after purchase customers can request returns for items in this category.' })"
+                  (mouseleave)="tooltip.hide()"
+                  class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all"
+                />
               </div>
 
               <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex flex-col gap-3">
@@ -471,7 +672,11 @@
                   <span class="text-[13px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Active & Visible on Store</span>
                 </label>
                 
-                <label class="flex items-center gap-2.5 cursor-pointer select-none group w-fit">
+                <label
+                  (mouseenter)="tooltip.show($event, 'Non-Returnable Category', { info: 'Mark items in this category as non-refundable and non-returnable (e.g. hygiene products, perishables).' })"
+                  (mouseleave)="tooltip.hide()"
+                  class="flex items-center gap-2.5 cursor-pointer select-none group w-fit"
+                >
                   <app-checkbox [checked]="subForm.controls.nonReturnable.value" (checkedChange)="subForm.controls.nonReturnable.setValue($event)" />
                   <span class="text-[13px] font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Non-Returnable Category</span>
                 </label>
@@ -486,24 +691,87 @@
           }
 
         </div>
-      } @else {
-        <!-- Empty State Preview -->
+      }
+
+      <!-- BRAND CREATION WORKSPACE -->
+      @else if (createMode() === 'brand') {
+        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1 flex flex-col gap-5 min-h-0">
+          
+          <!-- Header -->
+          <div class="flex flex-col gap-0.5 border-b border-slate-100 pb-3">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">New Brand</span>
+            <span class="text-[13px] font-bold text-slate-800">Create a new product brand record</span>
+          </div>
+
+          <!-- FORM: Brand Creator -->
+          <form [formGroup]="brandForm" (ngSubmit)="saveBrand()" class="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
+            <div class="sm:col-span-2 flex flex-col gap-1.5">
+              <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Brand Name *</label>
+              <input formControlName="name" placeholder="Enter brand name" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all"
+                [class.!border-red-500]="brandForm.controls.name.touched && brandForm.controls.name.invalid" />
+            </div>
+
+            <div class="sm:col-span-2 flex flex-col gap-1.5">
+              <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Description Notes</label>
+              <textarea formControlName="notes" placeholder="Enter notes..." rows="2" class="rounded-xl border border-slate-200 p-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-brand-500/10 focus:outline-none transition-all resize-none"></textarea>
+            </div>
+
+            <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex flex-col sm:flex-row gap-5">
+              <div class="flex-1 flex flex-col gap-1.5">
+                <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Brand Logo</label>
+                <app-image-upload [(value)]="brandLogo" [previewUrl]="brandLogo()" fit="contain" />
+              </div>
+              <div class="flex-1 flex flex-col gap-1.5">
+                <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Cover Banner</label>
+                <app-image-upload [(value)]="brandBanner" [previewUrl]="brandBanner()" fit="cover" />
+              </div>
+            </div>
+
+            <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex flex-col gap-1.5">
+              <label class="text-[11px] font-bold text-slate-455 uppercase tracking-wider pl-0.5">Promo Banner</label>
+              <app-image-upload [(value)]="brandPromo" [previewUrl]="brandPromo()" fit="cover" />
+            </div>
+
+            <!-- Actions -->
+            <div class="sm:col-span-2 border-t border-slate-100 pt-4 flex gap-2 justify-end">
+              <button type="button" (click)="cancelSelection()" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
+              <button type="submit" [disabled]="saving()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">{{ saving() ? 'Saving…' : 'Create Brand' }}</button>
+            </div>
+          </form>
+
+        </div>
+      }
+
+      <!-- DEFAULT EMPTY STATE -->
+      @else {
         <div class="flex-1 flex flex-col items-center justify-center text-center p-8 animate-fadeIn">
           <div class="h-28 w-28 bg-slate-50 border border-slate-150/40 rounded-full flex items-center justify-center text-slate-350 shadow-2xs mb-4">
-            <svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.004 9.004 0 00-12 0M12 9a3 3 0 100-6 3 3 0 000 6zm3 10.72a9.004 9.004 0 00-6 0m6 0H9" />
-            </svg>
+            @if (activeTab() === 'categories') {
+              <svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.004 9.004 0 00-12 0M12 9a3 3 0 100-6 3 3 0 000 6zm3 10.72a9.004 9.004 0 00-6 0m6 0H9" />
+              </svg>
+            } @else {
+              <svg class="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.5 1.5 0 002.122 0l4.318-4.318a1.5 1.5 0 000-2.122L11.16 3.659A2.25 2.25 0 009.568 3z" />
+              </svg>
+            }
           </div>
-          <h3 class="text-[15px] font-bold text-slate-700">Categories Studio</h3>
+          
+          <h3 class="text-[15px] font-bold text-slate-700">
+            {{ activeTab() === 'categories' ? 'Categories Studio' : 'Brands Studio' }}
+          </h3>
           <p class="text-[12.5px] text-slate-450 max-w-xs mt-1.5 leading-normal">
-            Select a category, sub-category, or sub-sub-category from the tree on the left to configure details and attributes.
+            {{ activeTab() === 'categories' 
+                ? 'Select a category, sub-category, or sub-sub-category from the tree on the left to configure details and options.' 
+                : 'Select a product brand from the list on the left to edit notes, logos, and promotional banners.' }}
           </p>
+          
           <button
-            (click)="openCreateCategory()"
+            (click)="activeTab() === 'categories' ? openCreateCategory() : openCreateBrand()"
             class="btn-primary h-9 px-4 text-[12.5px] font-semibold rounded-xl mt-4 cursor-pointer gap-1.5 shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all"
           >
             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-            Create New Category
+            Create New {{ activeTab() === 'categories' ? 'Category' : 'Brand' }}
           </button>
         </div>
       }
