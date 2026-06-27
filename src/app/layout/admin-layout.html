@@ -213,6 +213,73 @@
       }
     </div>
   </div>
+
+  <!-- Global Command Palette Modal Overlay -->
+  @if (commandPaletteOpen()) {
+    <div
+      (click)="toggleCommandPalette()"
+      class="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/60 backdrop-blur-xs p-4 sm:p-10 md:p-20 cursor-zoom-out animate-fadeIn"
+    >
+      <div
+        (click)="$event.stopPropagation()"
+        class="w-full max-w-lg bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden mt-16 flex flex-col max-h-[70vh] cursor-default animate-scaleIn"
+      >
+        <!-- Search input header -->
+        <div class="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100 shrink-0">
+          <span class="text-slate-400 shrink-0">
+            <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            #commandInput
+            type="text"
+            [value]="commandQuery()"
+            (input)="commandQuery.set($any($event.target).value)"
+            placeholder="Search pages or triggers..."
+            class="flex-1 border-none outline-none focus:ring-0 text-[14px] text-slate-800 placeholder:text-slate-400 bg-transparent h-6"
+            autofocus
+          />
+          <kbd class="text-[10px] font-bold text-slate-400 bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200/50 shrink-0 select-none">ESC</kbd>
+        </div>
+
+        <!-- Command results list -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-1 min-h-0">
+          @for (c of filteredCommands(); track c.name; let idx = $index) {
+            <div
+              (click)="executeCommand(c.path)"
+              class="flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 border border-transparent transition-all group/cmd"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 text-slate-500 group-hover/cmd:bg-brand-50 group-hover/cmd:text-brand-650 transition-colors shrink-0">
+                  <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="c.icon" />
+                  </svg>
+                </span>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-[13px] font-semibold text-slate-800 group-hover/cmd:text-brand-800 transition-colors truncate">{{ c.name }}</span>
+                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 truncate">{{ c.category }}</span>
+                </div>
+              </div>
+              <span class="opacity-0 group-hover/cmd:opacity-100 text-brand-600 transition-opacity shrink-0">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </div>
+          } @empty {
+            <div class="px-4 py-8 text-center text-slate-400 text-[13px] font-medium">No navigation actions match.</div>
+          }
+        </div>
+
+        <!-- Palette footer info -->
+        <div class="px-4 py-2 border-t border-slate-50 bg-slate-50/50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0 select-none">
+          <span>Search palette actions</span>
+          <span>Ctrl + K</span>
+        </div>
+      </div>
+    </div>
+  }
 </div>
 
 

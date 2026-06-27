@@ -184,15 +184,26 @@
         [loadingMore]="loadingMore()"
       />
       <ng-template #refundActions let-row>
-        <button (click)="approveRefund(row)"
-                (mouseenter)="tooltip.show($event, 'Approve Refund', { info: 'Approve refund request and update transaction ledger.', placement: 'left' })"
-                (mouseleave)="tooltip.hide()"
-                class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 border border-slate-200/40 hover:border-emerald-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          @let risk = getRefundRisk(row);
+          <span 
+            (mouseenter)="tooltip.show($event, risk.label, { info: risk.info, placement: 'left' })"
+            (mouseleave)="tooltip.hide()"
+            class="status-chip {{ risk.class }} cursor-help py-0.5 text-[11px]"
+          >
+            <span class="dot"></span>
+            {{ risk.label }}
+          </span>
+          <button (click)="approveRefund(row)"
+                  (mouseenter)="tooltip.show($event, 'Approve Refund', { info: 'Approve refund request and update transaction ledger.', placement: 'left' })"
+                  (mouseleave)="tooltip.hide()"
+                  class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 border border-slate-200/40 hover:border-emerald-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+        </div>
       </ng-template>
     </div>
   }
