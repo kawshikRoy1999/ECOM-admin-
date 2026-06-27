@@ -87,7 +87,7 @@
 
   <!-- Results -->
   <div class="fluent-card overflow-hidden relative flex-1 min-h-0 flex flex-col">
-    <div class="overflow-auto relative custom-scrollbar flex-1 min-h-0">
+    <div (scroll)="onTableScroll($event)" class="overflow-auto relative custom-scrollbar flex-1 min-h-0">
       <table class="min-w-full divide-y divide-slate-100 text-[13px]">
         <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs text-[10.5px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-100 shadow-xs">
           <tr>
@@ -142,47 +142,29 @@
               <tr><td colspan="8" class="px-5 py-14 text-center text-slate-400 font-medium text-[13px]">No data found. Adjust filters and search.</td></tr>
             }
           }
+          @if (loadingMore()) {
+            <tr class="animate-pulse">
+              <td colspan="8" class="px-5 py-3 text-center bg-slate-50/15 border-t border-slate-50">
+                <div class="flex items-center justify-center gap-2">
+                  <svg class="animate-spin h-4.5 w-4.5 text-brand-650" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span class="text-[12px] font-semibold text-slate-500">Loading more...</span>
+                </div>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>
 
     <!-- Pagination footer -->
-    <div class="flex items-center justify-between flex-wrap gap-3 border-t border-slate-100 px-5 py-3 bg-slate-50/50 shrink-0">
-      <div class="flex items-center gap-2">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rows per page</span>
-        <select
-          [ngModel]="pageSize()"
-          (ngModelChange)="changePageSize($event)"
-          class="h-8 rounded-xl border border-slate-200 px-2.5 text-[12.5px] font-semibold text-slate-600 bg-white hover:bg-slate-50 focus:border-brand-600 focus:outline-none transition-all cursor-pointer shadow-2xs"
-        >
-          @for (s of pageSizes; track s) {
-            <option [ngValue]="s">{{ s }}</option>
-          }
-        </select>
-      </div>
+    <div class="flex items-center justify-between py-2 px-5 border-t border-slate-100 shrink-0">
       @if (result(); as res) {
-        <div class="flex items-center gap-4">
-          <span class="text-[11.5px] font-bold text-slate-550 bg-slate-100/70 border border-slate-200/40 rounded-lg px-2.5 py-1 shrink-0">
-            {{ res.recordFrom }}–{{ res.recordTo }} of {{ res.totalRecord }}
-          </span>
-          <div class="flex items-center gap-1.5">
-            <button
-              (click)="prevPage()"
-              [disabled]="pageNumber() <= 1"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs animate-fadeIn"
-            >
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <span class="text-[12px] font-bold text-slate-600 px-1">{{ pageNumber() }} / {{ totalPages() || 1 }}</span>
-            <button
-              (click)="nextPage()"
-              [disabled]="pageNumber() >= totalPages()"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs animate-fadeIn"
-            >
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-            </button>
-          </div>
-        </div>
+        <span class="text-[11.5px] font-bold text-slate-500 bg-slate-100/70 border border-slate-200/40 rounded-lg px-2.5 py-1 shrink-0">
+          {{ res.totalRecord }} items
+        </span>
       }
     </div>
   </div>

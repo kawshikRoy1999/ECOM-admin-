@@ -1,4 +1,4 @@
-import { Component, TemplateRef, computed, inject, input, signal } from '@angular/core';
+import { Component, TemplateRef, computed, inject, input, output, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { TooltipService } from '../tooltip.service';
 
@@ -42,6 +42,13 @@ export class DataTable<T extends object> {
   readonly maxHeightClass = input<string>('max-h-[calc(100vh-170px)] md:max-h-[calc(100vh-190px)]');
   /** When true, the table stretches to fill available parent flex space instead of using fixed max-height. */
   readonly fillHeight = input(false);
+  readonly loadingMore = input(false);
+
+  readonly tableScroll = output<Event>();
+
+  onScroll(event: Event): void {
+    this.tableScroll.emit(event);
+  }
 
   readonly query = signal('');
 

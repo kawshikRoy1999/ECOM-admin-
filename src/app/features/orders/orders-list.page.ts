@@ -44,9 +44,14 @@ export class OrdersListPage {
   readonly refundRows = signal<RefundItem[]>([]);
   readonly returnRows = signal<ReturnItem[]>([]);
   readonly loading = signal(false);
+  readonly loadingMore = signal(false);
   readonly pageNo = signal(1);
   readonly totalPages = signal(1);
   readonly totalRecords = signal(0);
+
+  // Depletion trackers for APIs that don't return total page counts
+  readonly refundsDepleted = signal(false);
+  readonly returnsDepleted = signal(false);
 
   // filters
   readonly cName = signal('');
@@ -84,10 +89,6 @@ export class OrdersListPage {
     { key: 'statusName', header: 'Status' },
   ];
 
-  readonly canPrev = computed(() => this.pageNo() > 1);
-  readonly canNext = computed(() => this.pageNo() < this.totalPages());
-
-
   constructor() {
     this.load();
 
@@ -110,11 +111,15 @@ export class OrdersListPage {
   changeTab(id: string): void {
     this.active.set(id);
     this.pageNo.set(1);
+    this.refundsDepleted.set(false);
+    this.returnsDepleted.set(false);
     this.load();
   }
 
   applyFilters(): void {
     this.pageNo.set(1);
+    this.refundsDepleted.set(false);
+    this.returnsDepleted.set(false);
     this.load();
   }
 
@@ -143,7 +148,9 @@ export class OrdersListPage {
     if (this.isRefund()) {
       this.service.listRefunds(filters).subscribe({
         next: (rows) => {
-          this.refundRows.set(rows ?? []);
+          const list = rows ?? [];
+          this.refundRows.set(list);
+          this.refundsDepleted.set(list.length < 20);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
@@ -151,7 +158,9 @@ export class OrdersListPage {
     } else if (this.isReturn()) {
       this.service.listReturns(filters).subscribe({
         next: (rows) => {
-          this.returnRows.set(rows ?? []);
+          const list = rows ?? [];
+          this.returnRows.set(list);
+          this.returnsDepleted.set(list.length < 20);
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
@@ -169,16 +178,72 @@ export class OrdersListPage {
     }
   }
 
-  prev(): void {
-    if (!this.canPrev()) return;
-    this.pageNo.update((p) => p - 1);
-    this.load();
+  onTableScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    // Check if scrolled near the bottom (within 60px)
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) {
+      this.loadNextPage();
+    }
   }
 
-  next(): void {
-    if (!this.canNext()) return;
-    this.pageNo.update((p) => p + 1);
-    this.load();
+  loadNextPage(): void {
+    let hasMore = false;
+    if (this.isRefund()) {
+      hasMore = !this.refundsDepleted() && !this.loadingMore() && !this.loading();
+    } else if (this.isReturn()) {
+      hasMore = !this.returnsDepleted() && !this.loadingMore() && !this.loading();
+    } else {
+      hasMore = this.pageNo() < this.totalPages() && !this.loadingMore() && !this.loading();
+    }
+
+    if (!hasMore) return;
+
+    this.loadingMore.set(true);
+    const nextPage = this.pageNo() + 1;
+    this.pageNo.set(nextPage);
+
+    const filters = {
+      cName: this.cName(),
+      orderno: this.orderno(),
+      custphone: this.custphone(),
+      pinCode: this.pinCode(),
+      fromDate: this.fromDate(),
+      toDate: this.toDate(),
+      pageNo: nextPage,
+    };
+
+    if (this.isRefund()) {
+      this.service.listRefunds(filters).subscribe({
+        next: (rows) => {
+          const list = rows ?? [];
+          this.refundRows.update((existing) => [...existing, ...list]);
+          this.refundsDepleted.set(list.length < 20);
+          this.loadingMore.set(false);
+        },
+        error: () => this.loadingMore.set(false),
+      });
+    } else if (this.isReturn()) {
+      this.service.listReturns(filters).subscribe({
+        next: (rows) => {
+          const list = rows ?? [];
+          this.returnRows.update((existing) => [...existing, ...list]);
+          this.returnsDepleted.set(list.length < 20);
+          this.loadingMore.set(false);
+        },
+        error: () => this.loadingMore.set(false),
+      });
+    } else {
+      this.service.list({ custOrdStatus: this.active(), ...filters }).subscribe({
+        next: (res) => {
+          const list = res?.orderListV2 ?? [];
+          this.rows.update((existing) => [...existing, ...list]);
+          this.totalPages.set(res?.totalPageNumber ?? 1);
+          this.totalRecords.set(res?.totalRecord ?? 0);
+          this.loadingMore.set(false);
+        },
+        error: () => this.loadingMore.set(false),
+      });
+    }
   }
 
   open(o: OrderListItem): void {
@@ -198,7 +263,6 @@ export class OrdersListPage {
   }
 
   async approveReturn(r: ReturnItem): Promise<void> {
-    // status 1 = approved (advance the return); adjust if the lookup differs.
     const ok = await this.confirm.ask(`Approve return of "${r.itemName}"?`, { confirmLabel: 'Approve' });
     if (!ok) return;
     this.service.updateReturnStatus(r, 1).subscribe({

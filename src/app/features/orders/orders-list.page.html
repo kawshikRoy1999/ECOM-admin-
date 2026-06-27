@@ -145,6 +145,8 @@
         emptyText="No orders found."
         [actions]="orderActions"
         [fillHeight]="true"
+        (tableScroll)="onTableScroll($event)"
+        [loadingMore]="loadingMore()"
       />
       <ng-template #orderActions let-row>
         <button (click)="open(row)"
@@ -163,29 +165,6 @@
         <span class="text-[11.5px] font-bold text-slate-500 bg-slate-100/70 border border-slate-200/40 rounded-lg px-2.5 py-1 shrink-0">
           {{ totalRecords() }} orders
         </span>
-        <div class="flex items-center gap-2">
-          <button
-            (click)="prev()"
-            [disabled]="!canPrev()"
-            class="btn-secondary h-8 px-3 text-[11.5px] font-bold flex items-center justify-center disabled:opacity-40 shrink-0 cursor-pointer"
-          >
-            <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Prev
-          </button>
-          <span class="text-[11.5px] font-bold text-slate-600 px-1">Page {{ pageNo() }} / {{ totalPages() }}</span>
-          <button
-            (click)="next()"
-            [disabled]="!canNext()"
-            class="btn-secondary h-8 px-3 text-[11.5px] font-bold flex items-center justify-center disabled:opacity-40 shrink-0 cursor-pointer"
-          >
-            Next
-            <svg class="h-3 w-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
   }
@@ -201,6 +180,8 @@
         emptyText="No refund requests."
         [actions]="refundActions"
         [fillHeight]="true"
+        (tableScroll)="onTableScroll($event)"
+        [loadingMore]="loadingMore()"
       />
       <ng-template #refundActions let-row>
         <button (click)="approveRefund(row)"
@@ -227,6 +208,8 @@
         emptyText="No return requests."
         [actions]="returnActions"
         [fillHeight]="true"
+        (tableScroll)="onTableScroll($event)"
+        [loadingMore]="loadingMore()"
       />
       <ng-template #returnActions let-row>
         <button (click)="approveReturn(row)"
