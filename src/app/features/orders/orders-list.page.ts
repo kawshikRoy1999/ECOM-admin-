@@ -25,14 +25,6 @@ export class OrdersListPage {
   private readonly confirm = inject(ConfirmService);
   public readonly tooltip = inject(TooltipService);
 
-  readonly tabs: TabItem[] = [
-    { id: '', label: 'All Orders' },
-    { id: 'cancelrequested', label: 'Cancel Requests' },
-    { id: 'cancelled', label: 'Cancelled' },
-    { id: 'delivered', label: 'Delivered' },
-    { id: 'refund', label: 'Refund' },
-    { id: 'returnorder', label: 'Return' },
-  ];
   readonly active = signal('');
   readonly showAdvanced = signal(false);
 
@@ -48,6 +40,31 @@ export class OrdersListPage {
   readonly pageNo = signal(1);
   readonly totalPages = signal(1);
   readonly totalRecords = signal(0);
+
+  readonly tabs = computed<TabItem[]>(() => {
+    const activeTab = this.active();
+    
+    // Determine count to display
+    let activeCount = 0;
+    if (activeTab === 'refund') {
+      activeCount = this.refundRows().length;
+    } else if (activeTab === 'returnorder') {
+      activeCount = this.returnRows().length;
+    } else {
+      activeCount = this.totalRecords();
+    }
+
+    const countSuffix = activeCount > 0 ? ` (${activeCount})` : '';
+
+    return [
+      { id: '', label: activeTab === '' ? `All Orders${countSuffix}` : 'All Orders' },
+      { id: 'cancelrequested', label: activeTab === 'cancelrequested' ? `Cancel Requests${countSuffix}` : 'Cancel Requests' },
+      { id: 'cancelled', label: activeTab === 'cancelled' ? `Cancelled${countSuffix}` : 'Cancelled' },
+      { id: 'delivered', label: activeTab === 'delivered' ? `Delivered${countSuffix}` : 'Delivered' },
+      { id: 'refund', label: activeTab === 'refund' ? `Refund${countSuffix}` : 'Refund' },
+      { id: 'returnorder', label: activeTab === 'returnorder' ? `Return${countSuffix}` : 'Return' },
+    ];
+  });
 
   // Depletion trackers for APIs that don't return total page counts
   readonly refundsDepleted = signal(false);
@@ -111,6 +128,9 @@ export class OrdersListPage {
   changeTab(id: string): void {
     this.active.set(id);
     this.pageNo.set(1);
+    this.totalRecords.set(0);
+    this.refundRows.set([]);
+    this.returnRows.set([]);
     this.refundsDepleted.set(false);
     this.returnsDepleted.set(false);
     this.load();
@@ -118,6 +138,9 @@ export class OrdersListPage {
 
   applyFilters(): void {
     this.pageNo.set(1);
+    this.totalRecords.set(0);
+    this.refundRows.set([]);
+    this.returnRows.set([]);
     this.refundsDepleted.set(false);
     this.returnsDepleted.set(false);
     this.load();
@@ -168,7 +191,11 @@ export class OrdersListPage {
     } else {
       this.service.list({ custOrdStatus: this.active(), ...filters }).subscribe({
         next: (res) => {
-          this.rows.set(res?.orderListV2 ?? []);
+          const list = res?.orderListV2 ?? [];
+          if (list.length > 0) {
+            console.log('API Order Row Keys:', Object.keys(list[0]), list[0]);
+          }
+          this.rows.set(list);
           this.totalPages.set(res?.totalPageNumber ?? 1);
           this.totalRecords.set(res?.totalRecord ?? 0);
           this.loading.set(false);
@@ -282,6 +309,27 @@ export class OrdersListPage {
       next: () => {
         this.toast.success('Return updated.');
         this.load();
+      },
+    });
+  }
+
+  viewInvoice(invoiceNo: string): void {
+    if (!invoiceNo) return;
+    this.service.getStatement(invoiceNo).subscribe({
+      next: (stmt) => {
+        const w = window.open('', '_blank');
+        if (w) {
+          w.document.write(`<!DOCTYPE html><html><head><title>Invoice ${invoiceNo}</title>
+            <style>body{margin:0;padding:0;} @media print{.no-print{display:none}}</style>
+            </head><body>
+            <div class="no-print" style="padding:12px;background:#f1f5f9;display:flex;gap:8px;align-items:center">
+              <button onclick="window.print()" style="padding:6px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Print / Save PDF</button>
+              <button onclick="window.close()" style="padding:6px 16px;background:#e2e8f0;border:none;border-radius:6px;cursor:pointer;font-size:13px">Close</button>
+            </div>
+            \${stmt.html}\${stmt.htmlc ? \`<hr style="margin:20px 0">\${stmt.htmlc}\` : ''}
+            </body></html>`);
+          w.document.close();
+        }
       },
     });
   }

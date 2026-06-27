@@ -129,6 +129,21 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/catalog/reviews/review.page').then((m) => m.ReviewPage),
       },
+      {
+        path: 'catalog/items',
+        loadComponent: () =>
+          import('./features/catalog/item/items-list.page').then((m) => m.ItemsListPage),
+      },
+      {
+        path: 'catalog/items/new',
+        loadComponent: () =>
+          import('./features/catalog/item/item-edit.page').then((m) => m.ItemEditPage),
+      },
+      {
+        path: 'catalog/items/:id',
+        loadComponent: () =>
+          import('./features/catalog/item/item-edit.page').then((m) => m.ItemEditPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },

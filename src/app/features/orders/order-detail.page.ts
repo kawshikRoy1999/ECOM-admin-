@@ -127,6 +127,14 @@ export class OrderDetailPage {
     return [...new Set(items.map((i) => i.invoiceNumber).filter(Boolean))];
   }
 
+  getInvoiceNo(): string | null {
+    const d = this.detail();
+    if (!d) return null;
+    if (d.invoiceNo) return d.invoiceNo;
+    const nums = this.invoiceNumbers(d.orderDtl);
+    return nums.length ? nums[0] : null;
+  }
+
   /** Look up the rate/amount row for a given order item from order.data. */
   rateFor(item: OrderItem, data?: any[]): any | undefined {
     if (!data?.length) return undefined;

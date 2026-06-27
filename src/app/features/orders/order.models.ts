@@ -18,6 +18,8 @@ export interface OrderListItem {
   total: number;
   paidAmount: number;
   isDeliver: boolean;
+  invoiceNo?: string;
+  invoiceNumber?: string;
 }
 
 export interface OrderListResponse {
