@@ -250,6 +250,19 @@ export class OrdersListPage {
     this.router.navigate(['/orders', o.orderId]);
   }
 
+  getRefundRisk(r: RefundItem): { label: string; class: string; info: string } {
+    const amount = r.itemTotalAmountAtInvoice ?? 0;
+    const qty = r.itemQty ?? 0;
+
+    if (amount > 1000 || qty > 5) {
+      return { label: 'High Risk', class: 'danger', info: 'Suspicious order quantity or refund invoice amount > 1000.' };
+    }
+    if (amount > 400) {
+      return { label: 'Medium Risk', class: 'warning', info: 'Refund invoice amount between 400 and 1000.' };
+    }
+    return { label: 'Low Risk', class: 'success', info: 'Standard refund claim request bounds.' };
+  }
+
   // --- Refund / Return actions ---
   async approveRefund(r: RefundItem): Promise<void> {
     const ok = await this.confirm.ask(`Approve refund for order ${r.custOrdNo}?`, { confirmLabel: 'Approve' });
