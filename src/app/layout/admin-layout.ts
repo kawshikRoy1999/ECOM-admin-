@@ -67,6 +67,7 @@ export class AdminLayout {
     {
       group: 'Catalog',
       items: [
+        { label: 'Items', path: '/catalog/items', icon: '', info: 'Manage products, pricing, variants, and media.' },
         { label: 'Categories & Brands', path: '/catalog/categories', icon: '', info: 'Manage categories hierarchy and product brands.' },
         { label: 'Review Approval', path: '/catalog/reviews', icon: '', info: 'Moderate and approve customer product reviews.' },
       ],

@@ -1,0 +1,162 @@
+<div class="flex flex-col gap-4 w-full pb-6 max-w-5xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between flex-wrap gap-3 shrink-0">
+    <div class="flex flex-col gap-0.5">
+      <a routerLink="/catalog/items" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700">← Back to items</a>
+      <h1 class="page-title">{{ itemId() ? 'Edit Item' : 'New Item' }}</h1>
+    </div>
+    <button (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-9 px-5 text-[13px] font-semibold rounded-xl disabled:opacity-60">
+      {{ saving() ? 'Saving…' : 'Save Item' }}
+    </button>
+  </div>
+
+  <app-tabs [tabs]="tabs" [(active)]="activeTab" />
+
+  @if (loading()) {
+    <p class="py-16 text-center text-sm text-slate-400">Loading item…</p>
+  } @else {
+
+    <!-- DETAILS TAB -->
+    @if (activeTab() === 'details') {
+      <form [formGroup]="form" class="fluent-card p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item Name <span class="text-red-500">*</span></label>
+          <input formControlName="itemName" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50"
+            [class.!border-red-500]="form.controls.itemName.touched && form.controls.itemName.invalid" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item Code</label>
+          <input formControlName="itemCode" [placeholder]="itemCodeFormat() ? ('Format: ' + itemCodeFormat()) : ''" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Brand <span class="text-red-500">*</span></label>
+          <app-select formControlName="brandId" [options]="brands()" labelKey="name" valueKey="id" defaultLabel="- Select Brand -" [defaultValue]="0" [searchable]="true" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Category <span class="text-red-500">*</span></label>
+          <app-select [options]="categories()" labelKey="name" valueKey="id" [value]="form.controls.categoryId.value" (valueChange)="onCategoryChange($event)" defaultLabel="- Select Category -" [defaultValue]="0" [searchable]="true" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sub-category</label>
+          <app-select formControlName="subCategoryId" [options]="subCategories()" labelKey="name" valueKey="id" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" />
+        </div>
+        <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Description</label>
+          <textarea formControlName="itemDescription" rows="3" class="rounded-xl border border-slate-200 px-3 py-2 text-[13px] bg-slate-50/50 resize-none"></textarea>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Tax</label>
+          <app-select formControlName="taxId" [options]="taxes()" labelKey="taxName" valueKey="taxDetailsId" defaultLabel="- None -" [defaultValue]="0" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">HSN Code</label>
+          <input formControlName="hsn" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Live From</label>
+          <input type="date" formControlName="liveFromDate" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Live To</label>
+          <input type="date" formControlName="liveToDate" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sort Order</label>
+          <input type="number" formControlName="itemSortOrderInCategory" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Return Window (days)</label>
+          <input type="number" formControlName="returnWindowInDays" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        </div>
+
+        <!-- Flags -->
+        <div class="sm:col-span-2 flex flex-wrap gap-x-8 gap-y-3 border-t border-slate-100 pt-4 mt-1">
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <app-checkbox [checked]="form.controls.isActive.value" (checkedChange)="form.controls.isActive.setValue($event)" />
+            <span class="text-[13px] font-semibold text-slate-700">Active</span>
+          </label>
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <app-checkbox [checked]="form.controls.isFeatureItem.value" (checkedChange)="form.controls.isFeatureItem.setValue($event)" />
+            <span class="text-[13px] font-semibold text-slate-700">Featured</span>
+          </label>
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <app-checkbox [checked]="form.controls.isSoldOut.value" (checkedChange)="form.controls.isSoldOut.setValue($event)" />
+            <span class="text-[13px] font-semibold text-slate-700">Sold Out</span>
+          </label>
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <app-checkbox [checked]="form.controls.isSerialized.value" (checkedChange)="form.controls.isSerialized.setValue($event)" />
+            <span class="text-[13px] font-semibold text-slate-700">Serialized</span>
+          </label>
+        </div>
+      </form>
+    }
+
+    <!-- PRICING TAB -->
+    @if (activeTab() === 'pricing') {
+      <div class="fluent-card p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <p class="text-[13px] font-bold text-slate-800">Pricing</p>
+          <button (click)="addPricing()" class="btn-primary h-8 px-3 text-[12px] font-semibold rounded-lg gap-1">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Add Row
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-[13px]">
+            <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+              <tr>
+                <th class="px-2 py-2 text-left">MRP</th>
+                <th class="px-2 py-2 text-left">Discount</th>
+                <th class="px-2 py-2 text-left">Price</th>
+                <th class="px-2 py-2 text-left">Cost</th>
+                <th class="px-2 py-2 text-left">Start</th>
+                <th class="px-2 py-2 text-left">End</th>
+                <th class="px-2 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of pricing(); track $index) {
+                <tr>
+                  <td class="px-2 py-1.5"><input type="number" [ngModel]="p.mrp" (ngModelChange)="updatePricing($index, 'mrp', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                  <td class="px-2 py-1.5"><input type="number" [ngModel]="p.discount" (ngModelChange)="updatePricing($index, 'discount', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                  <td class="px-2 py-1.5"><input type="number" [ngModel]="p.price" (ngModelChange)="updatePricing($index, 'price', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                  <td class="px-2 py-1.5"><input type="number" [ngModel]="p.cost" (ngModelChange)="updatePricing($index, 'cost', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                  <td class="px-2 py-1.5"><input type="date" [ngModel]="p.startDate" (ngModelChange)="updatePricing($index, 'startDate', $event)" class="h-8 w-36 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                  <td class="px-2 py-1.5"><input type="date" [ngModel]="p.endDate" (ngModelChange)="updatePricing($index, 'endDate', $event)" class="h-8 w-36 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                  <td class="px-2 py-1.5">
+                    <button (click)="removePricing($index)" [disabled]="pricing().length <= 1" class="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-30">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- MEDIA TAB -->
+    @if (activeTab() === 'media') {
+      <div class="fluent-card p-5">
+        <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Images</p>
+        <div class="flex flex-wrap gap-3 mb-4">
+          @for (img of media(); track $index) {
+            <div class="relative group">
+              <img [src]="img" alt="" class="h-24 w-24 rounded-xl object-cover border border-slate-200" onerror="this.style.display='none'" />
+              <button (click)="removeMedia($index)" class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          } @empty {
+            <p class="text-[12.5px] text-slate-400">No images yet.</p>
+          }
+        </div>
+        <div class="max-w-xs">
+          <app-image-upload value="" (valueChange)="addMedia($event)" entityType="Item" entitySubType="Image" label="Add image" />
+        </div>
+        <p class="text-[11px] text-slate-400 mt-2">Note: item image persistence uses the dedicated image API (pending endpoint).</p>
+      </div>
+    }
+  }
+</div>
