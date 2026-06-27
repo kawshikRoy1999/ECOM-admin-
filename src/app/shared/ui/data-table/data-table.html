@@ -28,6 +28,7 @@
 
   <!-- Viewport Grid Table -->
   <div
+    (scroll)="onScroll($event)"
     [class]="fillHeight()
       ? 'overflow-auto relative custom-scrollbar flex-1 min-h-0'
       : 'overflow-auto relative custom-scrollbar ' + maxHeightClass()"
@@ -132,6 +133,19 @@
               }
             </tr>
           }
+        }
+        @if (loadingMore()) {
+          <tr class="animate-pulse">
+            <td [attr.colspan]="columns().length + (actions() ? 1 : 0)" class="px-5 py-3 text-center bg-slate-50/15 border-t border-slate-50">
+              <div class="flex items-center justify-center gap-2">
+                <svg class="animate-spin h-4.5 w-4.5 text-brand-650" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-[12px] font-semibold text-slate-500">Loading more...</span>
+              </div>
+            </td>
+          </tr>
         }
       </tbody>
     </table>

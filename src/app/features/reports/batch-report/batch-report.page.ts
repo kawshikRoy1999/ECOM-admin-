@@ -31,9 +31,11 @@ export class BatchReportPageComponent implements OnDestroy {
 
   readonly result = signal<BatchReportPage | null>(null);
   readonly loading = signal(false);
+  readonly loadingMore = signal(false);
 
   readonly rows = computed(() => this.result()?.batchReportList ?? []);
   readonly totalPages = computed(() => this.result()?.totalPageNumber ?? 0);
+  readonly totalRecords = computed(() => this.result()?.totalRecord ?? 0);
 
   private readonly searchSubject = new Subject<string>();
   private readonly searchSubscription: Subscription;
@@ -88,7 +90,6 @@ export class BatchReportPageComponent implements OnDestroy {
     this.searchSubject.next(val);
   }
 
-
   clearFilters(): void {
     this.selCategoryId.set(0);
     this.selItemId.set(0);
@@ -105,7 +106,12 @@ export class BatchReportPageComponent implements OnDestroy {
   }
 
   runReport(): void {
-    this.loading.set(true);
+    if (this.pageNumber() === 1) {
+      this.loading.set(true);
+    } else {
+      this.loadingMore.set(true);
+    }
+
     this.service
       .report({
         categoryId: this.selCategoryId(),
@@ -118,30 +124,43 @@ export class BatchReportPageComponent implements OnDestroy {
       })
       .subscribe({
         next: (r) => {
-          this.result.set(r);
-          this.loading.set(false);
+          if (this.pageNumber() === 1) {
+            this.result.set(r);
+            this.loading.set(false);
+          } else {
+            const prevList = this.result()?.batchReportList ?? [];
+            this.result.set({
+              ...r,
+              batchReportList: [...prevList, ...(r.batchReportList ?? [])],
+            });
+            this.loadingMore.set(false);
+          }
         },
-        error: () => this.loading.set(false),
+        error: () => {
+          this.loading.set(false);
+          this.loadingMore.set(false);
+        },
       });
+  }
+
+  onTableScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) {
+      this.loadNextPage();
+    }
+  }
+
+  loadNextPage(): void {
+    if (this.loading() || this.loadingMore() || this.pageNumber() >= this.totalPages()) {
+      return;
+    }
+    this.pageNumber.update((p) => p + 1);
+    this.runReport();
   }
 
   changePageSize(size: number): void {
     this.pageSize.set(Number(size));
     this.pageNumber.set(1);
     this.runReport();
-  }
-
-  prevPage(): void {
-    if (this.pageNumber() > 1) {
-      this.pageNumber.update((p) => p - 1);
-      this.runReport();
-    }
-  }
-
-  nextPage(): void {
-    if (this.pageNumber() < this.totalPages()) {
-      this.pageNumber.update((p) => p + 1);
-      this.runReport();
-    }
   }
 }
