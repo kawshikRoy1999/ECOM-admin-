@@ -11,6 +11,7 @@ import { of, switchMap } from 'rxjs';
 
 import { UsersService } from './users.service';
 import { AdminUser, UserRoleOption } from './user.models';
+import { TooltipService } from '../../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-users-page',
@@ -22,6 +23,7 @@ export class UsersPage {
   private readonly service = inject(UsersService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  public readonly tooltip = inject(TooltipService);
 
   readonly rows = signal<AdminUser[]>([]);
   readonly loading = signal(false);
