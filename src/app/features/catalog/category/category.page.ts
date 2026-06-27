@@ -1,7 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { UpperCasePipe } from '@angular/common';
+import { TooltipService } from '../../../shared/ui/tooltip.service';
 
-import { Modal } from '../../../shared/ui/modal/modal';
 import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { Select } from '../../../shared/ui/select/select';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
@@ -9,13 +10,11 @@ import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { CategoryService } from './category.service';
 import { CategoryOptions } from './category-options';
-import { BusinessUnitOption, Category, SubCategory } from './category.models';
-
-type View = 'categories' | 'subs' | 'subsubs';
+import { BusinessUnitOption, Category, SubCategory, TreeNode } from './category.models';
 
 @Component({
   selector: 'app-category-page',
-  imports: [ReactiveFormsModule, FormsModule, Modal, Checkbox, Select, ImageUpload, CategoryOptions],
+  imports: [ReactiveFormsModule, FormsModule, UpperCasePipe, Checkbox, Select, ImageUpload, CategoryOptions],
   templateUrl: './category.page.html',
 })
 export class CategoryPage {
@@ -23,18 +22,17 @@ export class CategoryPage {
   private readonly service = inject(CategoryService);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
+  public readonly tooltip = inject(TooltipService);
 
-  readonly view = signal<View>('categories');
   readonly loading = signal(false);
   readonly saving = signal(false);
 
-  readonly categories = signal<Category[]>([]);
-  readonly subs = signal<SubCategory[]>([]);
-  readonly subSubs = signal<SubCategory[]>([]);
+  readonly treeNodes = signal<TreeNode[]>([]);
   readonly businessUnits = signal<BusinessUnitOption[]>([]);
 
-  readonly selectedCategory = signal<Category | null>(null);
-  readonly selectedSub = signal<SubCategory | null>(null);
+  readonly selectedNode = signal<TreeNode | null>(null);
+  readonly parentNode = signal<TreeNode | null>(null);
+  readonly createMode = signal<'root' | 'child' | null>(null);
 
   readonly search = signal('');
 
@@ -44,11 +42,10 @@ export class CategoryPage {
   readonly optionsSubCategoryId = signal(0);
   readonly optionsContext = signal('');
 
-  // Category modal
-  readonly catModalOpen = signal(false);
-  readonly editingCatId = signal(0);
-  readonly catImage = signal(''); // banner (imageName)
-  readonly catIcon = signal(''); // logo (iconImage)
+  // Category image uploaders
+  readonly catImage = signal(''); // banner
+  readonly catIcon = signal(''); // icon/logo
+
   readonly catForm = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
     returnWindowInDays: [0],
@@ -56,9 +53,6 @@ export class CategoryPage {
     businessUnitId: [0],
   });
 
-  // Sub / sub-sub modal (shared)
-  readonly subModalOpen = signal(false);
-  readonly editingSubId = signal(0);
   readonly subForm = this.fb.nonNullable.group({
     subCategoryName: ['', [Validators.required]],
     sortOrder: [0],
@@ -67,10 +61,11 @@ export class CategoryPage {
     isActive: [true],
   });
 
-  readonly filteredCategories = computed(() => {
+  readonly filteredTreeNodes = computed(() => {
     const q = this.search().toLowerCase().trim();
-    const list = this.categories();
-    return q ? list.filter((c) => c.name?.toLowerCase().includes(q)) : list;
+    const list = this.treeNodes();
+    if (!q) return list;
+    return list.filter((n) => n.name.toLowerCase().includes(q));
   });
 
   constructor() {
@@ -78,89 +73,161 @@ export class CategoryPage {
     this.service.businessUnits().subscribe({ next: (b) => this.businessUnits.set(b) });
   }
 
-  // --- Navigation ---
+  // --- Tree Operations ---
   loadCategories(): void {
-    this.view.set('categories');
     this.loading.set(true);
     this.service.list().subscribe({
-      next: (rows) => {
-        this.categories.set(rows);
+      next: (cats) => {
+        const nodes = cats.map((c) => this.mapCategoryToNode(c));
+        this.treeNodes.set(nodes);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
     });
   }
 
-  openCategory(cat: Category): void {
-    this.selectedCategory.set(cat);
-    this.view.set('subs');
-    this.loading.set(true);
-    this.service.subCategories(cat.categoryId).subscribe({
-      next: (rows) => {
-        this.subs.set(rows);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+  private mapCategoryToNode(c: Category): TreeNode {
+    return {
+      id: `cat-${c.categoryId}`,
+      type: 'category',
+      name: c.name || '',
+      isActive: c.isActive,
+      returnWindowInDays: c.returnWindowInDays,
+      nonReturnable: c.nonReturnable,
+      businessUnitId: c.businessUnitId,
+      imageName: c.imageName,
+      iconImage: c.iconImage,
+      categoryId: c.categoryId,
+      expanded: false,
+      loaded: false,
+      loading: false,
+      children: [],
+    };
   }
 
-  openSub(sub: SubCategory): void {
-    this.selectedSub.set(sub);
-    this.view.set('subsubs');
-    this.loading.set(true);
-    this.service.subSubCategories(sub.subCategoryId).subscribe({
-      next: (rows) => {
-        this.subSubs.set(rows);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+  private mapSubToNode(s: SubCategory, isSubSub = false): TreeNode {
+    return {
+      id: isSubSub ? `subsub-${s.subCategoryId}` : `sub-${s.subCategoryId}`,
+      type: isSubSub ? 'subsubcategory' : 'subcategory',
+      name: s.subCategoryName || '',
+      isActive: s.isActive,
+      returnWindowInDays: s.returnWindowInDays,
+      nonReturnable: s.nonReturnable,
+      sortOrder: s.sortOrder,
+      categoryId: s.categoryId,
+      subCategoryId: s.subCategoryId,
+      parentSubCategoryId: s.parentSubCategoryId,
+      expanded: false,
+      loaded: false,
+      loading: false,
+      children: [],
+    };
   }
 
-  backToCategories(): void {
-    this.selectedCategory.set(null);
-    this.selectedSub.set(null);
-    this.view.set('categories');
+  toggleExpand(node: TreeNode, event?: Event): void {
+    event?.stopPropagation();
+    if (node.type === 'subsubcategory') return;
+
+    if (node.expanded) {
+      node.expanded = false;
+      return;
+    }
+
+    if (node.loaded) {
+      node.expanded = true;
+      return;
+    }
+
+    node.loading = true;
+    if (node.type === 'category') {
+      this.service.subCategories(node.categoryId).subscribe({
+        next: (subs) => {
+          node.children = subs.map((s) => this.mapSubToNode(s, false));
+          node.loaded = true;
+          node.loading = false;
+          node.expanded = true;
+          this.treeNodes.update((list) => [...list]);
+        },
+        error: () => {
+          node.loading = false;
+        },
+      });
+    } else if (node.type === 'subcategory') {
+      this.service.subSubCategories(node.subCategoryId!).subscribe({
+        next: (subsubs) => {
+          node.children = subsubs.map((s) => this.mapSubToNode(s, true));
+          node.loaded = true;
+          node.loading = false;
+          node.expanded = true;
+          this.treeNodes.update((list) => [...list]);
+        },
+        error: () => {
+          node.loading = false;
+        },
+      });
+    }
   }
 
-  backToSubs(): void {
-    this.selectedSub.set(null);
-    this.view.set('subs');
+  selectNode(node: TreeNode): void {
+    this.createMode.set(null);
+    this.parentNode.set(null);
+    this.selectedNode.set(node);
+
+    if (node.type === 'category') {
+      this.catImage.set(node.imageName || '');
+      this.catIcon.set(node.iconImage || '');
+      this.catForm.reset({
+        name: node.name,
+        returnWindowInDays: node.returnWindowInDays,
+        nonReturnable: node.nonReturnable,
+        businessUnitId: node.businessUnitId ?? 0,
+      });
+    } else {
+      this.subForm.reset({
+        subCategoryName: node.name,
+        sortOrder: node.sortOrder ?? 0,
+        returnWindowInDays: node.returnWindowInDays,
+        nonReturnable: node.nonReturnable,
+        isActive: node.isActive,
+      });
+    }
   }
 
-  private reloadCurrentSubs(): void {
-    const cat = this.selectedCategory();
-    if (cat) this.service.subCategories(cat.categoryId).subscribe({ next: (r) => this.subs.set(r) });
-  }
-
-  private reloadCurrentSubSubs(): void {
-    const sub = this.selectedSub();
-    if (sub) this.service.subSubCategories(sub.subCategoryId).subscribe({ next: (r) => this.subSubs.set(r) });
-  }
-
-  // --- Category CRUD ---
+  // --- CRUD Initiators ---
   openCreateCategory(): void {
-    this.editingCatId.set(0);
+    this.selectedNode.set(null);
+    this.parentNode.set(null);
+    this.createMode.set('root');
     this.catImage.set('');
     this.catIcon.set('');
     this.catForm.reset({ name: '', returnWindowInDays: 0, nonReturnable: false, businessUnitId: 0 });
-    this.catModalOpen.set(true);
   }
 
-  openEditCategory(c: Category, event?: Event): void {
+  addChildNode(parent: TreeNode, event?: Event): void {
     event?.stopPropagation();
-    this.editingCatId.set(c.categoryId);
-    this.catImage.set(c.imageName);
-    this.catIcon.set(c.iconImage);
-    this.catForm.reset({
-      name: c.name,
-      returnWindowInDays: c.returnWindowInDays,
-      nonReturnable: c.nonReturnable,
-      businessUnitId: c.businessUnitId ?? 0,
+    this.selectedNode.set(null);
+    this.parentNode.set(parent);
+    this.createMode.set('child');
+    this.subForm.reset({
+      subCategoryName: '',
+      sortOrder: 0,
+      returnWindowInDays: parent.returnWindowInDays,
+      nonReturnable: parent.nonReturnable,
+      isActive: true,
     });
-    this.catModalOpen.set(true);
+
+    if (!parent.expanded) {
+      this.toggleExpand(parent);
+    }
   }
 
+  cancelSelection(): void {
+    this.selectedNode.set(null);
+    this.parentNode.set(null);
+    this.createMode.set(null);
+  }
+
+  // --- Category CRUD Operations ---
   saveCategory(): void {
     if (this.catForm.invalid) {
       this.catForm.markAllAsTouched();
@@ -168,9 +235,11 @@ export class CategoryPage {
     }
     this.saving.set(true);
     const v = this.catForm.getRawValue();
+    const catId = this.createMode() === 'root' ? 0 : this.selectedNode()!.categoryId;
+
     this.service
       .saveCategory({
-        categoryId: this.editingCatId(),
+        categoryId: catId,
         companyId: 0,
         name: v.name,
         imageName: this.catImage(),
@@ -183,59 +252,55 @@ export class CategoryPage {
       .subscribe({
         next: () => {
           this.saving.set(false);
-          this.catModalOpen.set(false);
-          this.toast.success(this.editingCatId() ? 'Category updated.' : 'Category created.');
+          this.toast.success(catId ? 'Category updated.' : 'Category created.');
+          this.cancelSelection();
           this.loadCategories();
         },
         error: () => this.saving.set(false),
       });
   }
 
-  toggleCategory(c: Category): void {
-    this.service.toggleCategory(c.categoryId, !c.isActive).subscribe({
+  toggleCategoryNode(node: TreeNode, event?: Event): void {
+    event?.stopPropagation();
+    this.service.toggleCategory(node.categoryId, !node.isActive).subscribe({
       next: () => {
-        this.categories.update((list) =>
-          list.map((x) => (x.categoryId === c.categoryId ? { ...x, isActive: !x.isActive } : x)),
-        );
-        this.toast.success(c.isActive ? 'Category hidden.' : 'Category visible.');
+        node.isActive = !node.isActive;
+        this.treeNodes.update((list) => [...list]);
+        this.toast.success(node.isActive ? 'Category visible.' : 'Category hidden.');
       },
     });
   }
 
-  // --- Sub / Sub-sub CRUD (shared modal) ---
-  openCreateSub(): void {
-    this.editingSubId.set(0);
-    this.subForm.reset({ subCategoryName: '', sortOrder: 0, returnWindowInDays: 0, nonReturnable: false, isActive: true });
-    this.subModalOpen.set(true);
-  }
-
-  openEditSub(s: SubCategory): void {
-    this.editingSubId.set(s.subCategoryId);
-    this.subForm.reset({
-      subCategoryName: s.subCategoryName,
-      sortOrder: s.sortOrder,
-      returnWindowInDays: s.returnWindowInDays,
-      nonReturnable: s.nonReturnable,
-      isActive: s.isActive,
-    });
-    this.subModalOpen.set(true);
-  }
-
+  // --- Sub / Sub-sub CRUD Operations ---
   saveSub(): void {
     if (this.subForm.invalid) {
       this.subForm.markAllAsTouched();
       return;
     }
-    const cat = this.selectedCategory();
-    if (!cat) return;
-    const isSubSub = this.view() === 'subsubs';
-    const parentSubId = isSubSub ? (this.selectedSub()?.subCategoryId ?? 0) : 0;
+    
     this.saving.set(true);
     const v = this.subForm.getRawValue();
+    
+    let catId = 0;
+    let parentSubId = 0;
+    let subId = 0;
+
+    if (this.createMode() === 'child') {
+      const parent = this.parentNode()!;
+      catId = parent.categoryId;
+      parentSubId = parent.type === 'subcategory' ? parent.subCategoryId! : 0;
+      subId = 0;
+    } else {
+      const selected = this.selectedNode()!;
+      catId = selected.categoryId;
+      parentSubId = selected.parentSubCategoryId ?? 0;
+      subId = selected.subCategoryId!;
+    }
+
     this.service
       .saveSubCategory({
-        subCategoryId: this.editingSubId(),
-        categoryId: cat.categoryId,
+        subCategoryId: subId,
+        categoryId: catId,
         parentSubCategoryId: parentSubId,
         subCategoryName: v.subCategoryName,
         sortOrder: Number(v.sortOrder),
@@ -246,45 +311,106 @@ export class CategoryPage {
       .subscribe({
         next: () => {
           this.saving.set(false);
-          this.subModalOpen.set(false);
           this.toast.success('Saved.');
-          if (isSubSub) this.reloadCurrentSubSubs();
-          else this.reloadCurrentSubs();
+          
+          if (this.createMode() === 'child') {
+            const parent = this.parentNode()!;
+            this.refreshNodeChildren(parent);
+          } else {
+            const selected = this.selectedNode()!;
+            this.refreshParentOfNode(selected);
+          }
+          
+          this.cancelSelection();
         },
         error: () => this.saving.set(false),
       });
   }
 
-  async deleteSub(s: SubCategory): Promise<void> {
-    const isSubSub = this.view() === 'subsubs';
-    const ok = await this.confirm.ask(`Delete "${s.subCategoryName}"?`, { confirmLabel: 'Delete', danger: true });
+  async deleteNode(node: TreeNode, event?: Event): Promise<void> {
+    event?.stopPropagation();
+    const ok = await this.confirm.ask(`Delete "${node.name}"?`, { confirmLabel: 'Delete', danger: true });
     if (!ok) return;
-    this.service.deleteSubCategory(s.subCategoryId).subscribe({
+
+    if (node.type === 'category') {
+      return; // Root categories can only be hidden in this system
+    }
+
+    this.service.deleteSubCategory(node.subCategoryId!).subscribe({
       next: () => {
         this.toast.success('Deleted.');
-        if (isSubSub) this.reloadCurrentSubSubs();
-        else this.reloadCurrentSubs();
+        this.refreshParentOfNode(node);
+        this.cancelSelection();
       },
     });
   }
 
+  // --- Helper Methods ---
   buName(id: number | null): string {
     return this.businessUnits().find((b) => b.businessUnitId === id)?.unitName ?? '';
   }
 
   // --- Options (category / sub / sub-sub level) ---
-  openCategoryOptions(c: Category, event?: Event): void {
+  openCategoryOptions(node: TreeNode, event?: Event): void {
     event?.stopPropagation();
-    this.optionsCategoryId.set(c.categoryId);
+    this.optionsCategoryId.set(node.categoryId);
     this.optionsSubCategoryId.set(0);
-    this.optionsContext.set(c.name);
+    this.optionsContext.set(node.name);
     this.optionsOpen.set(true);
   }
 
-  openSubOptions(s: SubCategory): void {
-    this.optionsCategoryId.set(s.categoryId);
-    this.optionsSubCategoryId.set(s.subCategoryId);
-    this.optionsContext.set(s.subCategoryName);
+  openSubOptions(node: TreeNode): void {
+    this.optionsCategoryId.set(node.categoryId);
+    this.optionsSubCategoryId.set(node.subCategoryId!);
+    this.optionsContext.set(node.name);
     this.optionsOpen.set(true);
+  }
+
+  private refreshNodeChildren(node: TreeNode): void {
+    if (node.type === 'category') {
+      this.service.subCategories(node.categoryId).subscribe({
+        next: (subs) => {
+          node.children = subs.map((s) => this.mapSubToNode(s, false));
+          node.loaded = true;
+          this.treeNodes.update((list) => [...list]);
+        },
+      });
+    } else if (node.type === 'subcategory') {
+      this.service.subSubCategories(node.subCategoryId!).subscribe({
+        next: (subsubs) => {
+          node.children = subsubs.map((s) => this.mapSubToNode(s, true));
+          node.loaded = true;
+          this.treeNodes.update((list) => [...list]);
+        },
+      });
+    }
+  }
+
+  private refreshParentOfNode(node: TreeNode): void {
+    if (node.type === 'category') {
+      this.loadCategories();
+      return;
+    }
+
+    const parentNode = this.findParentNodeInTree(this.treeNodes(), node);
+    if (parentNode) {
+      this.refreshNodeChildren(parentNode);
+    } else {
+      this.loadCategories();
+    }
+  }
+
+  private findParentNodeInTree(nodes: TreeNode[], target: TreeNode): TreeNode | null {
+    for (const n of nodes) {
+      if (target.type === 'subcategory' && n.type === 'category' && n.categoryId === target.categoryId) {
+        return n;
+      }
+      if (target.type === 'subsubcategory' && n.type === 'subcategory' && n.subCategoryId === target.parentSubCategoryId) {
+        return n;
+      }
+      const found = this.findParentNodeInTree(n.children, target);
+      if (found) return found;
+    }
+    return null;
   }
 }

@@ -7,6 +7,7 @@ import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { CategoryService } from './category.service';
 import { CategoryOption, OptionValue } from './category.models';
+import { TooltipService } from '../../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-category-options',
@@ -17,6 +18,7 @@ export class CategoryOptions {
   private readonly service = inject(CategoryService);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
+  public readonly tooltip = inject(TooltipService);
 
   readonly categoryId = input.required<number>();
   readonly subCategoryId = input<number>(0);
