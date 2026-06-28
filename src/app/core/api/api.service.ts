@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiError, ApiResponse } from './api.models';
+import { noAuth } from '../auth/skip-auth';
 
 /**
  * Thin wrapper over HttpClient for the gateway. Unwraps the {Status,Message,Data}
@@ -29,9 +30,15 @@ export class ApiService {
       .pipe(map((res) => this.unwrap(res, path)));
   }
 
-  /** POST returning the full envelope (when the Message matters to the caller). */
-  postRaw<T>(path: string, body: unknown = {}): Observable<ApiResponse<T>> {
-    return this.http.post<ApiResponse<T>>(`${this.baseUrl}/${path}`, body);
+  /**
+   * POST returning the full envelope (when the Message matters to the caller).
+   * Pass `skipAuth: true` to send the request token-less (some gateway endpoints
+   * behave differently when a bearer token is present — e.g. AddEditItem).
+   */
+  postRaw<T>(path: string, body: unknown = {}, skipAuth = false): Observable<ApiResponse<T>> {
+    return this.http.post<ApiResponse<T>>(`${this.baseUrl}/${path}`, body, {
+      context: skipAuth ? noAuth() : undefined,
+    });
   }
 
   private unwrap<T>(res: ApiResponse<T>, path: string, body?: unknown): T {

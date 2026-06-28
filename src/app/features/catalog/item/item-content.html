@@ -1,0 +1,124 @@
+<div class="fluent-card p-5 flex flex-col gap-4">
+  <app-tabs [tabs]="tabs" [(active)]="activeTab" />
+
+  <!-- TAGS -->
+  @if (activeTab() === 'tags') {
+    <div class="flex flex-col gap-3">
+      <div class="flex gap-2">
+        <input [(ngModel)]="newTag" (keyup.enter)="addTag()" placeholder="Add a tag…"
+          class="h-9 flex-1 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        <button (click)="addTag()" [disabled]="saving()" class="btn-primary h-9 px-4 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">Add Tag</button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @for (t of tags(); track t.tagId) {
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 text-[12.5px] font-semibold text-brand-700">
+            {{ t.tag }}
+            <button (click)="removeTag(t)" class="text-brand-400 hover:text-red-500">
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </span>
+        } @empty {
+          <p class="text-[12.5px] text-slate-400">No tags yet.</p>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- SEO / META -->
+  @if (activeTab() === 'seo') {
+    <div class="flex flex-col gap-3">
+      <div class="flex gap-2">
+        <input [(ngModel)]="newMeta" (keyup.enter)="addMeta()" placeholder="Add a meta keyword…"
+          class="h-9 flex-1 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+        <button (click)="addMeta()" [disabled]="saving()" class="btn-primary h-9 px-4 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">Add Meta</button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @for (m of metas(); track m.metaTagId) {
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-[12.5px] font-semibold text-slate-700">
+            {{ m.metaTag }}
+            <button (click)="removeMeta(m)" class="text-slate-400 hover:text-red-500">
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </span>
+        } @empty {
+          <p class="text-[12.5px] text-slate-400">No meta keywords yet.</p>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- FAQ -->
+  @if (activeTab() === 'faq') {
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/40 p-3">
+        <input [(ngModel)]="newFaq" placeholder="Question…" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-white" />
+        <textarea [(ngModel)]="newFaqAnswer" rows="2" placeholder="Answer…" class="rounded-xl border border-slate-200 px-3 py-2 text-[13px] bg-white resize-none"></textarea>
+        <button (click)="addFaq()" [disabled]="saving()" class="btn-primary h-9 px-4 text-[12.5px] font-semibold rounded-xl self-start disabled:opacity-60">Add FAQ</button>
+      </div>
+      <div class="flex flex-col gap-2">
+        @for (f of faqs(); track f.faqId) {
+          <div class="rounded-xl border border-slate-100 px-4 py-3 flex items-start justify-between gap-3">
+            <div class="flex flex-col gap-0.5 min-w-0">
+              <p class="text-[13px] font-semibold text-slate-800">{{ f.faq }}</p>
+              <p class="text-[12.5px] text-slate-500">{{ f.faqAnswer }}</p>
+            </div>
+            <button (click)="removeFaq(f)" class="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+          </div>
+        } @empty {
+          <p class="text-[12.5px] text-slate-400">No FAQs yet.</p>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- SIMILAR ITEMS -->
+  @if (activeTab() === 'similar') {
+    <div class="flex flex-col gap-3">
+      <div class="flex flex-wrap items-end gap-2 rounded-xl border border-slate-100 bg-slate-50/40 p-3">
+        <div class="flex flex-col gap-1 flex-1 min-w-[180px]">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Item</label>
+          <app-select [options]="itemOptions()" labelKey="name" valueKey="id" [value]="selSimItem()" (valueChange)="onSimItemChange($event)" defaultLabel="- Select Item -" [defaultValue]="0" [searchable]="true" />
+        </div>
+        <div class="flex flex-col gap-1 flex-1 min-w-[180px]">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Variant</label>
+          <app-select [options]="variantOptions()" labelKey="name" valueKey="id" [value]="selSimVariant()" (valueChange)="selSimVariant.set($event)" defaultLabel="- Any -" [defaultValue]="0" [searchable]="true" />
+        </div>
+        <button (click)="addSimilar()" [disabled]="saving()" class="btn-primary h-9 px-4 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">Link</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100 text-[13px]">
+          <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+            <tr>
+              <th class="px-4 py-2.5 text-left">Linked Item</th>
+              <th class="px-4 py-2.5 text-left">Variant</th>
+              <th class="px-4 py-2.5 text-center">Active</th>
+              <th class="px-4 py-2.5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (s of similar(); track s.similarItemId) {
+              <tr class="hover:bg-slate-50/50">
+                <td class="px-4 py-2.5 font-semibold text-slate-800">{{ s.similarItemName }}</td>
+                <td class="px-4 py-2.5 text-slate-500">{{ s.similarVariantName || '—' }}</td>
+                <td class="px-4 py-2.5 text-center">
+                  <button (click)="toggleSimilar(s)" class="rounded-md px-2 py-0.5 text-[11px] font-semibold" [class]="s.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">{{ s.isActive ? 'Active' : 'Inactive' }}</button>
+                </td>
+                <td class="px-4 py-2.5">
+                  <div class="flex justify-end">
+                    <button (click)="removeSimilar(s)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-red-500 hover:bg-red-50">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">No similar items linked.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
