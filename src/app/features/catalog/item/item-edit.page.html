@@ -10,7 +10,7 @@
     </button>
   </div>
 
-  <app-tabs [tabs]="tabs" [(active)]="activeTab" />
+  <app-tabs [tabs]="tabs()" [(active)]="activeTab" />
 
   @if (loading()) {
     <p class="py-16 text-center text-sm text-slate-400">Loading item…</p>
@@ -38,7 +38,11 @@
         </div>
         <div class="flex flex-col gap-1.5">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sub-category</label>
-          <app-select formControlName="subCategoryId" [options]="subCategories()" labelKey="name" valueKey="id" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" />
+          <app-select [options]="subCategories()" labelKey="name" valueKey="id" [value]="selectedSubCategoryId()" (valueChange)="onSubCategoryChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Family</label>
+          <app-select [options]="families()" labelKey="name" valueKey="id" [value]="selectedFamilyId()" (valueChange)="onFamilyChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" [disabled]="!selectedSubCategoryId() || !families().length" />
         </div>
         <div class="flex flex-col gap-1.5 sm:col-span-2">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Description</label>
@@ -65,6 +69,10 @@
           <input type="number" formControlName="itemSortOrderInCategory" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
         </div>
         <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Currency</label>
+          <input type="text" [value]="currency()" disabled class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-100 text-slate-500" />
+        </div>
+        <div class="flex flex-col gap-1.5">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Return Window (days)</label>
           <input type="number" formControlName="returnWindowInDays" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
         </div>
@@ -89,6 +97,30 @@
           </label>
         </div>
       </form>
+
+      @if (itemId() && stockTransactions().length) {
+        <div class="fluent-card p-5 mt-4">
+          <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Stock Transaction Details</p>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-[13px]">
+              <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                <tr>
+                  <th class="px-2 py-2 text-left w-36">Date</th>
+                  <th class="px-2 py-2 text-left">Details</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                @for (log of stockTransactions(); track log.date) {
+                  <tr>
+                    <td class="px-2 py-2.5 font-mono text-[12px] text-slate-500">{{ log.date }}</td>
+                    <td class="px-2 py-2.5 text-slate-600">{{ log.details }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     }
 
     <!-- PRICING TAB -->
@@ -136,15 +168,259 @@
       </div>
     }
 
+    <!-- VARIANTS TAB (variant options + values selection) -->
+    @if (activeTab() === 'variants') {
+      <div class="fluent-card p-5">
+        <div class="border-b border-slate-100 pb-3 mb-4">
+          <p class="text-[13px] font-bold text-slate-800">Variant Options</p>
+          <p class="text-[11.5px] text-slate-400">Choose which of the category's options &amp; values apply to this item. These define the item's variants.</p>
+        </div>
+
+        @if (!form.controls.categoryId.value) {
+          <p class="py-10 text-center text-[13px] text-slate-400">Select a category in the Details tab first.</p>
+        } @else if (loadingOptions()) {
+          <p class="py-10 text-center text-[13px] text-slate-400">Loading variant options…</p>
+        } @else {
+          <div class="flex flex-col gap-4">
+            @for (o of optionRows(); track o.variantOptionId) {
+              <div class="rounded-xl border border-slate-150 p-4" [class.bg-slate-50/40]="o.isApplicable">
+                <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+                  <span class="text-[13.5px] font-bold text-slate-800">{{ o.optionName }}</span>
+                  <div class="flex items-center gap-6">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                      <app-checkbox [checked]="o.isApplicable" (checkedChange)="toggleOptionApplicable(o.variantOptionId, $event)" />
+                      <span class="text-[12px] font-semibold text-slate-600">Applicable</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer select-none" [class.opacity-40]="!o.isApplicable">
+                      <app-checkbox [checked]="o.isFilterable" (checkedChange)="toggleOptionFilterable(o.variantOptionId, $event)" [disabled]="!o.isApplicable" />
+                      <span class="text-[12px] font-semibold text-slate-600">Filterable</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-2" [class.opacity-40]="!o.isApplicable" [class.pointer-events-none]="!o.isApplicable">
+                  @for (v of o.values; track v.optionValueId) {
+                    <button type="button" (click)="toggleOptionValue(o.variantOptionId, v.optionValueId)"
+                      class="rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold transition-all"
+                      [class]="v.selected ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300'">
+                      {{ v.optionValueName }}
+                    </button>
+                  } @empty {
+                    <span class="text-[12px] text-slate-400">No values defined for this option.</span>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <p class="py-10 text-center text-[13px] text-slate-400">This category has no variant options. Define them under Categories → Options.</p>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Generated variants list (saved items only) -->
+      @if (itemId()) {
+        <div class="fluent-card overflow-hidden">
+          <div class="border-b border-slate-100 px-5 py-3.5 flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[13px] font-bold text-slate-800">Item Variants</p>
+              <p class="text-[11.5px] text-slate-400">The actual variants generated from the selected options.</p>
+            </div>
+            <button (click)="openAddVariant()" class="btn-primary h-8.5 px-3.5 text-[12px] font-semibold rounded-xl gap-1.5">
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Add Variant
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-100 text-[13px]">
+              <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                <tr>
+                  <th class="px-5 py-3 text-left w-14"></th>
+                  <th class="px-5 py-3 text-left">Variant</th>
+                  <th class="px-5 py-3 text-left">SKU</th>
+                  <th class="px-5 py-3 text-left">Barcode</th>
+                  <th class="px-5 py-3 text-right">Price</th>
+                  <th class="px-5 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                @if (loadingVariants()) {
+                  <tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Loading variants…</td></tr>
+                } @else {
+                  @for (v of variants(); track v.itemVariantId) {
+                    <tr class="hover:bg-slate-50/50">
+                      <td class="px-5 py-2.5">
+                        @if (v.image) {
+                          <img [src]="v.image" alt="" class="h-9 w-9 rounded-lg object-cover border border-slate-100" onerror="this.style.display='none'" />
+                        } @else {
+                          <div class="h-9 w-9 rounded-lg bg-slate-100"></div>
+                        }
+                      </td>
+                      <td class="px-5 py-2.5 font-semibold text-slate-800">{{ v.itemVariantName }}</td>
+                      <td class="px-5 py-2.5 font-mono text-[12px] text-slate-500">{{ v.sku }}</td>
+                      <td class="px-5 py-2.5 font-mono text-[12px] text-slate-500">{{ v.barcode || '—' }}</td>
+                      <td class="px-5 py-2.5 text-right font-medium text-slate-800">{{ v.price | number:'1.2-2' }}</td>
+                      <td class="px-5 py-2.5">
+                        <div class="flex justify-end gap-1">
+                          <button (click)="openEditVariant(v)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50" title="Edit variant">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                          </button>
+                          <button (click)="deleteVariant(v)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" title="Delete variant">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">No variants yet. Select option values above and save to generate variants.</td></tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        @if (variantModalOpen()) {
+          <app-variant-edit
+            [itemId]="itemId()"
+            [itemVariantId]="editingVariantId()"
+            (close)="variantModalOpen.set(false)"
+            (saved)="onVariantSaved()"
+          />
+        }
+      }
+    }
+
+    <!-- TIERED PRICING TAB -->
+    @if (activeTab() === 'tiered-pricing') {
+      <div class="fluent-card p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <div>
+            <p class="text-[13px] font-bold text-slate-800">Tiered Pricing</p>
+            <p class="text-[11.5px] text-slate-400">Configure custom pricing tiers based on quantity ordered.</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <app-checkbox [checked]="isPriceRange()" (checkedChange)="isPriceRange.set($event)" />
+              <span class="text-[12px] font-semibold text-slate-600">Enable Tiered Pricing</span>
+            </label>
+            <button (click)="addPriceRange()" [disabled]="!isPriceRange()" class="btn-primary h-8 px-3 text-[12px] font-semibold rounded-lg gap-1 disabled:opacity-50">
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Add Row
+            </button>
+          </div>
+        </div>
+        
+        @if (isPriceRange()) {
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-[13px]">
+              <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                <tr>
+                  <th class="px-2 py-2 text-left">From Qty</th>
+                  <th class="px-2 py-2 text-left">To Qty</th>
+                  <th class="px-2 py-2 text-left">Price</th>
+                  <th class="px-2 py-2 text-left">Start Date</th>
+                  <th class="px-2 py-2 text-left">End Date</th>
+                  <th class="px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (pr of priceRanges(); track $index) {
+                  <tr>
+                    <td class="px-2 py-1.5"><input type="number" [ngModel]="pr.fromQty" (ngModelChange)="updatePriceRange($index, 'fromQty', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-2 py-1.5"><input type="number" [ngModel]="pr.toQty" (ngModelChange)="updatePriceRange($index, 'toQty', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-2 py-1.5"><input type="number" [ngModel]="pr.price" (ngModelChange)="updatePriceRange($index, 'price', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-2 py-1.5"><input type="date" [ngModel]="pr.fromDate" (ngModelChange)="updatePriceRange($index, 'fromDate', $event)" class="h-8 w-36 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-2 py-1.5"><input type="date" [ngModel]="pr.toDate" (ngModelChange)="updatePriceRange($index, 'toDate', $event)" class="h-8 w-36 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-2 py-1.5">
+                      <button (click)="removePriceRange($index)" [disabled]="priceRanges().length <= 1" class="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-30">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="py-10 text-center text-[13px] text-slate-400">Enable Tiered Pricing to configure tiered price ranges.</p>
+        }
+      </div>
+    }
+
+    <!-- CUSTOM FIELDS TAB -->
+    @if (activeTab() === 'custom-fields') {
+      <div class="fluent-card p-5 flex flex-col gap-4">
+        <div class="border-b border-slate-100 pb-3">
+          <p class="text-[13px] font-bold text-slate-800">Custom Fields</p>
+          <p class="text-[11.5px] text-slate-400">Configure additional custom metadata fields for this item.</p>
+        </div>
+        <div class="flex flex-col gap-5">
+          @for (f of customFields(); track f.fieldId; let idx = $index) {
+            <div class="rounded-xl border border-slate-150 p-4 bg-slate-50/20">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+                <span class="text-[13px] font-bold text-slate-700">{{ f.fieldName }}</span>
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <app-checkbox [checked]="f.isShow" (checkedChange)="updateCustomFieldIsShow(idx, $event)" />
+                  <span class="text-[11.5px] font-semibold text-slate-500">Show</span>
+                </label>
+              </div>
+
+              <!-- Field Input Based on Type -->
+              @if (f.fieldTypeId === 1) {
+                <!-- Text Field -->
+                <input type="text" [ngModel]="f.fieldValue" (ngModelChange)="updateCustomFieldValue(idx, $event)"
+                  class="h-9 w-full rounded-xl border border-slate-200 px-3 text-[13px] bg-white" />
+              } @else if (f.fieldTypeId === 2) {
+                <!-- Dropdown Field -->
+                <div class="relative w-full max-w-xs">
+                  <app-select [options]="f.fields" labelKey="name" valueKey="name" [value]="f.fieldValue"
+                    (valueChange)="updateCustomFieldValue(idx, $event)" defaultLabel="- Select -" defaultValue="" />
+                </div>
+              } @else if (f.fieldTypeId === 3) {
+                <!-- Checkbox Options -->
+                <div class="flex flex-wrap gap-x-6 gap-y-2">
+                  @for (opt of f.fields; track opt.id; let optIdx = $index) {
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                      <app-checkbox [checked]="opt.selected || opt.fieldChecked === 'checked'"
+                        (checkedChange)="updateCustomFieldOptionChecked(idx, optIdx, $event)" />
+                      <span class="text-[13px] text-slate-600">{{ opt.name }}</span>
+                    </label>
+                  }
+                </div>
+              } @else if (f.fieldTypeId === 4) {
+                <!-- Radio Options -->
+                <div class="flex flex-wrap gap-x-6 gap-y-2">
+                  @for (opt of f.fields; track opt.id) {
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                      <input type="radio" [name]="'custom_radio_' + f.fieldId" [value]="opt.name"
+                        [checked]="f.fieldValue === opt.name || opt.fieldChecked === 'checked'"
+                        (change)="updateCustomFieldValue(idx, opt.name)"
+                        class="h-4 w-4 text-brand-600 border-slate-350 focus:ring-brand-500" />
+                      <span class="text-[13px] text-slate-600">{{ opt.name }}</span>
+                    </label>
+                  }
+                </div>
+              } @else if (f.fieldTypeId === 5) {
+                <!-- HTML / Rich Text -->
+                <textarea rows="4" [ngModel]="f.fieldValue" (ngModelChange)="updateCustomFieldValue(idx, $event)"
+                  class="w-full rounded-xl border border-slate-200 px-3 py-2 text-[13px] bg-white resize-none"></textarea>
+              }
+            </div>
+          } @empty {
+            <p class="py-8 text-center text-[13px] text-slate-400">No custom fields defined for this company.</p>
+          }
+        </div>
+      </div>
+    }
+
     <!-- MEDIA TAB -->
     @if (activeTab() === 'media') {
       <div class="fluent-card p-5">
         <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Images</p>
         <div class="flex flex-wrap gap-3 mb-4">
-          @for (img of media(); track $index) {
+          @for (img of media(); track img.imageFullPath) {
             <div class="relative group">
-              <img [src]="img" alt="" class="h-24 w-24 rounded-xl object-cover border border-slate-200" onerror="this.style.display='none'" />
-              <button (click)="removeMedia($index)" class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <img [src]="img.imageFullPath" alt="" class="h-24 w-24 rounded-xl object-cover border border-slate-200" onerror="this.style.display='none'" />
+              <button (click)="removeMedia(img)" class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -155,8 +431,12 @@
         <div class="max-w-xs">
           <app-image-upload value="" (valueChange)="addMedia($event)" entityType="Item" entitySubType="Image" label="Add image" />
         </div>
-        <p class="text-[11px] text-slate-400 mt-2">Note: item image persistence uses the dedicated image API (pending endpoint).</p>
       </div>
+    }
+
+    <!-- CONTENT TAB (tags / SEO / FAQ / similar) — saved items only -->
+    @if (activeTab() === 'content' && itemId()) {
+      <app-item-content [itemId]="itemId()" />
     }
   }
 </div>

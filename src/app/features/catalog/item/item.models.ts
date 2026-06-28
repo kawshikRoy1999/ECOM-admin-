@@ -73,6 +73,10 @@ export interface ItemDetail {
   isReturnWindowDays: boolean | null;
   pricing: ItemPricing[];
   media: ItemImage[];
+  variantOptions: ItemVariantOptionSel[];
+  isPriceRange?: boolean;
+  priceRanges?: ItemPriceRange[];
+  customFields?: ItemCustomField[];
 }
 
 /** Lists needed to populate the item form (GetALLItemDdlList). */
@@ -81,4 +85,141 @@ export interface ItemDdlLists {
   categories: NamedOption[];
   itemCodeFormatName: string;
   itemCount: number;
+  currency: string;
+}
+
+/** A tag (TagModel). */
+export interface ItemTag {
+  tagId: number;
+  tag: string;
+  itemId: number;
+  displayOrder: number;
+}
+
+/** A meta/SEO tag (MetaTagModel). */
+export interface ItemMeta {
+  metaTagId: number;
+  metaTag: string;
+  itemId: number;
+}
+
+/** An FAQ entry (FAQModel). */
+export interface ItemFaq {
+  faqId: number;
+  faq: string;
+  faqAnswer: string;
+  itemId: number;
+}
+
+/** An available variant option for a category (GetVariantOptionsWithValues). */
+export interface AvailableVariantOption {
+  variantOptionId: number;
+  optionName: string;
+  appliedOnVariant: boolean;
+  optionValues: { optionValueId: number; optionValueName: string }[];
+}
+
+/** The item's selected variant option (InventoryOptionList / AddEditItemVariantOption). */
+export interface ItemVariantOptionSel {
+  variantOptionId: number;
+  variantName: string;
+  defaultDisplayOrder: number;
+  isApplicable: boolean;
+  isFilterable: boolean;
+  /**
+   * value ids selected for this option. `optionValueId` = category value id (OptionValueId),
+   * `variantOptionValueId` = the item's existing value mapping id (0/null for new).
+   */
+  selectedValues: {
+    optionValueId: number;
+    variantOptionValueId: number;
+    optionValue: string;
+    displayOrder: number;
+    colorCode: string;
+  }[];
+}
+
+/** A generated/saved variant of an item (ItemVariant from GetVariant). */
+export interface ItemVariantRow {
+  itemVariantId: number;
+  itemVariantName: string;
+  sku: string;
+  barcode: string;
+  price: number;
+  image: string;
+}
+
+/** A pricing row for a variant (InventoryItemVariantPricing / AddEditItemVariantPricing). */
+export interface VariantPricing {
+  itemPricingId: number;
+  mrp: number;
+  discount: number;
+  price: number;
+  cost: number;
+  startDate: string;
+  endDate: string;
+  batchCode: string;
+}
+
+/** The add/edit variant editor payload (GetAddVariant load / SaveInventoryVariant). */
+export interface VariantEdit {
+  itemId: number;
+  itemVariantId: number;
+  itemVariantName: string;
+  sku: string;
+  barcode: string;
+  skuBarcodeImage: string; // base64 barcode preview from the gateway
+  returnDays: number;
+  returnInfo: string;
+  mrp: number;
+  discount: number;
+  pricing: VariantPricing[];
+}
+
+/** A similar-item link (SimilarItems). */
+export interface SimilarItem {
+  similarItemId: number;
+  forItemName: string;
+  forVariantName: string;
+  similarItemName: string;
+  similarVariantName: string;
+  isActive: boolean;
+}
+
+/** Price Range for tiered pricing. */
+export interface ItemPriceRange {
+  itemPriceChartId: number;
+  fromQty: number;
+  toQty: number;
+  price: number;
+  fromDate: string;
+  toDate: string;
+}
+
+/** Custom Field Option (FieldViewModel). */
+export interface CustomFieldOption {
+  id: number;
+  fieldId: number;
+  name: string;
+  fieldChecked: string;
+  selected?: boolean;
+}
+
+/** Custom Field definition (ItemCustomFieldMaster). */
+export interface ItemCustomField {
+  mappingId: number;
+  fieldId: number;
+  fieldName: string;
+  fieldValue: string;
+  fieldType: string;
+  fieldTypeId: number;
+  isShow: boolean;
+  selectedValue: number;
+  fields: CustomFieldOption[];
+}
+
+/** Stock Transaction log. */
+export interface StockTransaction {
+  date: string;
+  details: string;
 }
