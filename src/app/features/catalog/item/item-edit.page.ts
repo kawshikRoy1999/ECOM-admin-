@@ -6,7 +6,6 @@ import { DecimalPipe } from '@angular/common';
 
 import { Select } from '../../../shared/ui/select/select';
 import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
-import { Tabs, TabItem } from '../../../shared/ui/tabs/tabs';
 import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
@@ -48,7 +47,7 @@ interface OptionRow {
 
 @Component({
   selector: 'app-item-edit-page',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, Tabs, ImageUpload, ItemContent, VariantEditModal],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ImageUpload, ItemContent, VariantEditModal],
   templateUrl: './item-edit.page.html',
 })
 export class ItemEditPage {
@@ -62,24 +61,6 @@ export class ItemEditPage {
   readonly itemId = signal(0);
   readonly loading = signal(false);
   readonly saving = signal(false);
-
-  readonly activeTab = signal('details');
-  // "Stock" and "Content" tabs only apply to saved items.
-  readonly tabs = computed<TabItem[]>(() => {
-    const base: TabItem[] = [
-      { id: 'details', label: 'Details' },
-      { id: 'pricing', label: 'Pricing' },
-      { id: 'tiered-pricing', label: 'Tiered Pricing' },
-      { id: 'variants', label: 'Variants' },
-      { id: 'custom-fields', label: 'Custom Fields' },
-      { id: 'media', label: 'Media' },
-    ];
-    if (this.itemId()) {
-      base.push({ id: 'stock', label: 'Stock' });
-      base.push({ id: 'content', label: 'Content' });
-    }
-    return base;
-  });
 
   readonly brands = signal<NamedOption[]>([]);
   readonly categories = signal<NamedOption[]>([]);
@@ -387,9 +368,17 @@ export class ItemEditPage {
       next: (v) => {
         this.variants.set(v);
         this.loadingVariants.set(false);
+        this.loadStockVariants();
       },
       error: () => this.loadingVariants.set(false),
     });
+  }
+
+  async discard(): Promise<void> {
+    if (this.form.dirty) {
+      if (!(await this.confirm.ask('Discard unsaved changes?', { confirmLabel: 'Discard', danger: true }))) return;
+    }
+    this.router.navigate(['/catalog/items']);
   }
 
   openAddVariant(): void {
@@ -600,8 +589,7 @@ export class ItemEditPage {
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.activeTab.set('details');
-      this.toast.error('Fill in the required item details (see Details tab).');
+      this.toast.error('Fill in the required item details.');
       return;
     }
     this.saving.set(true);
@@ -733,14 +721,6 @@ export class ItemEditPage {
         this.router.navigate(['/catalog/items']);
       },
     });
-  }
-
-  // --- Active Tab Switching ---
-  setActiveTab(tabId: string): void {
-    this.activeTab.set(tabId);
-    if (tabId === 'stock') {
-      this.loadStockVariants();
-    }
   }
 
   // --- Variants Filtering ---
