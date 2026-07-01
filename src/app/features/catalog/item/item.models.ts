@@ -84,6 +84,7 @@ export interface ItemDdlLists {
   brands: NamedOption[];
   categories: NamedOption[];
   itemCodeFormatName: string;
+  itemCodeFormatId: number;
   itemCount: number;
   currency: string;
 }
@@ -174,6 +175,26 @@ export interface VariantEdit {
   mrp: number;
   discount: number;
   pricing: VariantPricing[];
+  variantOptionValueIds: string;
+  repoId: number;
+  options?: ItemVariantOptionSel[];
+}
+
+/** An item from the repository search (GetItemRepositoryData). */
+export interface RepoItem {
+  id: number;
+  itemCode: string;
+  itemName: string;
+  designCode: string;
+  designName: string;
+  variantName: string;
+}
+
+/** A batch row from syncing a repository item (GetRepositoryBatchByRepoId). */
+export interface RepositoryBatch {
+  barcode: string;
+  price: number;
+  quantity: number;
 }
 
 /** A similar-item link (SimilarItems). */
@@ -222,4 +243,49 @@ export interface ItemCustomField {
 export interface StockTransaction {
   date: string;
   details: string;
+}
+
+/** A store location stock status row (StockList). */
+export interface StockList {
+  storeId: number;
+  storeName: string;
+  rol: number;
+  moq: number;
+  totalCurrentStock: number;
+  itemROIMOQDetailsId: string | null;
+  isSerialized: boolean | null;
+  onOrderQty: number;
+  available: number;
+}
+
+/** Request payload to save ROL/MOQ details. */
+export interface RequestSaveRolMoqDetails {
+  itemROIMOQDetailsId: string | number;
+  itemId: number;
+  itemVariantId: number;
+  rol: number;
+  moq: number;
+  storeId: number;
+}
+
+/** A stock Bin location row (Bin). */
+export interface Bin {
+  binId: number;
+  companyId?: number;
+  name: string;
+  isActive: boolean;
+  storeId: number;
+  isDefault: boolean;
+  currentStock: number;
+  isModal: boolean;
+  itemId: number;
+  itemVariantId: number;
+  batchCode?: string;
+  batchId?: number | null;
+}
+
+/** Dropdown Option for Item Variants in Stock Tab. */
+export interface ItemVariantInfo {
+  id: number;
+  name: string;
 }

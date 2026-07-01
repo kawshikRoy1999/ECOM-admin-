@@ -22,6 +22,12 @@ import {
   ItemCustomField,
   StockTransaction,
   ItemImage,
+  RepoItem,
+  RepositoryBatch,
+  StockList,
+  RequestSaveRolMoqDetails,
+  Bin,
+  ItemVariantInfo,
 } from './item.models';
 
 @Injectable({ providedIn: 'root' })
@@ -107,6 +113,7 @@ export class ItemService {
           brands: this.toOptions(d?.['brand'] as Record<string, unknown>[]),
           categories: this.toOptions(d?.['category'] as Record<string, unknown>[]),
           itemCodeFormatName: String(d?.['itemCodeFormatName'] ?? ''),
+          itemCodeFormatId: Number(d?.['itemCodeFormatId'] ?? 0),
           itemCount: Number(d?.['itemCount'] ?? 0),
           currency: String(d?.['currency'] ?? ''),
         })),
@@ -163,22 +170,28 @@ export class ItemService {
   }
 
   /** The item's actual variants (GetVariant → data.itemVariantList). */
-  variants(itemId: number): Observable<ItemVariantRow[]> {
+  variants(itemId: number, variantOptionValueIds: string = ''): Observable<ItemVariantRow[]> {
     return this.api
       .postRaw<{ itemVariantList?: Record<string, unknown>[] }>('ProductManagement/GetVariant', {
         CompanyId: this.auth.companyId(),
+        companyId: this.auth.companyId(),
+        companyid: this.auth.companyId(),
         ItemId: itemId,
-        VariantOptionValueIds: '',
+        itemId: itemId,
+        itemid: itemId,
+        VariantOptionValueIds: variantOptionValueIds,
+        variantOptionValueIds: variantOptionValueIds,
+        variantoptionvalueids: variantOptionValueIds,
       })
       .pipe(
         map((res) =>
           (res?.data?.itemVariantList ?? []).map((v) => ({
-            itemVariantId: Number(v['itemVariantId'] ?? 0),
-            itemVariantName: String(v['itemVariantName'] ?? ''),
-            sku: String(v['sku'] ?? ''),
-            barcode: String(v['barcode'] ?? ''),
-            price: Number(v['price'] ?? 0),
-            image: String(v['image'] ?? ''),
+            itemVariantId: Number(v['itemVariantId'] ?? v['ItemVariantId'] ?? 0),
+            itemVariantName: String(v['itemVariantName'] ?? v['ItemVariantName'] ?? ''),
+            sku: String(v['sku'] ?? v['SKU'] ?? ''),
+            barcode: String(v['barcode'] ?? v['Barcode'] ?? ''),
+            price: Number(v['price'] ?? v['Price'] ?? 0),
+            image: String(v['image'] ?? v['Image'] ?? v['imageUrl'] ?? v['ImageUrl'] ?? ''),
           })),
         ),
       );
@@ -189,12 +202,19 @@ export class ItemService {
     return this.api
       .post<Record<string, unknown>>('ProductManagement/GetAddVariant', {
         CompanyId: this.auth.companyId(),
+        companyId: this.auth.companyId(),
+        companyid: this.auth.companyId(),
         ItemId: itemId,
+        itemId: itemId,
+        itemid: itemId,
         ItemVariantId: itemVariantId,
+        itemVariantId: itemVariantId,
+        itemvariantid: itemVariantId,
       })
       .pipe(
         map((d) => {
-          const pricing = (d?.['inventoryItemVariantPricingList'] as Record<string, unknown>[]) ?? [];
+          const pricing = ((d?.['inventoryItemVariantPricingList'] ?? d?.['InventoryItemVariantPricingList']) as Record<string, unknown>[]) ?? [];
+          const options = ((d?.['inventoryOptionList'] ?? d?.['InventoryOptionList']) as Record<string, unknown>[]) ?? [];
           return {
             itemId: Number(d?.['itemId'] ?? itemId),
             itemVariantId: Number(d?.['itemVariantId'] ?? itemVariantId),
@@ -206,15 +226,31 @@ export class ItemService {
             returnInfo: String(d?.['returnInfo'] ?? ''),
             mrp: Number(d?.['mrp'] ?? 0),
             discount: Number(d?.['discount'] ?? 0),
+            variantOptionValueIds: '',
+            repoId: 0,
             pricing: pricing.map((p) => ({
-              itemPricingId: Number(p['itemPricingId'] ?? 0),
-              mrp: Number(p['mrp'] ?? 0),
-              discount: Number(p['discount'] ?? 0),
-              price: Number(p['price'] ?? 0),
-              cost: Number(p['cost'] ?? 0),
-              startDate: String(p['startDate'] ?? '').slice(0, 10),
-              endDate: String(p['endDate'] ?? '').slice(0, 10),
-              batchCode: String(p['batchCode'] ?? ''),
+              itemPricingId: Number(p['itemPricingId'] ?? p['ItemPricingId'] ?? 0),
+              mrp: Number(p['mrp'] ?? p['MRP'] ?? 0),
+              discount: Number(p['discount'] ?? p['Discount'] ?? 0),
+              price: Number(p['price'] ?? p['Price'] ?? 0),
+              cost: Number(p['cost'] ?? p['Cost'] ?? 0),
+              startDate: String(p['startDate'] ?? p['StartDate'] ?? '').slice(0, 10),
+              endDate: String(p['endDate'] ?? p['EndDate'] ?? '').slice(0, 10),
+              batchCode: String(p['batchCode'] ?? p['BatchCode'] ?? ''),
+            })),
+            options: options.map((o) => ({
+              variantOptionId: Number(o['variantOptionId'] ?? o['VariantOptionId'] ?? 0),
+              variantName: String(o['variantName'] ?? o['VariantName'] ?? o['optionName'] ?? o['OptionName'] ?? ''),
+              defaultDisplayOrder: Number(o['defaultDisplayOrder'] ?? o['DefaultDisplayOrder'] ?? 0),
+              isApplicable: o['isApplicable'] === true || o['IsApplicable'] === true || Number(o['appliedOnVariant'] ?? o['AppliedOnVariant'] ?? 0) !== 0,
+              isFilterable: o['isFilterable'] === true || o['IsFilterable'] === true,
+              selectedValues: (((o['variantOptionValue'] ?? o['VariantOptionValue']) as Record<string, unknown>[]) ?? []).map((v) => ({
+                optionValueId: Number(v['optionValueId'] ?? v['OptionValueId'] ?? 0),
+                variantOptionValueId: Number(v['variantOptionValueId'] ?? v['VariantOptionValueId'] ?? 0),
+                optionValue: String(v['optionValue'] ?? v['OptionValue'] ?? ''),
+                displayOrder: Number(v['displayOrder'] ?? v['DisplayOrder'] ?? 0),
+                colorCode: String(v['colorCode'] ?? v['ColorCode'] ?? ''),
+              })),
             })),
           };
         }),
@@ -223,31 +259,125 @@ export class ItemService {
 
   /** Create/update a variant (SaveInventoryVariant). */
   saveVariant(v: VariantEdit): Observable<unknown> {
-    return this.api.post('ProductManagement/SaveInventoryVariant', {
+    const payload = {
       CompanyId: this.auth.companyId(),
-      ItemId: v.itemId,
-      ItemVariantId: v.itemVariantId,
-      ItemVariantName: v.itemVariantName,
-      SKU: v.sku,
-      Barcode: v.barcode,
+      companyId: this.auth.companyId(),
+      companyid: this.auth.companyId(),
+      UserId: this.auth.userId(),
+      userId: this.auth.userId(),
+      userid: this.auth.userId(),
       CreatedByUserId: this.auth.userId(),
+      createdByUserId: this.auth.userId(),
+      createdbyuserid: this.auth.userId(),
       UserName: this.auth.displayName(),
+      userName: this.auth.displayName(),
+      username: this.auth.displayName(),
+      ItemId: v.itemId,
+      itemId: v.itemId,
+      itemid: v.itemId,
+      ItemVariantId: v.itemVariantId,
+      itemVariantId: v.itemVariantId,
+      itemvariantid: v.itemVariantId,
+      ItemVariantName: v.itemVariantName,
+      itemVariantName: v.itemVariantName,
+      itemvariantname: v.itemVariantName,
+      SKU: v.sku,
+      sku: v.sku,
+      Barcode: v.barcode,
+      barcode: v.barcode,
       ReturnDays: v.returnDays,
+      returnDays: v.returnDays,
+      returndays: v.returnDays,
       ReturnInfo: v.returnInfo,
+      returnInfo: v.returnInfo,
+      returninfo: v.returnInfo,
       MRP: v.mrp,
+      mrp: v.mrp,
       Discount: v.discount,
-      VariantOptionValueIds: '',
+      discount: v.discount,
+      VariantOptionValueIds: v.variantOptionValueIds,
+      variantOptionValueIds: v.variantOptionValueIds,
+      variantoptionvalueids: v.variantOptionValueIds,
+      RepoId: v.repoId || null,
+      repoId: v.repoId || null,
+      repoid: v.repoId || null,
       InventoryItemVariantPricingList: v.pricing.map((p) => ({
         ItemVariantPriceId: p.itemPricingId,
+        itemVariantPriceId: p.itemPricingId,
+        itemvariantpriceid: p.itemPricingId,
         MRP: p.mrp,
+        mrp: p.mrp,
         Discount: p.discount,
+        discount: p.discount,
         Price: p.price,
+        price: p.price,
+        Cost: p.cost,
+        cost: p.cost,
         ActualCostPerItem: p.cost,
+        actualCostPerItem: p.cost,
+        actualcostperitem: p.cost,
         StartDate: p.startDate,
+        startDate: p.startDate,
+        startdate: p.startDate,
         EndDate: p.endDate,
+        endDate: p.endDate,
+        enddate: p.endDate,
         BatchCode: p.batchCode,
+        batchCode: p.batchCode,
+        batchcode: p.batchCode,
       })),
-    });
+      inventoryItemVariantPricingList: v.pricing.map((p) => ({
+        ItemVariantPriceId: p.itemPricingId,
+        itemVariantPriceId: p.itemPricingId,
+        itemvariantpriceid: p.itemPricingId,
+        MRP: p.mrp,
+        mrp: p.mrp,
+        Discount: p.discount,
+        discount: p.discount,
+        Price: p.price,
+        price: p.price,
+        Cost: p.cost,
+        cost: p.cost,
+        ActualCostPerItem: p.cost,
+        actualCostPerItem: p.cost,
+        actualcostperitem: p.cost,
+        StartDate: p.startDate,
+        startDate: p.startDate,
+        startdate: p.startDate,
+        EndDate: p.endDate,
+        endDate: p.endDate,
+        enddate: p.endDate,
+        BatchCode: p.batchCode,
+        batchCode: p.batchCode,
+        batchcode: p.batchCode,
+      })),
+      inventoryitemvariantpricinglist: v.pricing.map((p) => ({
+        ItemVariantPriceId: p.itemPricingId,
+        itemVariantPriceId: p.itemPricingId,
+        itemvariantpriceid: p.itemPricingId,
+        MRP: p.mrp,
+        mrp: p.mrp,
+        Discount: p.discount,
+        discount: p.discount,
+        Price: p.price,
+        price: p.price,
+        Cost: p.cost,
+        cost: p.cost,
+        ActualCostPerItem: p.cost,
+        actualCostPerItem: p.cost,
+        actualcostperitem: p.cost,
+        StartDate: p.startDate,
+        startDate: p.startDate,
+        startdate: p.startDate,
+        EndDate: p.endDate,
+        endDate: p.endDate,
+        enddate: p.endDate,
+        BatchCode: p.batchCode,
+        batchCode: p.batchCode,
+        batchcode: p.batchCode,
+      })),
+    };
+    return this.api.post('ProductManagement/SaveInventoryVariant', payload);
   }
 
   /** Delete a variant (DeleteVariant). */
@@ -332,66 +462,66 @@ export class ItemService {
   }
 
   private mapItemDetail(d: Record<string, unknown>): ItemDetail {
-    const pricing = (d['inventoryPricingList'] as Record<string, unknown>[]) ?? [];
-    const media = (d['inventoryMediaList'] as Record<string, unknown>[]) ?? [];
-    const options = (d['inventoryOptionList'] as Record<string, unknown>[]) ?? [];
+    const pricing = ((d['inventoryPricingList'] ?? d['InventoryPricingList']) as Record<string, unknown>[]) ?? [];
+    const media = ((d['inventoryMediaList'] ?? d['InventoryMediaList']) as Record<string, unknown>[]) ?? [];
+    const options = ((d['inventoryOptionList'] ?? d['InventoryOptionList']) as Record<string, unknown>[]) ?? [];
     return {
-      itemId: Number(d['itemId'] ?? 0),
-      brandId: Number(d['brandId'] ?? 0),
-      categoryId: Number(d['categoryId'] ?? 0),
-      subCategoryId: Number(d['subCategoryId'] ?? 0),
-      itemName: String(d['itemName'] ?? ''),
-      itemCode: String(d['itemCode'] ?? ''),
-      itemDescription: String(d['itemDescription'] ?? ''),
-      liveFromDate: String(d['liveFromDate'] ?? '').slice(0, 10),
-      liveToDate: String(d['liveToDate'] ?? '').slice(0, 10),
-      itemSortOrderInCategory: Number(d['itemSortOrderInCategory'] ?? 0),
-      isActive: d['isActive'] !== false,
-      isFeatureItem: d['isFeatureItem'] === true,
-      isSoldOut: d['isSoldOut'] === true,
-      isSerialized: d['isSerialized'] === true,
-      taxId: Number(d['taxId'] ?? 0),
-      hsn: String(d['hsn'] ?? d['hsN'] ?? ''),
-      showAvailableQtyIfBelow: d['showAvailableQtyIfBelow'] != null ? Number(d['showAvailableQtyIfBelow']) : null,
-      returnWindowInDays: d['returnWindowInDays'] != null ? Number(d['returnWindowInDays']) : null,
-      isReturnWindowDays: d['isReturnWindowDays'] != null ? d['isReturnWindowDays'] === true : null,
+      itemId: Number(d['itemId'] ?? d['ItemId'] ?? 0),
+      brandId: Number(d['brandId'] ?? d['BrandId'] ?? 0),
+      categoryId: Number(d['categoryId'] ?? d['CategoryId'] ?? 0),
+      subCategoryId: Number(d['subCategoryId'] ?? d['SubCategoryId'] ?? 0),
+      itemName: String(d['itemName'] ?? d['ItemName'] ?? ''),
+      itemCode: String(d['itemCode'] ?? d['ItemCode'] ?? ''),
+      itemDescription: String(d['itemDescription'] ?? d['ItemDescription'] ?? ''),
+      liveFromDate: String(d['liveFromDate'] ?? d['LiveFromDate'] ?? '').slice(0, 10),
+      liveToDate: String(d['liveToDate'] ?? d['LiveToDate'] ?? '').slice(0, 10),
+      itemSortOrderInCategory: Number(d['itemSortOrderInCategory'] ?? d['ItemSortOrderInCategory'] ?? 0),
+      isActive: d['isActive'] !== false && d['IsActive'] !== false,
+      isFeatureItem: d['isFeatureItem'] === true || d['IsFeatureItem'] === true,
+      isSoldOut: d['isSoldOut'] === true || d['IsSoldOut'] === true,
+      isSerialized: d['isSerialized'] === true || d['IsSerialized'] === true,
+      taxId: Number(d['taxId'] ?? d['TaxId'] ?? 0),
+      hsn: String(d['hsn'] ?? d['hsN'] ?? d['HSN'] ?? ''),
+      showAvailableQtyIfBelow: (d['showAvailableQtyIfBelow'] ?? d['ShowAvailableQtyIfBelow']) != null ? Number(d['showAvailableQtyIfBelow'] ?? d['ShowAvailableQtyIfBelow']) : null,
+      returnWindowInDays: (d['returnWindowInDays'] ?? d['ReturnWindowInDays']) != null ? Number(d['returnWindowInDays'] ?? d['ReturnWindowInDays']) : null,
+      isReturnWindowDays: (d['isReturnWindowDays'] ?? d['IsReturnWindowDays']) != null ? (d['isReturnWindowDays'] ?? d['IsReturnWindowDays']) === true : null,
       pricing: pricing.map((p) => ({
-        itemPricingId: Number(p['itemPricingId'] ?? 0),
-        mrp: Number(p['mrp'] ?? 0),
-        discount: Number(p['discount'] ?? 0),
-        price: Number(p['price'] ?? 0),
-        cost: Number(p['cost'] ?? 0),
-        startDate: String(p['startDate'] ?? '').slice(0, 10),
-        endDate: String(p['endDate'] ?? '').slice(0, 10),
+        itemPricingId: Number(p['itemPricingId'] ?? p['ItemPricingId'] ?? 0),
+        mrp: Number(p['mrp'] ?? p['MRP'] ?? 0),
+        discount: Number(p['discount'] ?? p['Discount'] ?? 0),
+        price: Number(p['price'] ?? p['Price'] ?? 0),
+        cost: Number(p['cost'] ?? p['Cost'] ?? 0),
+        startDate: String(p['startDate'] ?? p['StartDate'] ?? '').slice(0, 10),
+        endDate: String(p['endDate'] ?? p['EndDate'] ?? '').slice(0, 10),
       })),
       media: media.map((m) => ({
-        imageId: Number(m['imageId'] ?? 0),
-        imageFullPath: String(m['imageFullPath'] ?? ''),
+        imageId: Number(m['imageId'] ?? m['ImageId'] ?? 0),
+        imageFullPath: String(m['imageFullPath'] ?? m['ImageFullPath'] ?? ''),
       })),
       variantOptions: options.map((o) => ({
-        variantOptionId: Number(o['variantOptionId'] ?? 0),
-        variantName: String(o['variantName'] ?? o['optionName'] ?? ''),
-        defaultDisplayOrder: Number(o['defaultDisplayOrder'] ?? 0),
-        isApplicable: o['isApplicable'] === true,
-        isFilterable: o['isFilterable'] === true,
-        selectedValues: ((o['variantOptionValue'] as Record<string, unknown>[]) ?? []).map((v) => ({
-          optionValueId: Number(v['optionValueId'] ?? 0),
-          variantOptionValueId: Number(v['variantOptionValueId'] ?? 0),
-          optionValue: String(v['optionValue'] ?? ''),
-          displayOrder: Number(v['displayOrder'] ?? 0),
-          colorCode: String(v['colorCode'] ?? ''),
+        variantOptionId: Number(o['variantOptionId'] ?? o['VariantOptionId'] ?? 0),
+        variantName: String(o['variantName'] ?? o['VariantName'] ?? o['optionName'] ?? o['OptionName'] ?? ''),
+        defaultDisplayOrder: Number(o['defaultDisplayOrder'] ?? o['DefaultDisplayOrder'] ?? 0),
+        isApplicable: o['isApplicable'] === true || o['IsApplicable'] === true,
+        isFilterable: o['isFilterable'] === true || o['IsFilterable'] === true,
+        selectedValues: (((o['variantOptionValue'] ?? o['VariantOptionValue']) as Record<string, unknown>[]) ?? []).map((v) => ({
+          optionValueId: Number(v['optionValueId'] ?? v['OptionValueId'] ?? 0),
+          variantOptionValueId: Number(v['variantOptionValueId'] ?? v['VariantOptionValueId'] ?? 0),
+          optionValue: String(v['optionValue'] ?? v['OptionValue'] ?? ''),
+          displayOrder: Number(v['displayOrder'] ?? v['DisplayOrder'] ?? 0),
+          colorCode: String(v['colorCode'] ?? v['ColorCode'] ?? ''),
         })),
       })),
-      isPriceRange: d['isPriceRange'] === true,
-      priceRanges: ((d['addEditPriceRange'] as Record<string, unknown>[]) ?? []).map((p) => ({
-        itemPriceChartId: Number(p['itemPriceChartId'] ?? 0),
-        fromQty: Number(p['fromQty'] ?? 0),
-        toQty: Number(p['toQty'] ?? 0),
-        price: Number(p['price'] ?? 0),
-        fromDate: String(p['priceStartDt'] ?? p['fromDate'] ?? '').slice(0, 10),
-        toDate: String(p['priceEndDt'] ?? p['toDate'] ?? '').slice(0, 10),
+      isPriceRange: d['isPriceRange'] === true || d['IsPriceRange'] === true,
+      priceRanges: (((d['addEditPriceRange'] ?? d['AddEditPriceRange']) as Record<string, unknown>[]) ?? []).map((p) => ({
+        itemPriceChartId: Number(p['itemPriceChartId'] ?? p['ItemPriceChartId'] ?? 0),
+        fromQty: Number(p['fromQty'] ?? p['FromQty'] ?? 0),
+        toQty: Number(p['toQty'] ?? p['ToQty'] ?? 0),
+        price: Number(p['price'] ?? p['Price'] ?? 0),
+        fromDate: String(p['priceStartDt'] ?? p['PriceStartDt'] ?? p['fromDate'] ?? p['FromDate'] ?? '').slice(0, 10),
+        toDate: String(p['priceEndDt'] ?? p['PriceEndDt'] ?? p['toDate'] ?? p['ToDate'] ?? '').slice(0, 10),
       })),
-      customFields: this.mapCustomFields((d['customFields'] as Record<string, unknown>[]) ?? []),
+      customFields: this.mapCustomFields(((d['customFields'] ?? d['CustomFields']) as Record<string, unknown>[]) ?? []),
     };
   }
 
@@ -916,5 +1046,241 @@ export class ItemService {
       CompanyId: this.auth.companyId(),
       UserId: this.auth.userId(),
     });
+  }
+
+  /** Search repository items (GetItemRepositoryData). */
+  searchRepository(search: string): Observable<RepoItem[]> {
+    return this.api
+      .postRaw<Record<string, unknown>[]>('ProductManagement/GetItemRepositoryData', {
+        Search: search,
+        search: search,
+      })
+      .pipe(
+        map((res) =>
+          (res?.data ?? []).map((r: Record<string, unknown>) => ({
+            id: Number(r['id'] ?? 0),
+            itemCode: String(r['item_Code'] ?? r['itemCode'] ?? r['Item_Code'] ?? ''),
+            itemName: String(r['item_Name'] ?? r['itemName'] ?? r['Item_Name'] ?? ''),
+            designCode: String(r['design_Code'] ?? r['designCode'] ?? r['Design_Code'] ?? ''),
+            designName: String(r['design_Name'] ?? r['designName'] ?? r['Design_Name'] ?? ''),
+            variantName: String(r['variant_Name'] ?? r['variantName'] ?? r['Variant_Name'] ?? ''),
+          })),
+        ),
+      );
+  }
+
+  /** Get repository batch rows by repo id (GetRepositoryBatchByRepoId). */
+  getRepositoryBatch(repoId: number): Observable<RepositoryBatch[]> {
+    return this.api
+      .postRaw<Record<string, unknown>[]>('ProductManagement/GetRepositoryBatchByRepoId', {
+        RepoId: repoId,
+        repoId: repoId,
+      })
+      .pipe(
+        map((res) =>
+          (res?.data ?? []).map((b: Record<string, unknown>) => ({
+            barcode: String(b['barcode'] ?? b['Barcode'] ?? ''),
+            price: Number(b['price'] ?? b['Price'] ?? 0),
+            quantity: Number(b['quantity'] ?? b['Quantity'] ?? 0),
+          })),
+        ),
+      );
+  }
+
+  /** Get list of store locations stock (GetStoreListByItemVariantId & GetItemROIMOQDetails). */
+  getStoreList(itemId: number, variantId: number, isSerialized: boolean): Observable<StockList[]> {
+    const payload = {
+      ItemId: itemId,
+      itemId: itemId,
+      ItemVariantId: variantId,
+      itemVariantId: variantId,
+      CompanyId: this.auth.companyId(),
+      companyId: this.auth.companyId(),
+      IsSerialized: isSerialized,
+      isSerialized: isSerialized,
+      CreatedBy: this.auth.userId(),
+      createdBy: this.auth.userId(),
+    };
+    return this.api
+      .postRaw<Record<string, unknown>[]>('ProductManagement/GetStoreListByItemVariantId', payload)
+      .pipe(
+        map((res) => {
+          const list = (res?.data ?? []).map((s: Record<string, unknown>) => ({
+            storeId: Number(s['storeId'] ?? s['StoreId'] ?? 0),
+            storeName: String(s['storeName'] ?? s['StoreName'] ?? ''),
+            rol: Number(s['rol'] ?? s['ROL'] ?? 0),
+            moq: Number(s['moq'] ?? s['MOQ'] ?? 0),
+            totalCurrentStock: Number(s['totalCurrentStock'] ?? s['TotalCurrentStock'] ?? 0),
+            itemROIMOQDetailsId: s['itemROIMOQDetailsId'] ? String(s['itemROIMOQDetailsId']) : null,
+            isSerialized: s['isSerialized'] === true,
+            onOrderQty: Number(s['onOrderQty'] ?? s['OnOrderQty'] ?? 0),
+            available: Number(s['available'] ?? s['Available'] ?? 0),
+          }));
+          return list;
+        }),
+      );
+  }
+
+  /** Save ROL/MOQ details for a warehouse/store (SaveItemROIMOQDetails). */
+  saveRolMoq(details: RequestSaveRolMoqDetails): Observable<unknown> {
+    const payload = {
+      ItemROIMOQDetailsId: details.itemROIMOQDetailsId || null,
+      itemROIMOQDetailsId: details.itemROIMOQDetailsId || null,
+      ItemId: details.itemId,
+      itemId: details.itemId,
+      ItemVariantId: details.itemVariantId,
+      itemVariantId: details.itemVariantId,
+      ROL: Number(details.rol),
+      rol: Number(details.rol),
+      MOQ: Number(details.moq),
+      moq: Number(details.moq),
+      StoreId: Number(details.storeId),
+      storeId: Number(details.storeId),
+      CompanyId: this.auth.companyId(),
+      companyId: this.auth.companyId(),
+      UserId: this.auth.userId(),
+      userId: this.auth.userId(),
+      CreatedByUserName: this.auth.displayName(),
+      createdByUserName: this.auth.displayName(),
+    };
+    return this.api.post('ProductManagement/SaveItemROIMOQDetails', payload);
+  }
+
+  /** Get ROL/MOQ list details (GetItemROIMOQDetails) directly. */
+  getRolMoqList(itemId: number, variantId: number): Observable<any[]> {
+    return this.api.postRaw<any[]>('ProductManagement/GetItemROIMOQDetails', {
+      ItemId: itemId,
+      itemId: itemId,
+      ItemVariantId: variantId,
+      itemVariantId: variantId,
+      CompanyId: this.auth.companyId(),
+      companyId: this.auth.companyId(),
+    }).pipe(map(res => res?.data ?? []));
+  }
+
+  /** Get bin list for warehouse and variant (GetBinListByStoreIdComapnyId). */
+  getBinList(storeId: number, itemId: number, variantId: number, isModal: boolean): Observable<Bin[]> {
+    return this.api
+      .postRaw<Record<string, unknown>[]>('ProductManagement/GetBinListByStoreIdComapnyId', {
+        StoreId: storeId,
+        storeId: storeId,
+        ItemId: itemId,
+        itemId: itemId,
+        ItemVariantId: variantId,
+        itemVariantId: variantId,
+        IsModal: isModal,
+        isModal: isModal,
+        CompanyId: this.auth.companyId(),
+        companyId: this.auth.companyId(),
+      })
+      .pipe(
+        map((res) =>
+          (res?.data ?? []).map((b: Record<string, unknown>) => ({
+            binId: Number(b['binId'] ?? b['BinId'] ?? 0),
+            name: String(b['name'] ?? b['Name'] ?? ''),
+            isActive: b['isActive'] === true,
+            storeId: Number(b['storeId'] ?? b['StoreId'] ?? storeId),
+            isDefault: b['isDefault'] === true,
+            currentStock: Number(b['currentStock'] ?? b['CurrentStock'] ?? 0),
+            isModal: b['isModal'] === true,
+            itemId: Number(b['itemId'] ?? b['ItemId'] ?? itemId),
+            itemVariantId: Number(b['itemVariantId'] ?? b['ItemVariantId'] ?? variantId),
+            batchCode: b['batchCode'] ? String(b['batchCode']) : undefined,
+            batchId: b['batchId'] ? Number(b['batchId']) : null,
+          })),
+        ),
+      );
+  }
+
+  /** Adjust quantity in Bins (SaveUpdateBin). */
+  saveUpdateBin(binList: Bin[]): Observable<unknown> {
+    const listPayload = binList.map((b) => ({
+      BinId: b.binId,
+      binId: b.binId,
+      Name: b.name,
+      name: b.name,
+      CurrentStock: Number(b.currentStock),
+      currentStock: Number(b.currentStock),
+      ItemId: b.itemId,
+      itemId: b.itemId,
+      ItemVariantId: b.itemVariantId,
+      itemVariantId: b.itemVariantId,
+      StoreId: b.storeId,
+      storeId: b.storeId,
+      BatchCode: b.batchCode || null,
+      batchCode: b.batchCode || null,
+      BatchId: b.batchId || null,
+      batchId: b.batchId || null,
+      CompanyId: this.auth.companyId(),
+      companyId: this.auth.companyId(),
+      CreatedBy: this.auth.userId(),
+      createdBy: this.auth.userId(),
+      UserName: this.auth.displayName(),
+      userName: this.auth.displayName(),
+    }));
+    return this.api.post('ProductManagement/SaveUpdateBin', listPayload);
+  }
+
+  /** Save mapping between variant and item images (SaveItemImageVariant). */
+  saveVariantImages(itemId: number, variantId: number, imageIds: number[]): Observable<unknown> {
+    return this.api.post('ProductManagement/SaveItemImageVariant', {
+      ItemId: itemId,
+      itemId: itemId,
+      ItemVariantId: variantId,
+      itemVariantId: variantId,
+      ImageIds: imageIds,
+      imageIds: imageIds,
+      CompanyId: this.auth.companyId(),
+      companyId: this.auth.companyId(),
+      UserId: this.auth.userId(),
+      userId: this.auth.userId(),
+    });
+  }
+
+  /** Get batch code dropdown list for Stock tab (GetVariantBatchCodeList). */
+  getVariantBatchCodeList(itemId: number, variantId: number): Observable<any[]> {
+    return this.api.postRaw<any[]>('ProductManagement/GetVariantBatchCodeList', {
+      ItemId: itemId,
+      itemId: itemId,
+      ItemVariantId: variantId,
+      itemVariantId: variantId,
+      CompanyId: this.auth.companyId(),
+      companyId: this.auth.companyId(),
+    }).pipe(map(res => res?.data ?? []));
+  }
+
+  /** Get list of image ids assigned to a variant (GetVariantImageDtl). */
+  getVariantImageDtl(itemId: number, variantId: number): Observable<number[]> {
+    return this.api
+      .postRaw<number[]>('ProductManagement/GetVariantImageDtl', {
+        ItemId: itemId,
+        itemId: itemId,
+        ItemVariantId: [variantId],
+        itemVariantId: [variantId],
+        CompanyId: this.auth.companyId(),
+        companyId: this.auth.companyId(),
+      })
+      .pipe(map((res) => (res?.data ?? []).map(Number)));
+  }
+
+  /** Get list of all images uploaded for the item (GetItemWiseImageList). */
+  getItemWiseImageList(itemId: number): Observable<ItemImage[]> {
+    return this.api
+      .postRaw<Record<string, unknown>[]>('ProductManagement/GetItemWiseImageList', {
+        ItemId: itemId,
+        itemId: itemId,
+        CompanyId: this.auth.companyId(),
+        companyId: this.auth.companyId(),
+        ItemVariantId: [],
+        itemVariantId: [],
+      })
+      .pipe(
+        map((res) =>
+          (res?.data ?? []).map((m: Record<string, unknown>) => ({
+            imageId: Number(m['imageId'] ?? m['ImageId'] ?? 0),
+            imageFullPath: String(m['imageFullPath'] ?? m['ImageFullPath'] ?? ''),
+          }))
+        )
+      );
   }
 }

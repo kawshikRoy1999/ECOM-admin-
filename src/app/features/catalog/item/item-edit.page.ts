@@ -26,6 +26,10 @@ import {
   StockTransaction,
   CustomFieldOption,
   ItemImage,
+  StockList,
+  RequestSaveRolMoqDetails,
+  Bin,
+  ItemVariantInfo,
 } from './item.models';
 
 /** Local row for the Variants tab: an option with per-value selection. */
@@ -60,7 +64,7 @@ export class ItemEditPage {
   readonly saving = signal(false);
 
   readonly activeTab = signal('details');
-  // "Content" (tags/SEO/FAQ/similar) only applies to a saved item.
+  // "Stock" and "Content" tabs only apply to saved items.
   readonly tabs = computed<TabItem[]>(() => {
     const base: TabItem[] = [
       { id: 'details', label: 'Details' },
@@ -70,7 +74,10 @@ export class ItemEditPage {
       { id: 'custom-fields', label: 'Custom Fields' },
       { id: 'media', label: 'Media' },
     ];
-    if (this.itemId()) base.push({ id: 'content', label: 'Content' });
+    if (this.itemId()) {
+      base.push({ id: 'stock', label: 'Stock' });
+      base.push({ id: 'content', label: 'Content' });
+    }
     return base;
   });
 
@@ -86,6 +93,8 @@ export class ItemEditPage {
   readonly selectedFamilyId = signal<number>(0);
   readonly taxes = signal<TaxOption[]>([]);
   readonly itemCodeFormat = signal('');
+  readonly itemCodeFormatId = signal(0);
+  readonly itemCount = signal(0);
   readonly currency = signal('');
 
   readonly pricing = signal<ItemPricing[]>([]);
@@ -114,6 +123,28 @@ export class ItemEditPage {
   readonly variantModalOpen = signal(false);
   readonly editingVariantId = signal(0);
 
+  // Variant filtering
+  readonly variantFilters = signal<Record<number, number>>({});
+
+  // Variant image mapping
+  readonly showImageMapModal = signal(false);
+  readonly selectedVariantForImage = signal<ItemVariantRow | null>(null);
+  readonly variantImageSelection = signal<number[]>([]);
+  readonly savingImageMapping = signal(false);
+
+  // Stock tab
+  readonly stockVariants = signal<ItemVariantInfo[]>([]);
+  readonly selectedStockVariantId = signal<number>(0);
+  readonly locationStocks = signal<StockList[]>([]);
+  readonly loadingStock = signal(false);
+  readonly expandedStoreIds = signal<number[]>([]);
+  readonly binLists = signal<Record<number, Bin[]>>({});
+  readonly showAdjustModal = signal(false);
+  readonly adjustingStore = signal<StockList | null>(null);
+  readonly adjustingBins = signal<Bin[]>([]);
+  readonly savingBinAdjustment = signal(false);
+  readonly batchLists = signal<any[]>([]);
+
   readonly form = this.fb.nonNullable.group({
     itemName: ['', [Validators.required]],
     itemCode: [''],
@@ -125,7 +156,8 @@ export class ItemEditPage {
     liveFromDate: [''],
     liveToDate: [''],
     itemSortOrderInCategory: [0],
-    returnWindowInDays: [0],
+    returnWindowInDays: [{ value: 0, disabled: false }],
+    isReturnWindowDays: [false],
     isActive: [true],
     isFeatureItem: [false],
     isSoldOut: [false],
@@ -136,11 +168,23 @@ export class ItemEditPage {
     const id = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     this.itemId.set(Number.isNaN(id) ? 0 : id);
 
+    this.form.controls.isReturnWindowDays.valueChanges.subscribe((checked) => {
+      const ctrl = this.form.controls.returnWindowInDays;
+      if (checked) {
+        ctrl.setValue(0);
+        ctrl.disable();
+      } else {
+        ctrl.enable();
+      }
+    });
+
     this.service.ddlLists().subscribe({
       next: (d) => {
         this.brands.set(d.brands);
         this.categories.set(d.categories);
         this.itemCodeFormat.set(d.itemCodeFormatName);
+        this.itemCodeFormatId.set(d.itemCodeFormatId);
+        this.itemCount.set(d.itemCount);
         this.currency.set(d.currency);
       },
     });
@@ -174,14 +218,18 @@ export class ItemEditPage {
           liveFromDate: item.liveFromDate,
           liveToDate: item.liveToDate,
           itemSortOrderInCategory: item.itemSortOrderInCategory,
-          returnWindowInDays: item.returnWindowInDays ?? 0,
+          returnWindowInDays: { value: item.returnWindowInDays ?? 0, disabled: !!item.isReturnWindowDays },
+          isReturnWindowDays: !!item.isReturnWindowDays,
           isActive: item.isActive,
           isFeatureItem: item.isFeatureItem,
           isSoldOut: item.isSoldOut,
           isSerialized: item.isSerialized,
         });
         this.pricing.set(item.pricing.length ? item.pricing : [this.blankPricing()]);
-        this.media.set(item.media);
+        this.service.getItemWiseImageList(this.itemId()).subscribe({
+          next: (images) => this.media.set(images),
+          error: () => this.media.set(item.media),
+        });
         this.itemSavedOptions = item.variantOptions ?? [];
         this.isPriceRange.set(item.isPriceRange ?? false);
         this.priceRanges.set(item.priceRanges?.length ? item.priceRanges : [this.blankPriceRange()]);
@@ -209,16 +257,20 @@ export class ItemEditPage {
     if (id) {
       this.loadSubCategories(Number(id));
       this.loadVariantOptions(Number(id));
+    } else {
+      this.generateItemCode();
     }
   }
 
   onSubCategoryChange(id: number): void {
     this.selectedSubCategoryId.set(Number(id));
     this.selectedFamilyId.set(0);
+    this.generateItemCode();
   }
 
   onFamilyChange(id: number): void {
     this.selectedFamilyId.set(Number(id));
+    this.generateItemCode();
   }
 
   private loadSubCategories(categoryId: number, activeSubCategoryId: number = 0): void {
@@ -243,8 +295,50 @@ export class ItemEditPage {
           this.selectedSubCategoryId.set(0);
           this.selectedFamilyId.set(0);
         }
+        this.generateItemCode();
       },
     });
+  }
+
+  private generateItemCode(): void {
+    if (this.itemId()) return; // Only auto-generate for new items
+    const catId = this.form.controls.categoryId.value;
+    if (!catId) {
+      this.form.controls.itemCode.setValue('');
+      return;
+    }
+
+    const catObj = this.categories().find((c) => c.id === catId);
+    const catText = catObj ? catObj.name : '';
+    const formattedCategoryText = catText.substring(0, 2).toUpperCase();
+
+    const subCatId = this.selectedFamilyId() || this.selectedSubCategoryId() || 0;
+    const subCatObj = this.allSubCategories().find((s) => s.id === subCatId);
+    const subCatText = subCatObj ? subCatObj.name : '';
+    const formattedSubCategoryText = subCatText.substring(0, 2).toUpperCase();
+
+    const itemCount = this.itemCount();
+    const formatId = this.itemCodeFormatId();
+
+    let generatedCode = '';
+    if (formatId === 2) {
+      if (subCatId) {
+        generatedCode = `${formattedCategoryText}-${formattedSubCategoryText}-${itemCount}`;
+      } else {
+        generatedCode = `${formattedCategoryText}-${itemCount}`;
+      }
+    } else {
+      // formats 3 and others
+      const currentYear = new Date().getFullYear();
+      const formattedYear = currentYear.toString().substring(2, 4);
+      if (subCatId) {
+        generatedCode = `${formattedCategoryText}-${formattedSubCategoryText}-${formattedYear}-${itemCount}`;
+      } else {
+        generatedCode = `${formattedCategoryText}-${formattedYear}-${itemCount}`;
+      }
+    }
+
+    this.form.controls.itemCode.setValue(generatedCode);
   }
 
   /** Load the category's variant options and merge the item's saved selection. */
@@ -404,8 +498,47 @@ export class ItemEditPage {
   }
 
   updatePricing(index: number, field: keyof ItemPricing, value: string | number): void {
+    let numVal = Number(value) || 0;
     this.pricing.update((list) =>
-      list.map((p, i) => (i === index ? { ...p, [field]: value } : p)),
+      list.map((p, i) => {
+        if (i !== index) return p;
+
+        let updated = { ...p, [field]: value };
+
+        const mrp = Number(field === 'mrp' ? numVal : updated.mrp) || 0;
+        let discount = Number(field === 'discount' ? numVal : updated.discount) || 0;
+        let price = Number(field === 'price' ? numVal : updated.price) || 0;
+
+        if (field === 'mrp') {
+          if (discount > 0) {
+            price = mrp - (mrp * discount) / 100;
+            updated.price = Number(price.toFixed(2));
+          } else {
+            updated.price = mrp;
+          }
+        } else if (field === 'discount') {
+          if (discount > 100) {
+            discount = 100;
+            updated.discount = 100;
+          } else if (discount < 0) {
+            discount = 0;
+            updated.discount = 0;
+          }
+          price = mrp - (mrp * discount) / 100;
+          updated.price = Number(price.toFixed(2));
+        } else if (field === 'price') {
+          if (price > mrp && mrp > 0) {
+            price = mrp;
+            updated.price = mrp;
+          }
+          if (mrp > 0) {
+            discount = ((mrp - price) / mrp) * 100;
+            updated.discount = Number(discount.toFixed(2));
+          }
+        }
+
+        return updated;
+      }),
     );
   }
 
@@ -492,7 +625,7 @@ export class ItemEditPage {
       hsn: v.hsn,
       showAvailableQtyIfBelow: null,
       returnWindowInDays: Number(v.returnWindowInDays) || null,
-      isReturnWindowDays: Number(v.returnWindowInDays) > 0,
+      isReturnWindowDays: v.isReturnWindowDays === true,
       pricing: this.pricing().map((p) => {
         const today = new Date();
         const startDate = p.startDate || today.toISOString().slice(0, 10);
@@ -598,6 +731,257 @@ export class ItemEditPage {
         this.toast.error('Item saved but some images failed to link.');
         this.newImagesToLink = [];
         this.router.navigate(['/catalog/items']);
+      },
+    });
+  }
+
+  // --- Active Tab Switching ---
+  setActiveTab(tabId: string): void {
+    this.activeTab.set(tabId);
+    if (tabId === 'stock') {
+      this.loadStockVariants();
+    }
+  }
+
+  // --- Variants Filtering ---
+  updateVariantFilter(variantOptionId: number, valueId: number): void {
+    this.variantFilters.update((prev) => ({ ...prev, [variantOptionId]: Number(valueId) }));
+    this.loadVariantsWithFilters();
+  }
+
+  clearVariantFilters(): void {
+    this.variantFilters.set({});
+    this.loadVariants();
+  }
+
+  private loadVariantsWithFilters(): void {
+    const filters = this.variantFilters();
+    const selectedIds: number[] = [];
+    for (const optId of Object.keys(filters)) {
+      const valId = filters[Number(optId)];
+      if (valId) {
+        selectedIds.push(valId);
+      }
+    }
+    const filterString = selectedIds.join(',');
+    this.loadingVariants.set(true);
+    this.service.variants(this.itemId(), filterString).subscribe({
+      next: (list) => {
+        this.variants.set(list);
+        this.loadingVariants.set(false);
+      },
+      error: () => this.loadingVariants.set(false),
+    });
+  }
+
+  // --- Variant Image Mapping Modal ---
+  openVariantImageMap(variant: ItemVariantRow): void {
+    this.selectedVariantForImage.set(variant);
+    this.variantImageSelection.set([]);
+    this.service.getVariantImageDtl(this.itemId(), variant.itemVariantId).subscribe({
+      next: (ids) => {
+        this.variantImageSelection.set(ids);
+        this.showImageMapModal.set(true);
+      },
+      error: () => {
+        this.variantImageSelection.set([]);
+        this.showImageMapModal.set(true);
+      },
+    });
+  }
+
+  closeImageMapModal(): void {
+    this.showImageMapModal.set(false);
+    this.selectedVariantForImage.set(null);
+  }
+
+  toggleImageSelect(imageId: number): void {
+    const current = this.variantImageSelection();
+    if (current.includes(imageId)) {
+      this.variantImageSelection.set(current.filter((id) => id !== imageId));
+    } else {
+      this.variantImageSelection.set([...current, imageId]);
+    }
+  }
+
+  saveImageMapping(): void {
+    const v = this.selectedVariantForImage();
+    if (!v) return;
+
+    this.savingImageMapping.set(true);
+    this.service.saveVariantImages(this.itemId(), v.itemVariantId, this.variantImageSelection()).subscribe({
+      next: () => {
+        this.savingImageMapping.set(false);
+        this.showImageMapModal.set(false);
+        this.toast.success('Images assigned to variant successfully.');
+        this.loadVariants();
+      },
+      error: () => {
+        this.savingImageMapping.set(false);
+        this.toast.error('Failed to assign images to variant.');
+      },
+    });
+  }
+
+  // --- Stock & Warehouse Inventory Tab ---
+  loadStockVariants(): void {
+    const vars = this.variants().map((v) => ({
+      id: v.itemVariantId,
+      name: v.itemVariantName,
+    }));
+    this.stockVariants.set(vars);
+    if (vars.length && !this.selectedStockVariantId()) {
+      this.selectedStockVariantId.set(vars[0].id);
+      this.loadLocationStock(vars[0].id);
+    }
+  }
+
+  onStockVariantChange(variantId: number): void {
+    this.selectedStockVariantId.set(Number(variantId));
+    if (variantId) {
+      this.loadLocationStock(Number(variantId));
+    } else {
+      this.locationStocks.set([]);
+    }
+  }
+
+  loadLocationStock(variantId: number): void {
+    this.loadingStock.set(true);
+    const isSerialized = this.form.controls.isSerialized.value;
+    this.service.getStoreList(this.itemId(), variantId, isSerialized).subscribe({
+      next: (list) => {
+        this.locationStocks.set(list);
+        this.loadingStock.set(false);
+      },
+      error: () => {
+        this.loadingStock.set(false);
+      },
+    });
+  }
+
+  toggleStoreExpanded(storeId: number): void {
+    const current = this.expandedStoreIds();
+    if (current.includes(storeId)) {
+      this.expandedStoreIds.set(current.filter((id) => id !== storeId));
+    } else {
+      this.expandedStoreIds.set([...current, storeId]);
+      this.loadBins(storeId);
+    }
+  }
+
+  loadBins(storeId: number): void {
+    const variantId = this.selectedStockVariantId();
+    this.service.getBinList(storeId, this.itemId(), variantId, false).subscribe({
+      next: (bins) => {
+        this.binLists.update((prev) => ({ ...prev, [storeId]: bins }));
+      },
+    });
+  }
+
+  saveLocationRolMoq(storeId: number): void {
+    const stock = this.locationStocks().find((s) => s.storeId === storeId);
+    if (!stock) return;
+
+    const payload: RequestSaveRolMoqDetails = {
+      itemROIMOQDetailsId: stock.itemROIMOQDetailsId || 0,
+      itemId: this.itemId(),
+      itemVariantId: this.selectedStockVariantId(),
+      rol: Number(stock.rol) || 0,
+      moq: Number(stock.moq) || 0,
+      storeId: storeId,
+    };
+
+    this.service.saveRolMoq(payload).subscribe({
+      next: () => {
+        this.toast.success('ROL & MOQ saved successfully.');
+        this.loadLocationStock(this.selectedStockVariantId());
+      },
+      error: () => {
+        this.toast.error('Failed to save ROL & MOQ.');
+      },
+    });
+  }
+
+  updateLocationRolMoq(storeId: number, field: 'rol' | 'moq', value: number): void {
+    this.locationStocks.update((list) =>
+      list.map((s) => (s.storeId === storeId ? { ...s, [field]: value } : s))
+    );
+  }
+
+  openAdjustQuantity(store: StockList): void {
+    this.adjustingStore.set(store);
+    const variantId = this.selectedStockVariantId();
+    // Load batch dropdown list
+    this.service.getVariantBatchCodeList(this.itemId(), variantId).subscribe({
+      next: (batches) => {
+        this.batchLists.set(batches);
+      },
+    });
+    // Load bins for editing
+    this.service.getBinList(store.storeId, this.itemId(), variantId, true).subscribe({
+      next: (bins) => {
+        this.adjustingBins.set(bins.length ? bins : [this.blankBin(store.storeId)]);
+        this.showAdjustModal.set(true);
+      },
+    });
+  }
+
+  closeAdjustModal(): void {
+    this.showAdjustModal.set(false);
+    this.adjustingStore.set(null);
+    this.adjustingBins.set([]);
+  }
+
+  blankBin(storeId: number): Bin {
+    return {
+      binId: 0,
+      name: 'BinOne',
+      isActive: true,
+      storeId: storeId,
+      isDefault: true,
+      currentStock: 0,
+      isModal: true,
+      itemId: this.itemId(),
+      itemVariantId: this.selectedStockVariantId(),
+    };
+  }
+
+  addAdjustBinRow(): void {
+    const store = this.adjustingStore();
+    if (store) {
+      this.adjustingBins.update((list) => [...list, this.blankBin(store.storeId)]);
+    }
+  }
+
+  removeAdjustBinRow(idx: number): void {
+    this.adjustingBins.update((list) => list.filter((_, i) => i !== idx));
+  }
+
+  updateAdjustBin(idx: number, field: keyof Bin, value: any): void {
+    this.adjustingBins.update((list) =>
+      list.map((b, i) => (i === idx ? { ...b, [field]: value } : b))
+    );
+  }
+
+  saveBinAdjustment(): void {
+    const bins = this.adjustingBins();
+    const store = this.adjustingStore();
+    if (!store) return;
+
+    this.savingBinAdjustment.set(true);
+    this.service.saveUpdateBin(bins).subscribe({
+      next: () => {
+        this.savingBinAdjustment.set(false);
+        this.showAdjustModal.set(false);
+        this.toast.success('Stock adjusted successfully.');
+        this.loadLocationStock(this.selectedStockVariantId());
+        if (this.expandedStoreIds().includes(store.storeId)) {
+          this.loadBins(store.storeId);
+        }
+      },
+      error: () => {
+        this.savingBinAdjustment.set(false);
+        this.toast.error('Failed to adjust stock.');
       },
     });
   }
