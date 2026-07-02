@@ -93,10 +93,41 @@
     </div>
   } @else {
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-      <!-- ============ MAIN COLUMN ============ -->
-      <div class="lg:col-span-2 flex flex-col gap-4 min-w-0">
+    <div class="flex flex-col gap-4">
+      <!-- Step indicator -->
+      <div class="fluent-card px-3 py-2.5 sm:px-4">
+        <div class="flex items-center gap-1 overflow-x-auto">
+          @for (s of steps; track s.n) {
+            <button type="button" (click)="goToStep(s.n)"
+              class="group flex shrink-0 items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all cursor-pointer"
+              [class.bg-brand-50]="step() === s.n">
+              <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[12px] font-bold transition-colors"
+                [class]="step() === s.n ? 'bg-brand-600 text-white shadow-sm shadow-brand-500/30' : (step() > s.n ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200')">
+                @if (step() > s.n) {
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                } @else {
+                  {{ s.n }}
+                }
+              </span>
+              <span class="hidden sm:flex flex-col items-start leading-tight pr-1">
+                <span class="text-[12.5px] font-bold" [class]="step() === s.n ? 'text-brand-700' : 'text-slate-600'">{{ s.label }}</span>
+                @if (s.requiresSave && !itemId()) {
+                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">After save</span>
+                } @else {
+                  <span class="text-[9.5px] font-medium text-slate-400">{{ s.hint }}</span>
+                }
+              </span>
+            </button>
+            @if (!$last) {
+              <span class="h-px flex-1 min-w-[6px] bg-slate-150"></span>
+            }
+          }
+        </div>
+      </div>
 
+      <!-- STEP 1 · DETAILS -->
+      @if (step() === 1) {
+      <div class="flex flex-col gap-4 animate-fadeIn">
         <!-- General information -->
         <form [formGroup]="form" class="fluent-card p-5">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
@@ -109,58 +140,62 @@
             </span>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+            <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item Name <span class="text-red-500">*</span></label>
               <input formControlName="itemName" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50"
                 [class.!border-red-500]="form.controls.itemName.touched && form.controls.itemName.invalid" />
-              <small class="text-[11px] text-slate-400">Use a clear, descriptive name so it's easy to search.</small>
             </div>
-            <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item code</label>
               <input formControlName="itemCode" [placeholder]="itemCodeFormat() ? ('Format: ' + itemCodeFormat()) : ''" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
             </div>
-            <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Brand <span class="text-red-500">*</span></label>
               <app-select formControlName="brandId" [options]="brands()" labelKey="name" valueKey="id" defaultLabel="- Select Brand -" [defaultValue]="0" [searchable]="true" />
             </div>
-            <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Category <span class="text-red-500">*</span></label>
               <app-select [options]="categories()" labelKey="name" valueKey="id" [value]="form.controls.categoryId.value" (valueChange)="onCategoryChange($event)" defaultLabel="- Select Category -" [defaultValue]="0" [searchable]="true" />
             </div>
-            <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sub-category</label>
               <app-select [options]="subCategories()" labelKey="name" valueKey="id" [value]="selectedSubCategoryId()" (valueChange)="onSubCategoryChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" />
             </div>
-            <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Family</label>
               <app-select [options]="families()" labelKey="name" valueKey="id" [value]="selectedFamilyId()" (valueChange)="onFamilyChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" [disabled]="!selectedSubCategoryId() || !families().length" />
             </div>
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <div class="flex flex-col gap-1 sm:col-span-2">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Description</label>
-              <app-wysiwyg-editor formControlName="itemDescription" [minHeight]="120" />
-              <small class="text-[11px] text-slate-400">Shown on your storefront and invoices.</small>
+              <app-wysiwyg-editor formControlName="itemDescription" [minHeight]="100" />
             </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Tax</label>
-              <app-select formControlName="taxId" [options]="taxes()" labelKey="taxName" valueKey="taxDetailsId" defaultLabel="- None -" [defaultValue]="0" />
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">HSN Code</label>
-              <input formControlName="hsn" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sort Order</label>
-              <input type="number" formControlName="itemSortOrderInCategory" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Currency</label>
-              <input type="text" [value]="currency()" disabled class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-100 text-slate-500" />
+
+            <!-- Secondary fields packed into one dense row -->
+            <div class="sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Tax</label>
+                <app-select formControlName="taxId" [options]="taxes()" labelKey="taxName" valueKey="taxDetailsId" defaultLabel="- None -" [defaultValue]="0" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">HSN Code</label>
+                <input formControlName="hsn" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sort Order</label>
+                <input type="number" formControlName="itemSortOrderInCategory" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Currency</label>
+                <input type="text" [value]="currency()" disabled class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-100 text-slate-500" />
+              </div>
             </div>
           </div>
         </form>
+      </div>
+      }
 
-        <!--
+      <!--
         @if (itemId() && stockTransactions().length) {
           <div class="fluent-card p-5">
             <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Stock Transaction Details</p>
@@ -186,8 +221,10 @@
         }
         -->
 
+      <!-- STEP 2 · PRICING -->
+      @if (step() === 2) {
         <!-- Pricing -->
-        <div class="fluent-card p-5">
+        <div class="fluent-card p-5 animate-fadeIn">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <div>
               <p class="text-[13px] font-bold text-slate-800">Pricing</p>
@@ -231,6 +268,7 @@
             </table>
           </div>
         </div>
+      }
 
         <!-- Tiered Pricing
         <div class="fluent-card p-5">
@@ -288,6 +326,9 @@
         </div>
         -->
 
+      <!-- STEP 4 · VARIANTS -->
+      @if (step() === 4) {
+      <div class="flex flex-col gap-4 animate-fadeIn">
         <!-- Variant Options -->
         <div class="fluent-card p-5">
           <div class="border-b border-slate-100 pb-3 mb-4">
@@ -489,7 +530,18 @@
               </div>
             </div>
           }
+        } @else {
+          <div class="fluent-card p-8 text-center">
+            <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+            </div>
+            <p class="text-[13.5px] font-bold text-slate-700">Save the item to generate variants</p>
+            <p class="text-[12px] text-slate-400 mt-1 max-w-sm mx-auto">Pick the applicable options &amp; values above, then save. Individual variants (SKU, barcode, price) can be managed here once the item exists.</p>
+            <button type="button" (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl mt-4 disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save Item' }}</button>
+          </div>
         }
+      </div>
+      }
 
         <!-- Custom Fields
         <div class="fluent-card p-5 flex flex-col gap-4">
@@ -550,17 +602,28 @@
         </div>
         -->
 
-        <!-- Content (tags / SEO / FAQ / similar / stock) — saved items only -->
+      <!-- STEP 5 · CONTENT -->
+      @if (step() === 5) {
         @if (itemId()) {
-          <app-item-content [itemId]="itemId()" [isSerialized]="form.controls.isSerialized.value" />
+          <div class="animate-fadeIn">
+            <app-item-content [itemId]="itemId()" [isSerialized]="form.controls.isSerialized.value" />
+          </div>
+        } @else {
+          <div class="fluent-card p-8 text-center animate-fadeIn">
+            <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            </div>
+            <p class="text-[13.5px] font-bold text-slate-700">Save the item to add content</p>
+            <p class="text-[12px] text-slate-400 mt-1 max-w-sm mx-auto">Tags, SEO meta, FAQs and similar-item links become available once the item is created.</p>
+            <button type="button" (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl mt-4 disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save Item' }}</button>
+          </div>
         }
-      </div>
+      }
 
-      <!-- ============ SIDEBAR ============ -->
-      <div class="flex flex-col gap-4 lg:sticky lg:top-4">
-
+      <!-- STEP 3 · MEDIA -->
+      @if (step() === 3) {
         <!-- Media -->
-        <div class="fluent-card p-5">
+        <div class="fluent-card p-5 animate-fadeIn">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <p class="text-[13px] font-bold text-slate-800">Product Media</p>
             <span class="text-[10px] bg-slate-150/80 text-slate-650 px-2 py-0.5 rounded-full font-bold">
@@ -661,14 +724,16 @@
             </div>
           }
         </div>
+      }
 
-        <!-- Status -->
-        <form [formGroup]="form" class="fluent-card p-5">
-          <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Status</p>
+      <!-- Visibility & Availability → part of STEP 1 · DETAILS -->
+      @if (step() === 1) {
+        <form [formGroup]="form" class="fluent-card p-5 animate-fadeIn">
+          <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Visibility &amp; Availability</p>
 
-          <div class="flex flex-col gap-3.5 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-4">
             <!-- Active -->
-            <div class="flex items-center justify-between py-0.5">
+            <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="text-[12.5px] font-semibold text-slate-700">Active</span>
                 <span class="status-chip text-[9px] px-1.5 py-0.5 shrink-0" [class.success]="form.controls.isActive.value" [class.neutral]="!form.controls.isActive.value">
@@ -682,7 +747,7 @@
             </div>
 
             <!-- Featured -->
-            <div class="flex items-center justify-between py-0.5">
+            <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="text-[12.5px] font-semibold text-slate-700">Featured</span>
                 <span class="status-chip text-[9px] px-1.5 py-0.5 shrink-0" [class.warning]="form.controls.isFeatureItem.value" [class.neutral]="!form.controls.isFeatureItem.value">
@@ -696,7 +761,7 @@
             </div>
 
             <!-- Sold Out -->
-            <div class="flex items-center justify-between py-0.5">
+            <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <span class="text-[12.5px] font-semibold text-slate-700">Sold Out</span>
               <label class="relative inline-flex items-center shrink-0 cursor-pointer">
                 <input type="checkbox" formControlName="isSoldOut" class="peer sr-only" />
@@ -705,7 +770,7 @@
             </div>
 
             <!-- Serialized -->
-            <div class="flex items-center justify-between py-0.5">
+            <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <span class="text-[12.5px] font-semibold text-slate-700">Serialized</span>
               <label class="relative inline-flex items-center shrink-0 cursor-pointer">
                 <input type="checkbox" formControlName="isSerialized" class="peer sr-only" />
@@ -714,7 +779,7 @@
             </div>
 
             <!-- Non-returnable -->
-            <div class="flex items-center justify-between py-0.5">
+            <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <span class="text-[12.5px] font-semibold text-slate-700">Non-returnable</span>
               <label class="relative inline-flex items-center shrink-0 cursor-pointer">
                 <input type="checkbox" formControlName="isReturnWindowDays" class="peer sr-only" />
@@ -724,9 +789,9 @@
 
             <!-- Return Days Input (only visible when return window is active) -->
             @if (!form.controls.isReturnWindowDays.value) {
-              <div class="flex items-center justify-between py-0.5">
-                <span class="text-[12.5px] font-semibold text-slate-500">Return Window (days)</span>
-                <input type="number" formControlName="returnWindowInDays" class="h-7.5 w-20 rounded-lg border border-slate-200 px-2.5 text-[12px] bg-slate-50/50 text-center" />
+              <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-1.5">
+                <span class="text-[12px] font-semibold text-slate-500">Return Window (days)</span>
+                <input type="number" formControlName="returnWindowInDays" class="h-7.5 w-16 rounded-lg border border-slate-200 px-2 text-[12px] bg-white text-center" />
               </div>
             }
           </div>
@@ -734,7 +799,7 @@
           <hr class="border-slate-100 mb-3.5" />
 
           <span class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2.5 block">Availability Window</span>
-          <div class="flex flex-col gap-2.5 mb-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
             <div class="flex items-center gap-2">
               <span class="text-[11.5px] font-semibold text-slate-500 w-9 shrink-0">From</span>
               <div class="flex-1 min-w-0">
@@ -750,6 +815,32 @@
           </div>
           <small class="text-[10.5px] text-slate-400 mt-2 block">Leave "Available to" empty to keep available indefinitely.</small>
         </form>
+      }
+
+      <!-- Wizard footer navigation (sticky floating toolbar, always visible) -->
+      <div class="sticky bottom-0 z-30 -mx-1">
+        <!-- Fade so page content visibly scrolls UNDER the bar -->
+        <div class="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#f0f2f5] to-transparent"></div>
+        <div class="relative mb-1 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.28)]">
+          <button type="button" (click)="prevStep()" [disabled]="step() === 1" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl disabled:opacity-40 gap-1.5">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            Back
+          </button>
+          <div class="flex items-center gap-2">
+            @for (s of steps; track s.n) {
+              <span class="h-1.5 rounded-full transition-all" [class]="step() === s.n ? 'w-5 bg-brand-600' : (step() > s.n ? 'w-1.5 bg-brand-300' : 'w-1.5 bg-slate-200')"></span>
+            }
+            <span class="ml-1.5 text-[12px] font-bold text-slate-500">Step {{ step() }} of {{ steps.length }}</span>
+          </div>
+          @if (step() < lastStep) {
+            <button type="button" (click)="nextStep()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl gap-1.5">
+              Continue
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          } @else {
+            <button type="button" (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save Item' }}</button>
+          }
+        </div>
       </div>
     </div>
   }

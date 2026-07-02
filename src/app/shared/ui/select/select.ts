@@ -29,7 +29,8 @@ export class Select implements ControlValueAccessor {
   
   readonly isOpen = signal(false);
   readonly searchQuery = signal('');
-  
+  readonly activeIndex = signal(-1);
+
   private readonly _disabled = signal(false);
 
   @Input()
@@ -61,16 +62,80 @@ export class Select implements ControlValueAccessor {
 
   toggleDropdown(): void {
     if (this.disabled) return;
-    this.isOpen.update((v) => !v);
     if (this.isOpen()) {
-      this.searchQuery.set('');
+      this.isOpen.set(false);
+    } else {
+      this.openDropdown();
     }
+  }
+
+  private openDropdown(): void {
+    this.searchQuery.set('');
+    this.isOpen.set(true);
+    // Pre-highlight the currently selected option for arrow navigation.
+    this.activeIndex.set(this.filteredOptions().findIndex((o) => this.isSelected(o)));
+  }
+
+  onSearchInput(value: string): void {
+    this.searchQuery.set(value);
+    this.activeIndex.set(0);
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!this.elementRef.nativeElement.contains(event.target)) {
       this.isOpen.set(false);
+    }
+  }
+
+  /** Close and mark touched when focus leaves the component (keyboard Tab out). */
+  @HostListener('focusout', ['$event'])
+  onFocusOut(event: FocusEvent): void {
+    if (!this.elementRef.nativeElement.contains(event.relatedTarget)) {
+      this.isOpen.set(false);
+      this.onTouched();
+    }
+  }
+
+  /** Full keyboard support so the control participates in Tab order like a native select. */
+  @HostListener('keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (this.disabled) return;
+    const opts = this.filteredOptions();
+
+    if (!this.isOpen()) {
+      if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        this.openDropdown();
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.activeIndex.set(Math.min(opts.length - 1, this.activeIndex() + 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.activeIndex.set(Math.max(0, this.activeIndex() - 1));
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (this.activeIndex() >= 0 && this.activeIndex() < opts.length) {
+          this.selectOption(opts[this.activeIndex()]);
+        } else {
+          this.isOpen.set(false);
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.isOpen.set(false);
+        break;
+      case 'Tab':
+        // Let focus move naturally; just close the panel.
+        this.isOpen.set(false);
+        break;
     }
   }
 

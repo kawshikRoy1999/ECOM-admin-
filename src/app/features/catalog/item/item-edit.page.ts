@@ -120,6 +120,51 @@ export class ItemEditPage {
   readonly variantImageSelection = signal<number[]>([]);
   readonly savingImageMapping = signal(false);
 
+  // ── Guided wizard ────────────────────────────────────────────────
+  readonly step = signal(1);
+  readonly steps: { n: number; label: string; hint: string; requiresSave?: boolean }[] = [
+    { n: 1, label: 'Details', hint: 'Name, brand & category' },
+    { n: 2, label: 'Pricing', hint: 'MRP, discount & cost' },
+    { n: 3, label: 'Media', hint: 'Product photos' },
+    { n: 4, label: 'Variants', hint: 'Options & combinations' },
+    { n: 5, label: 'Content', hint: 'Tags, SEO & FAQs', requiresSave: true },
+  ];
+  readonly lastStep = 5;
+
+  /** Step 1 required fields — must be valid before advancing. */
+  detailsValid(): boolean {
+    const c = this.form.controls;
+    return c.itemName.valid && Number(c.brandId.value) > 0 && Number(c.categoryId.value) > 0;
+  }
+
+  goToStep(n: number): void {
+    if (n === this.step()) return;
+    // Advancing beyond Details requires the core fields.
+    if (n > 1 && !this.detailsValid()) {
+      this.form.controls.itemName.markAsTouched();
+      this.toast.error('Fill in item name, brand and category first.');
+      this.step.set(1);
+      return;
+    }
+    this.step.set(n);
+    this.scrollTop();
+  }
+
+  nextStep(): void {
+    if (this.step() < this.lastStep) this.goToStep(this.step() + 1);
+  }
+
+  prevStep(): void {
+    if (this.step() > 1) {
+      this.step.set(this.step() - 1);
+      this.scrollTop();
+    }
+  }
+
+  private scrollTop(): void {
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
 
 
   readonly form = this.fb.nonNullable.group({
