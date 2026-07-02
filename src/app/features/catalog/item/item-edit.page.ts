@@ -254,6 +254,12 @@ export class ItemEditPage {
     this.service.subCategories(categoryId).subscribe({
       next: (s) => {
         this.allSubCategories.set(s);
+        // On a fresh category pick (not when restoring a saved item), inherit the
+        // category's default return window — mirrors .NET GetSubCategory setting
+        // txtReturnWindow to data[0].returnWindowInDays.
+        if (!activeSubCategoryId) {
+          this.form.controls.returnWindowInDays.setValue(s[0]?.returnWindowInDays ?? 0);
+        }
         if (activeSubCategoryId) {
           const match = s.find((x) => x.id === activeSubCategoryId);
           if (match) {

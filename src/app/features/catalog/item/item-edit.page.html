@@ -440,6 +440,7 @@
               [itemVariantId]="editingVariantId()"
               [itemName]="form.controls.itemName.value"
               [categoryId]="form.controls.categoryId.value"
+              [itemReturnDays]="form.controls.returnWindowInDays.value || 0"
               (close)="variantModalOpen.set(false)"
               (saved)="onVariantSaved()"
             />

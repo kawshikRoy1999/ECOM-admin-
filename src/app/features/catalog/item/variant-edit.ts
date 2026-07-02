@@ -30,6 +30,8 @@ export class VariantEditModal implements OnInit {
   readonly itemName = input<string>('');
   /** The category id (needed to load variant option dropdowns). */
   readonly categoryId = input<number>(0);
+  /** The parent item's return window; new variants inherit it as their Return Days. */
+  readonly itemReturnDays = input<number>(0);
   readonly close = output<void>();
   readonly saved = output<void>();
 
@@ -63,6 +65,11 @@ export class VariantEditModal implements OnInit {
         if (!v.pricing.length) v.pricing = [this.blankPricing()];
         if (this.isNew() && !v.itemVariantName) {
           v.itemVariantName = this.itemName();
+        }
+        // New variants inherit the parent item's return window as their Return Days
+        // (mirrors .NET OpenPopupVariant: #ItemDays = #txtReturnWindow).
+        if (this.isNew() && !v.returnDays) {
+          v.returnDays = this.itemReturnDays();
         }
         this.model.set(v);
         this.loading.set(false);

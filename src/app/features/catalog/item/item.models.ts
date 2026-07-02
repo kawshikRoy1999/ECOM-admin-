@@ -31,6 +31,8 @@ export interface SubCategoryOption {
   id: number;
   name: string;
   parentSubCategoryId: number | null;
+  /** Category/sub-category default return window, inherited onto a new item. */
+  returnWindowInDays: number | null;
 }
 
 /** A pricing row (InventoryPricing / AddEditItemPricing). */

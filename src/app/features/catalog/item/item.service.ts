@@ -403,6 +403,7 @@ export class ItemService {
           id: Number(s['id'] ?? s['subCategoryId'] ?? 0),
           name: String(s['name'] ?? s['subCategoryName'] ?? ''),
           parentSubCategoryId: s['parentSubCategoryId'] != null ? Number(s['parentSubCategoryId']) : null,
+          returnWindowInDays: (s['returnWindowInDays'] ?? s['ReturnWindowInDays']) != null ? Number(s['returnWindowInDays'] ?? s['ReturnWindowInDays']) : null,
         })),
       ),
     );
