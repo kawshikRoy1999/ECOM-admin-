@@ -148,6 +148,7 @@ export interface ItemVariantRow {
   barcode: string;
   price: number;
   image: string;
+  variantOptionValueIds?: string;
 }
 
 /** A pricing row for a variant (InventoryItemVariantPricing / AddEditItemVariantPricing). */

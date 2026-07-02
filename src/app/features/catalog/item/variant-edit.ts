@@ -2,6 +2,7 @@ import { Component, OnInit, inject, input, output, signal, computed } from '@ang
 import { FormsModule } from '@angular/forms';
 
 import { Modal } from '../../../shared/ui/modal/modal';
+import { DatePicker } from '../../../shared/ui/date-picker/date-picker';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ItemService } from './item.service';
 import { VariantEdit, VariantPricing, AvailableVariantOption, RepoItem, RepositoryBatch } from './item.models';
@@ -16,7 +17,7 @@ interface VariantOptionSelection {
 
 @Component({
   selector: 'app-variant-edit',
-  imports: [FormsModule, Modal],
+  imports: [FormsModule, Modal, DatePicker],
   templateUrl: './variant-edit.html',
 })
 export class VariantEditModal implements OnInit {
@@ -60,6 +61,9 @@ export class VariantEditModal implements OnInit {
     this.service.getAddVariant(this.itemId(), this.itemVariantId()).subscribe({
       next: (v) => {
         if (!v.pricing.length) v.pricing = [this.blankPricing()];
+        if (this.isNew() && !v.itemVariantName) {
+          v.itemVariantName = this.itemName();
+        }
         this.model.set(v);
         this.loading.set(false);
 
@@ -148,6 +152,14 @@ export class VariantEditModal implements OnInit {
     if (m) this.model.set({ ...m, pricing: [...m.pricing, this.blankPricing()] });
   }
 
+  generateRandomBarcode(): void {
+    const m = this.model();
+    if (!m) return;
+    const code = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+    this.patch('barcode', code);
+    this.toast.success('Barcode generated.');
+  }
+
   removePricing(index: number): void {
     const m = this.model();
     if (m && m.pricing.length > 1) {
@@ -155,11 +167,17 @@ export class VariantEditModal implements OnInit {
     }
   }
 
+  onOptionValueChange(variantOptionId: number, valueId: any): void {
+    const val = Number(valueId) || 0;
+    this.variantOptions.update((list) =>
+      list.map((o) => (o.variantOptionId === variantOptionId ? { ...o, selectedValueId: val } : o))
+    );
+    this.onVariantOptionChange();
+  }
+
   /** Called when the user changes a variant option dropdown value. Auto-generates name. */
   onVariantOptionChange(): void {
-    if (!this.isManualName) {
-      this.generateVariantName();
-    }
+    this.generateVariantName();
   }
 
   /** Called when the user manually types in the variant name field. */
@@ -180,18 +198,15 @@ export class VariantEditModal implements OnInit {
     const selectedTexts: string[] = [];
     for (const opt of this.variantOptions()) {
       if (opt.selectedValueId) {
-        const found = opt.values.find((v) => v.optionValueId === opt.selectedValueId);
+        const found = opt.values.find((v) => Number(v.optionValueId) === Number(opt.selectedValueId));
         if (found) selectedTexts.push(found.optionValueName);
       }
     }
 
     const optionPart = selectedTexts.join('/');
-    const parentName = this.itemName();
+    const parentName = this.itemName() || '';
 
-    let generatedName = '';
-    if (optionPart) {
-      generatedName = parentName ? `${parentName}/${optionPart}` : optionPart;
-    }
+    const generatedName = optionPart ? (parentName ? `${parentName}/${optionPart}` : optionPart) : parentName;
 
     this.model.set({ ...m, itemVariantName: generatedName });
   }

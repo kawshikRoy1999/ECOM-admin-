@@ -192,6 +192,7 @@ export class ItemService {
             barcode: String(v['barcode'] ?? v['Barcode'] ?? ''),
             price: Number(v['price'] ?? v['Price'] ?? 0),
             image: String(v['image'] ?? v['Image'] ?? v['imageUrl'] ?? v['ImageUrl'] ?? ''),
+            variantOptionValueIds: String(v['variantOptionValueIds'] ?? v['VariantOptionValueIds'] ?? v['variantoptionvalueids'] ?? ''),
           })),
         ),
       );

@@ -23,6 +23,7 @@ export class DatePicker implements ControlValueAccessor {
   private readonly elementRef = inject(ElementRef);
 
   readonly placeholder = input<string>('Select date');
+  readonly direction = input<'down' | 'up'>('down');
   
   readonly isOpen = signal(false);
   readonly value = signal<string>(''); // YYYY-MM-DD

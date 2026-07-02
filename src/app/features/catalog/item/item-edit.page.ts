@@ -6,6 +6,7 @@ import { DecimalPipe } from '@angular/common';
 
 import { Select } from '../../../shared/ui/select/select';
 import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
+import { DatePicker } from '../../../shared/ui/date-picker/date-picker';
 import { ImageUploadService } from '../../../core/api/image-upload.service';
 import { TooltipService } from '../../../shared/ui/tooltip.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
@@ -27,10 +28,6 @@ import {
   StockTransaction,
   CustomFieldOption,
   ItemImage,
-  StockList,
-  RequestSaveRolMoqDetails,
-  Bin,
-  ItemVariantInfo,
 } from './item.models';
 
 /** Local row for the Variants tab: an option with per-value selection. */
@@ -49,7 +46,7 @@ interface OptionRow {
 
 @Component({
   selector: 'app-item-edit-page',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ItemContent, VariantEditModal, WysiwygEditor],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ItemContent, VariantEditModal, WysiwygEditor, DatePicker],
   templateUrl: './item-edit.page.html',
 })
 export class ItemEditPage {
@@ -106,6 +103,7 @@ export class ItemEditPage {
 
   // Generated variants of the item
   readonly variants = signal<ItemVariantRow[]>([]);
+  readonly allVariants = signal<ItemVariantRow[]>([]);
   readonly loadingVariants = signal(false);
   // Variant add/edit modal
   readonly variantModalOpen = signal(false);
@@ -120,18 +118,7 @@ export class ItemEditPage {
   readonly variantImageSelection = signal<number[]>([]);
   readonly savingImageMapping = signal(false);
 
-  // Stock tab
-  readonly stockVariants = signal<ItemVariantInfo[]>([]);
-  readonly selectedStockVariantId = signal<number>(0);
-  readonly locationStocks = signal<StockList[]>([]);
-  readonly loadingStock = signal(false);
-  readonly expandedStoreIds = signal<number[]>([]);
-  readonly binLists = signal<Record<number, Bin[]>>({});
-  readonly showAdjustModal = signal(false);
-  readonly adjustingStore = signal<StockList | null>(null);
-  readonly adjustingBins = signal<Bin[]>([]);
-  readonly savingBinAdjustment = signal(false);
-  readonly batchLists = signal<any[]>([]);
+
 
   readonly form = this.fb.nonNullable.group({
     itemName: ['', [Validators.required]],
@@ -374,8 +361,9 @@ export class ItemEditPage {
     this.service.variants(this.itemId()).subscribe({
       next: (v) => {
         this.variants.set(v);
+        this.allVariants.set(v);
+        this.applyVariantFilters();
         this.loadingVariants.set(false);
-        this.loadStockVariants();
       },
       error: () => this.loadingVariants.set(false),
     });
@@ -941,32 +929,66 @@ export class ItemEditPage {
   // --- Variants Filtering ---
   updateVariantFilter(variantOptionId: number, valueId: number): void {
     this.variantFilters.update((prev) => ({ ...prev, [variantOptionId]: Number(valueId) }));
-    this.loadVariantsWithFilters();
+    this.applyVariantFilters();
   }
 
   clearVariantFilters(): void {
     this.variantFilters.set({});
-    this.loadVariants();
+    this.applyVariantFilters();
   }
 
-  private loadVariantsWithFilters(): void {
+  applyVariantFilters(): void {
     const filters = this.variantFilters();
-    const selectedIds: number[] = [];
+    const activeFilterNames: string[] = [];
+    const activeFilterValIds: number[] = [];
+
     for (const optId of Object.keys(filters)) {
-      const valId = filters[Number(optId)];
-      if (valId) {
-        selectedIds.push(valId);
+      const valId = Number(filters[Number(optId)]);
+      if (valId > 0) {
+        activeFilterValIds.push(valId);
+        const row = this.optionRows().find((r) => r.variantOptionId === Number(optId));
+        if (row) {
+          const valObj = row.values.find((val) => val.optionValueId === valId);
+          if (valObj) {
+            activeFilterNames.push(valObj.optionValueName);
+          }
+        }
       }
     }
-    const filterString = selectedIds.join(',');
-    this.loadingVariants.set(true);
-    this.service.variants(this.itemId(), filterString).subscribe({
-      next: (list) => {
-        this.variants.set(list);
-        this.loadingVariants.set(false);
-      },
-      error: () => this.loadingVariants.set(false),
+
+    if (activeFilterValIds.length === 0) {
+      this.variants.set(this.allVariants());
+      return;
+    }
+
+    const filtered = this.allVariants().filter((v) => {
+      // 1. Try matching by ID first
+      const rawIds = v.variantOptionValueIds || '';
+      if (rawIds.trim()) {
+        const variantValIds = rawIds
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map(Number);
+        
+        const matchesAllIds = activeFilterValIds.every((filterValId) => 
+          variantValIds.includes(filterValId)
+        );
+        if (matchesAllIds) return true;
+      }
+
+      // 2. Fallback: match by option value names against the variant name path parts
+      const nameParts = v.itemVariantName
+        .split('/')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+
+      return activeFilterNames.every((valName) => 
+        nameParts.includes(valName.toLowerCase())
+      );
     });
+
+    this.variants.set(filtered);
   }
 
   // --- Variant Image Mapping Modal ---
@@ -1014,169 +1036,6 @@ export class ItemEditPage {
       error: () => {
         this.savingImageMapping.set(false);
         this.toast.error('Failed to assign images to variant.');
-      },
-    });
-  }
-
-  // --- Stock & Warehouse Inventory Tab ---
-  loadStockVariants(): void {
-    const vars = this.variants().map((v) => ({
-      id: v.itemVariantId,
-      name: v.itemVariantName,
-    }));
-    this.stockVariants.set(vars);
-    if (vars.length && !this.selectedStockVariantId()) {
-      this.selectedStockVariantId.set(vars[0].id);
-      this.loadLocationStock(vars[0].id);
-    }
-  }
-
-  onStockVariantChange(variantId: number): void {
-    this.selectedStockVariantId.set(Number(variantId));
-    if (variantId) {
-      this.loadLocationStock(Number(variantId));
-    } else {
-      this.locationStocks.set([]);
-    }
-  }
-
-  loadLocationStock(variantId: number): void {
-    this.loadingStock.set(true);
-    const isSerialized = this.form.controls.isSerialized.value;
-    this.service.getStoreList(this.itemId(), variantId, isSerialized).subscribe({
-      next: (list) => {
-        this.locationStocks.set(list);
-        this.loadingStock.set(false);
-      },
-      error: () => {
-        this.loadingStock.set(false);
-      },
-    });
-  }
-
-  toggleStoreExpanded(storeId: number): void {
-    const current = this.expandedStoreIds();
-    if (current.includes(storeId)) {
-      this.expandedStoreIds.set(current.filter((id) => id !== storeId));
-    } else {
-      this.expandedStoreIds.set([...current, storeId]);
-      this.loadBins(storeId);
-    }
-  }
-
-  loadBins(storeId: number): void {
-    const variantId = this.selectedStockVariantId();
-    this.service.getBinList(storeId, this.itemId(), variantId, false).subscribe({
-      next: (bins) => {
-        this.binLists.update((prev) => ({ ...prev, [storeId]: bins }));
-      },
-    });
-  }
-
-  saveLocationRolMoq(storeId: number): void {
-    const stock = this.locationStocks().find((s) => s.storeId === storeId);
-    if (!stock) return;
-
-    const payload: RequestSaveRolMoqDetails = {
-      itemROIMOQDetailsId: stock.itemROIMOQDetailsId || 0,
-      itemId: this.itemId(),
-      itemVariantId: this.selectedStockVariantId(),
-      rol: Number(stock.rol) || 0,
-      moq: Number(stock.moq) || 0,
-      storeId: storeId,
-    };
-
-    this.service.saveRolMoq(payload).subscribe({
-      next: () => {
-        this.toast.success('ROL & MOQ saved successfully.');
-        this.loadLocationStock(this.selectedStockVariantId());
-      },
-      error: () => {
-        this.toast.error('Failed to save ROL & MOQ.');
-      },
-    });
-  }
-
-  updateLocationRolMoq(storeId: number, field: 'rol' | 'moq', value: number): void {
-    this.locationStocks.update((list) =>
-      list.map((s) => (s.storeId === storeId ? { ...s, [field]: value } : s))
-    );
-  }
-
-  openAdjustQuantity(store: StockList): void {
-    this.adjustingStore.set(store);
-    const variantId = this.selectedStockVariantId();
-    // Load batch dropdown list
-    this.service.getVariantBatchCodeList(this.itemId(), variantId).subscribe({
-      next: (batches) => {
-        this.batchLists.set(batches);
-      },
-    });
-    // Load bins for editing
-    this.service.getBinList(store.storeId, this.itemId(), variantId, true).subscribe({
-      next: (bins) => {
-        this.adjustingBins.set(bins.length ? bins : [this.blankBin(store.storeId)]);
-        this.showAdjustModal.set(true);
-      },
-    });
-  }
-
-  closeAdjustModal(): void {
-    this.showAdjustModal.set(false);
-    this.adjustingStore.set(null);
-    this.adjustingBins.set([]);
-  }
-
-  blankBin(storeId: number): Bin {
-    return {
-      binId: 0,
-      name: 'BinOne',
-      isActive: true,
-      storeId: storeId,
-      isDefault: true,
-      currentStock: 0,
-      isModal: true,
-      itemId: this.itemId(),
-      itemVariantId: this.selectedStockVariantId(),
-    };
-  }
-
-  addAdjustBinRow(): void {
-    const store = this.adjustingStore();
-    if (store) {
-      this.adjustingBins.update((list) => [...list, this.blankBin(store.storeId)]);
-    }
-  }
-
-  removeAdjustBinRow(idx: number): void {
-    this.adjustingBins.update((list) => list.filter((_, i) => i !== idx));
-  }
-
-  updateAdjustBin(idx: number, field: keyof Bin, value: any): void {
-    this.adjustingBins.update((list) =>
-      list.map((b, i) => (i === idx ? { ...b, [field]: value } : b))
-    );
-  }
-
-  saveBinAdjustment(): void {
-    const bins = this.adjustingBins();
-    const store = this.adjustingStore();
-    if (!store) return;
-
-    this.savingBinAdjustment.set(true);
-    this.service.saveUpdateBin(bins).subscribe({
-      next: () => {
-        this.savingBinAdjustment.set(false);
-        this.showAdjustModal.set(false);
-        this.toast.success('Stock adjusted successfully.');
-        this.loadLocationStock(this.selectedStockVariantId());
-        if (this.expandedStoreIds().includes(store.storeId)) {
-          this.loadBins(store.storeId);
-        }
-      },
-      error: () => {
-        this.savingBinAdjustment.set(false);
-        this.toast.error('Failed to adjust stock.');
       },
     });
   }

@@ -12,7 +12,7 @@
               <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{{ opt.optionName }}</label>
               <select
                 [ngModel]="opt.selectedValueId"
-                (ngModelChange)="opt.selectedValueId = +$event; onVariantOptionChange()"
+                (ngModelChange)="onOptionValueChange(opt.variantOptionId, $event)"
                 class="h-9 min-w-[140px] rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50">
                 <option [value]="0">Select {{ opt.optionName }}</option>
                 @for (val of opt.values; track val.optionValueId) {
@@ -57,9 +57,14 @@
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">SKU</label>
           <input [ngModel]="m.sku" (ngModelChange)="patch('sku', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 font-mono" />
         </div>
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-1.5 relative">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Barcode</label>
-          <input [ngModel]="m.barcode" (ngModelChange)="patch('barcode', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 font-mono" />
+          <div class="relative">
+            <input [ngModel]="m.barcode" (ngModelChange)="patch('barcode', $event)" class="h-9 w-full rounded-xl border border-slate-200 pl-3 pr-20 text-[13px] bg-slate-50/50 font-mono" />
+            <button type="button" (click)="generateRandomBarcode()" class="absolute right-1.5 top-1.5 h-6 px-2.5 text-[10px] font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors">
+              Generate
+            </button>
+          </div>
         </div>
         @if (m.skuBarcodeImage) {
           <div class="sm:col-span-2 flex justify-center bg-slate-50/50 rounded-xl border border-slate-100 py-2">
@@ -93,7 +98,7 @@
             Add Row
           </button>
         </div>
-        <div class="overflow-x-auto">
+        <div class="relative">
           <table class="min-w-full text-[12.5px]">
             <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
               <tr>
@@ -115,8 +120,8 @@
                   <td class="px-1 py-1"><input type="number" [ngModel]="p.price" (ngModelChange)="updatePricing($index,'price',$event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
                   <td class="px-1 py-1"><input type="number" [ngModel]="p.cost" (ngModelChange)="updatePricing($index,'cost',$event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
                   <td class="px-1 py-1"><input [ngModel]="p.batchCode" (ngModelChange)="updatePricing($index,'batchCode',$event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 bg-slate-50/50 font-mono" /></td>
-                  <td class="px-1 py-1"><input type="date" [ngModel]="p.startDate" (ngModelChange)="updatePricing($index,'startDate',$event)" class="h-8 w-32 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
-                  <td class="px-1 py-1"><input type="date" [ngModel]="p.endDate" (ngModelChange)="updatePricing($index,'endDate',$event)" class="h-8 w-32 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
+                  <td class="px-1 py-1"><div class="w-32"><app-date-picker direction="up" [ngModel]="p.startDate" (ngModelChange)="updatePricing($index,'startDate',$event)" placeholder="Start Date" /></div></td>
+                  <td class="px-1 py-1"><div class="w-32"><app-date-picker direction="up" [ngModel]="p.endDate" (ngModelChange)="updatePricing($index,'endDate',$event)" placeholder="End Date" /></div></td>
                   <td class="px-1 py-1">
                     <button (click)="removePricing($index)" [disabled]="m.pricing.length <= 1" class="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-30">
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>

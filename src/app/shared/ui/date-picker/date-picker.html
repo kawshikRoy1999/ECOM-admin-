@@ -17,7 +17,10 @@
 
   <!-- Calendar Dropdown -->
   @if (isOpen() && !disabled) {
-    <div class="absolute z-50 mt-1.5 w-[280px] bg-white border border-slate-200/80 rounded-2xl shadow-xl p-4 right-0 sm:left-0 select-none animate-fadeIn">
+    <div class="absolute z-50 w-[280px] bg-white border border-slate-200/80 rounded-2xl shadow-xl p-4 right-0 sm:left-0 select-none animate-fadeIn"
+         [class.mt-1.5]="direction() === 'down'"
+         [class.bottom-full]="direction() === 'up'"
+         [class.mb-1.5]="direction() === 'up'">
       <!-- Calendar Header -->
       <div class="flex items-center justify-between mb-3">
         <button type="button" (click)="prevMonth()" class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer">

@@ -160,6 +160,7 @@
           </div>
         </form>
 
+        <!--
         @if (itemId() && stockTransactions().length) {
           <div class="fluent-card p-5">
             <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Stock Transaction Details</p>
@@ -183,6 +184,7 @@
             </div>
           </div>
         }
+        -->
 
         <!-- Pricing -->
         <div class="fluent-card p-5">
@@ -230,7 +232,7 @@
           </div>
         </div>
 
-        <!-- Tiered Pricing -->
+        <!-- Tiered Pricing
         <div class="fluent-card p-5">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <div>
@@ -284,6 +286,7 @@
             <p class="py-10 text-center text-[13px] text-slate-400">Enable Tiered Pricing to configure tiered price ranges.</p>
           }
         </div>
+        -->
 
         <!-- Variant Options -->
         <div class="fluent-card p-5">
@@ -297,11 +300,11 @@
           } @else if (loadingOptions()) {
             <p class="py-10 text-center text-[13px] text-slate-400">Loading variant options…</p>
           } @else {
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-1">
               @for (o of optionRows(); track o.variantOptionId) {
-                <div class="rounded-xl border border-slate-150 p-4" [class.bg-slate-50/40]="o.isApplicable">
-                  <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
-                    <span class="text-[13.5px] font-bold text-slate-800">{{ o.optionName }}</span>
+                <div class="border-b border-slate-100 last:border-0 pb-4 mb-4 last:pb-0 last:mb-0">
+                  <div class="flex items-center justify-between flex-wrap gap-3 mb-2.5">
+                    <span class="text-[13px] font-bold text-slate-800">{{ o.optionName }}</span>
                     <div class="flex items-center gap-6">
                       <label class="flex items-center gap-2 cursor-pointer select-none">
                         <app-checkbox [checked]="o.isApplicable" (checkedChange)="toggleOptionApplicable(o.variantOptionId, $event)" />
@@ -316,7 +319,7 @@
                   <div class="flex flex-wrap gap-2" [class.opacity-40]="!o.isApplicable" [class.pointer-events-none]="!o.isApplicable">
                     @for (v of o.values; track v.optionValueId) {
                       <button type="button" (click)="toggleOptionValue(o.variantOptionId, v.optionValueId)"
-                        class="rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold transition-all"
+                        class="rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition-all"
                         [class]="v.selected ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300'">
                         {{ v.optionValueName }}
                       </button>
@@ -479,7 +482,7 @@
           }
         }
 
-        <!-- Custom Fields -->
+        <!-- Custom Fields
         <div class="fluent-card p-5 flex flex-col gap-4">
           <div class="border-b border-slate-100 pb-3">
             <p class="text-[13px] font-bold text-slate-800">Custom Fields</p>
@@ -496,19 +499,15 @@
                   </label>
                 </div>
 
-                <!-- Field Input Based on Type -->
                 @if (f.fieldTypeId === 1) {
-                  <!-- Text Field -->
                   <input type="text" [ngModel]="f.fieldValue" (ngModelChange)="updateCustomFieldValue(idx, $event)"
                     class="h-9 w-full rounded-xl border border-slate-200 px-3 text-[13px] bg-white" />
                 } @else if (f.fieldTypeId === 2) {
-                  <!-- Dropdown Field -->
                   <div class="relative w-full max-w-xs">
                     <app-select [options]="f.fields" labelKey="name" valueKey="name" [value]="f.fieldValue"
                       (valueChange)="updateCustomFieldValue(idx, $event)" defaultLabel="- Select -" defaultValue="" />
                   </div>
                 } @else if (f.fieldTypeId === 3) {
-                  <!-- Checkbox Options -->
                   <div class="flex flex-wrap gap-x-6 gap-y-2">
                     @for (opt of f.fields; track opt.id; let optIdx = $index) {
                       <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -519,7 +518,6 @@
                     }
                   </div>
                 } @else if (f.fieldTypeId === 4) {
-                  <!-- Radio Options -->
                   <div class="flex flex-wrap gap-x-6 gap-y-2">
                     @for (opt of f.fields; track opt.id) {
                       <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -532,7 +530,6 @@
                     }
                   </div>
                 } @else if (f.fieldTypeId === 5) {
-                  <!-- HTML / Rich Text -->
                   <textarea rows="4" [ngModel]="f.fieldValue" (ngModelChange)="updateCustomFieldValue(idx, $event)"
                     class="w-full rounded-xl border border-slate-200 px-3 py-2 text-[13px] bg-white resize-none"></textarea>
                 }
@@ -542,274 +539,16 @@
             }
           </div>
         </div>
+        -->
 
-        <!-- Stock — saved items only -->
+        <!-- Content (tags / SEO / FAQ / similar / stock) — saved items only -->
         @if (itemId()) {
-          <div class="fluent-card p-5 flex flex-col gap-4">
-            <div class="border-b border-slate-100 pb-3.5 flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <p class="text-[13px] font-bold text-slate-800">Warehouse & Stock Management</p>
-                <p class="text-[11.5px] text-slate-400">Manage location stock levels, re-order limits (ROL), and minimum order quantities (MOQ).</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[12.5px] text-slate-600 font-semibold">Variant:</span>
-                <select [ngModel]="selectedStockVariantId()" (ngModelChange)="onStockVariantChange($event)" class="h-9 w-64 rounded-xl border border-slate-200 px-3 text-[13px] bg-white">
-                  @for (v of stockVariants(); track v.id) {
-                    <option [value]="v.id">{{ v.name }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-
-            @if (loadingStock()) {
-              <p class="py-16 text-center text-sm text-slate-400">Loading stock status...</p>
-            } @else {
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-100 text-[13px]">
-                  <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                    <tr>
-                      <th class="px-4 py-3 text-left w-10"></th>
-                      <th class="px-4 py-3 text-left">Location / Store</th>
-                      <th class="px-4 py-3 text-left w-24">ROL</th>
-                      <th class="px-4 py-3 text-left w-24">MOQ</th>
-                      <th class="px-4 py-3 text-center">On Hand Qty</th>
-                      <th class="px-4 py-3 text-center">Reserved Qty</th>
-                      <th class="px-4 py-3 text-center">Available Qty</th>
-                      <th class="px-4 py-3 text-center w-36">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    @for (item of locationStocks(); track item.storeId) {
-                      <tr class="hover:bg-slate-50/30">
-                        <td class="px-4 py-3">
-                          <button type="button" (click)="toggleStoreExpanded(item.storeId)" class="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50">
-                            @if (expandedStoreIds().includes(item.storeId)) {
-                              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6" /></svg>
-                            } @else {
-                              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v12m6-8H4" /></svg>
-                            }
-                          </button>
-                        </td>
-                        <td class="px-4 py-3 font-semibold text-slate-800">{{ item.storeName }}</td>
-                        <td class="px-4 py-3">
-                          <input type="number" [ngModel]="item.rol" (ngModelChange)="updateLocationRolMoq(item.storeId, 'rol', $event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50 focus:bg-white" />
-                        </td>
-                        <td class="px-4 py-3">
-                          <input type="number" [ngModel]="item.moq" (ngModelChange)="updateLocationRolMoq(item.storeId, 'moq', $event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50 focus:bg-white" />
-                        </td>
-                        <td class="px-4 py-3 text-center font-medium">{{ item.totalCurrentStock }}</td>
-                        <td class="px-4 py-3 text-center text-slate-500">{{ item.onOrderQty }}</td>
-                        <td class="px-4 py-3 text-center font-medium" [class.text-red-500]="item.available <= 0" [class.text-green-600]="item.available > 0">{{ item.available }}</td>
-                        <td class="px-4 py-3 text-center flex items-center justify-center gap-3">
-                          <button (click)="saveLocationRolMoq(item.storeId)" class="text-[12px] text-brand-600 font-semibold hover:underline">Save ROL/MOQ</button>
-                          <span class="text-slate-200">|</span>
-                          <button (click)="openAdjustQuantity(item)" class="text-[12px] text-slate-600 font-semibold hover:underline">Adjust Stock</button>
-                        </td>
-                      </tr>
-                      @if (expandedStoreIds().includes(item.storeId)) {
-                        <tr>
-                          <td colspan="8" class="bg-slate-50/30 p-4">
-                            <div class="rounded-xl border border-slate-200 overflow-hidden bg-white max-w-2xl mx-auto shadow-sm">
-                              <table class="min-w-full divide-y divide-slate-100 text-[12px]">
-                                <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400">
-                                  <tr>
-                                    <th class="px-4 py-2 text-left">Bin Name</th>
-                                    <th class="px-4 py-2 text-left">Batch Code</th>
-                                    <th class="px-4 py-2 text-right">Current Stock</th>
-                                  </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-150">
-                                  @for (bin of binLists()[item.storeId]; track bin.binId) {
-                                    <tr>
-                                      <td class="px-4 py-2 text-slate-700 font-medium">{{ bin.name }}</td>
-                                      <td class="px-4 py-2 text-slate-500">{{ bin.batchCode || '—' }}</td>
-                                      <td class="px-4 py-2 text-right font-semibold text-slate-800">{{ bin.currentStock }}</td>
-                                    </tr>
-                                  } @empty {
-                                    <tr><td colspan="3" class="px-4 py-4 text-center text-slate-400">No bins assigned for this location.</td></tr>
-                                  }
-                                </tbody>
-                              </table>
-                            </div>
-                          </td>
-                        </tr>
-                      }
-                    } @empty {
-                      <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">No locations available.</td></tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-
-            <!-- Adjust Quantity Modal -->
-            @if (showAdjustModal()) {
-              <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-[2px] p-4">
-                <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl flex flex-col overflow-hidden max-h-[85vh]">
-                  <div class="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-                    <div>
-                      <h3 class="text-base font-bold text-slate-800">Adjust Location Stock</h3>
-                      <p class="text-[12px] text-slate-400 mt-0.5">Location: <span class="font-semibold text-slate-700">{{ adjustingStore()?.storeName }}</span></p>
-                    </div>
-                    <button (click)="closeAdjustModal()" class="text-slate-400 hover:text-slate-600">
-                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
-                  </div>
-                  <div class="flex-1 overflow-y-auto p-6">
-                    <div class="flex justify-end mb-3">
-                      <button (click)="addAdjustBinRow()" class="h-8 px-3 text-[12px] font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg flex items-center gap-1">
-                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-8H4" /></svg>
-                        Add Bin Row
-                      </button>
-                    </div>
-                    <table class="min-w-full divide-y divide-slate-150 text-[12.5px]">
-                      <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400">
-                        <tr>
-                          <th class="px-3 py-2 text-left">Bin Name</th>
-                          <th class="px-3 py-2 text-left">Batch</th>
-                          <th class="px-3 py-2 text-left w-36">Current Stock</th>
-                          <th class="px-3 py-2 w-10"></th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-slate-100">
-                        @for (b of adjustingBins(); track $index; let idx = $index) {
-                          <tr>
-                            <td class="px-3 py-2">
-                              <input type="text" [ngModel]="b.name" (ngModelChange)="updateAdjustBin(idx, 'name', $event)" class="h-8.5 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px]" />
-                            </td>
-                            <td class="px-3 py-2">
-                              <select [ngModel]="b.batchId || 0" (ngModelChange)="updateAdjustBin(idx, 'batchId', $event)" class="h-8.5 w-full rounded-lg border border-slate-200 px-2 text-[12.5px] bg-white">
-                                <option [value]="0">- No Batch -</option>
-                                @for (batch of batchLists(); track batch.batchId) {
-                                  <option [value]="batch.batchId">{{ batch.batchCode }}</option>
-                                }
-                              </select>
-                            </td>
-                            <td class="px-3 py-2">
-                              <input type="number" [ngModel]="b.currentStock" (ngModelChange)="updateAdjustBin(idx, 'currentStock', $event)" class="h-8.5 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px]" />
-                            </td>
-                            <td class="px-3 py-2 text-center">
-                              <button (click)="removeAdjustBinRow(idx)" class="h-8 w-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-lg">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
-                            </td>
-                          </tr>
-                        } @empty {
-                          <tr><td colspan="4" class="px-3 py-6 text-center text-slate-400">Click "Add Bin Row" to configure quantities.</td></tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
-                  <div class="border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3 bg-slate-50/50">
-                    <button (click)="closeAdjustModal()" class="h-9.5 px-4 text-[13px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">Cancel</button>
-                    <button (click)="saveBinAdjustment()" [disabled]="savingBinAdjustment() || adjustingBins().length === 0" class="btn-primary h-9.5 px-4 text-[13px] font-semibold rounded-xl">
-                      @if (savingBinAdjustment()) { Saving... } @else { Save Adjustments }
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Content (tags / SEO / FAQ / similar) — saved items only -->
-        @if (itemId()) {
-          <app-item-content [itemId]="itemId()" />
+          <app-item-content [itemId]="itemId()" [isSerialized]="form.controls.isSerialized.value" />
         }
       </div>
 
       <!-- ============ SIDEBAR ============ -->
       <div class="flex flex-col gap-4 lg:sticky lg:top-4">
-
-        <!-- Status -->
-        <form [formGroup]="form" class="fluent-card p-5">
-          <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Status</p>
-
-          <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-150 px-3 py-2.5 mb-2.5 bg-white">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-[13px] font-semibold text-slate-700">Active</span>
-                <span class="status-chip" [class.success]="form.controls.isActive.value" [class.neutral]="!form.controls.isActive.value">
-                  <span class="dot"></span>{{ form.controls.isActive.value ? 'Live' : 'Hidden' }}
-                </span>
-              </div>
-              <p class="text-[11px] text-slate-400 mt-0.5">{{ form.controls.isActive.value ? 'Visible in your sales channels.' : 'Hidden from customers, but still in inventory.' }}</p>
-            </div>
-            <label class="relative inline-flex items-center shrink-0 cursor-pointer">
-              <input type="checkbox" formControlName="isActive" class="peer sr-only" />
-              <div class="relative h-5 w-9 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-4 shadow-xs"></div>
-            </label>
-          </div>
-
-          <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-150 px-3 py-2.5 mb-2.5 bg-white">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-[13px] font-semibold text-slate-700">Featured</span>
-                <span class="status-chip" [class.warning]="form.controls.isFeatureItem.value" [class.neutral]="!form.controls.isFeatureItem.value">
-                  <span class="dot"></span>{{ form.controls.isFeatureItem.value ? 'Home' : 'Off' }}
-                </span>
-              </div>
-              <p class="text-[11px] text-slate-400 mt-0.5">{{ form.controls.isFeatureItem.value ? 'Shown on your storefront highlights.' : 'Not shown in featured sections.' }}</p>
-            </div>
-            <label class="relative inline-flex items-center shrink-0 cursor-pointer">
-              <input type="checkbox" formControlName="isFeatureItem" class="peer sr-only" />
-              <div class="relative h-5 w-9 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-4 shadow-xs"></div>
-            </label>
-          </div>
-
-          <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-150 px-3 py-2.5 mb-2.5 bg-white">
-            <div>
-              <span class="text-[13px] font-semibold text-slate-700">Sold Out</span>
-              <p class="text-[11px] text-slate-400 mt-0.5">Marked unavailable for purchase.</p>
-            </div>
-            <label class="relative inline-flex items-center shrink-0 cursor-pointer">
-              <input type="checkbox" formControlName="isSoldOut" class="peer sr-only" />
-              <div class="relative h-5 w-9 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-4 shadow-xs"></div>
-            </label>
-          </div>
-
-          <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-150 px-3 py-2.5 mb-2.5 bg-white">
-            <div>
-              <span class="text-[13px] font-semibold text-slate-700">Serialized</span>
-              <p class="text-[11px] text-slate-400 mt-0.5">Tracks individual serial numbers.</p>
-            </div>
-            <label class="relative inline-flex items-center shrink-0 cursor-pointer">
-              <input type="checkbox" formControlName="isSerialized" class="peer sr-only" />
-              <div class="relative h-5 w-9 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-4 shadow-xs"></div>
-            </label>
-          </div>
-
-          <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-150 px-3 py-2.5 mb-3 bg-white">
-            <div>
-              <span class="text-[13px] font-semibold text-slate-700">Non-returnable</span>
-              <p class="text-[11px] text-slate-400 mt-0.5">Disable the return window below.</p>
-            </div>
-            <label class="relative inline-flex items-center shrink-0 cursor-pointer">
-              <input type="checkbox" formControlName="isReturnWindowDays" class="peer sr-only" />
-              <div class="relative h-5 w-9 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-4 shadow-xs"></div>
-            </label>
-          </div>
-
-          <div class="flex flex-col gap-1.5 mb-3">
-            <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Return Window (days)</label>
-            <input type="number" formControlName="returnWindowInDays" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 disabled:bg-slate-100 disabled:text-slate-400" />
-          </div>
-
-          <hr class="border-slate-100 mb-3" />
-
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2 block">Availability window</label>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="flex flex-col gap-1">
-              <label class="text-[10px] font-semibold text-slate-500">Available from</label>
-              <input type="date" formControlName="liveFromDate" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
-            </div>
-            <div class="flex flex-col gap-1">
-              <label class="text-[10px] font-semibold text-slate-500">Available to</label>
-              <input type="date" formControlName="liveToDate" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
-            </div>
-          </div>
-          <small class="text-[11px] text-slate-400 mt-2 block">Leave "Available to" empty to keep the item available indefinitely.</small>
-        </form>
 
         <!-- Media -->
         <div class="fluent-card p-5">
@@ -821,7 +560,19 @@
           </div>
 
           <!-- Grid of Images -->
-          <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 gap-3.5 mb-5">
+          <div class="grid grid-cols-3 xl:grid-cols-4 gap-3">
+            <!-- Add Image Trigger Card -->
+            <div class="relative aspect-square rounded-2xl overflow-hidden border border-dashed border-slate-300 hover:border-brand-500 bg-slate-50/50 hover:bg-brand-50/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all group"
+                 (click)="fileInput.click()">
+              <div class="h-8 w-8 rounded-full bg-slate-100/80 group-hover:bg-brand-50 flex items-center justify-center text-slate-400 group-hover:text-brand-600 transition-colors">
+                <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </div>
+              <span class="text-[9.5px] font-bold text-slate-500 group-hover:text-brand-600 transition-colors">Add Image</span>
+              <input #fileInput type="file" multiple accept="image/*" class="hidden" (change)="onFilesSelected($event)" />
+            </div>
+
             <!-- Existing Images -->
             @for (img of media(); track img.imageFullPath) {
               <div class="relative group/img aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-2xs hover:shadow-sm bg-slate-50 transition-all">
@@ -888,21 +639,6 @@
             }
           </div>
 
-          <!-- Modern Multi-Image Uploader Dropzone -->
-          <div class="border-2 border-dashed border-slate-200 hover:border-brand-500 bg-slate-50/50 hover:bg-brand-50/10 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group mb-2"
-               (click)="fileInput.click()">
-            <div class="h-10 w-10 rounded-full bg-slate-100/80 flex items-center justify-center text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
-              <svg class="h-5.5 w-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <span class="text-[12.5px] font-bold text-slate-700 group-hover:text-brand-600 transition-colors">Select Product Images</span>
-              <span class="text-[10px] text-slate-400">Drag and drop or click to upload multiple files</span>
-            </div>
-            <input #fileInput type="file" multiple accept="image/*" class="hidden" (change)="onFilesSelected($event)" />
-          </div>
-
           <!-- Progress Bar -->
           @if (uploading()) {
             <div class="flex flex-col gap-1.5 mt-4 p-3 bg-brand-50/10 border border-brand-100/30 rounded-xl">
@@ -916,6 +652,95 @@
             </div>
           }
         </div>
+
+        <!-- Status -->
+        <form [formGroup]="form" class="fluent-card p-5">
+          <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Status</p>
+
+          <div class="flex flex-col gap-3.5 mb-4">
+            <!-- Active -->
+            <div class="flex items-center justify-between py-0.5">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-[12.5px] font-semibold text-slate-700">Active</span>
+                <span class="status-chip text-[9px] px-1.5 py-0.5 shrink-0" [class.success]="form.controls.isActive.value" [class.neutral]="!form.controls.isActive.value">
+                  {{ form.controls.isActive.value ? 'Live' : 'Hidden' }}
+                </span>
+              </div>
+              <label class="relative inline-flex items-center shrink-0 cursor-pointer">
+                <input type="checkbox" formControlName="isActive" class="peer sr-only" />
+                <div class="relative h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+              </label>
+            </div>
+
+            <!-- Featured -->
+            <div class="flex items-center justify-between py-0.5">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-[12.5px] font-semibold text-slate-700">Featured</span>
+                <span class="status-chip text-[9px] px-1.5 py-0.5 shrink-0" [class.warning]="form.controls.isFeatureItem.value" [class.neutral]="!form.controls.isFeatureItem.value">
+                  {{ form.controls.isFeatureItem.value ? 'Home' : 'Off' }}
+                </span>
+              </div>
+              <label class="relative inline-flex items-center shrink-0 cursor-pointer">
+                <input type="checkbox" formControlName="isFeatureItem" class="peer sr-only" />
+                <div class="relative h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+              </label>
+            </div>
+
+            <!-- Sold Out -->
+            <div class="flex items-center justify-between py-0.5">
+              <span class="text-[12.5px] font-semibold text-slate-700">Sold Out</span>
+              <label class="relative inline-flex items-center shrink-0 cursor-pointer">
+                <input type="checkbox" formControlName="isSoldOut" class="peer sr-only" />
+                <div class="relative h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+              </label>
+            </div>
+
+            <!-- Serialized -->
+            <div class="flex items-center justify-between py-0.5">
+              <span class="text-[12.5px] font-semibold text-slate-700">Serialized</span>
+              <label class="relative inline-flex items-center shrink-0 cursor-pointer">
+                <input type="checkbox" formControlName="isSerialized" class="peer sr-only" />
+                <div class="relative h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+              </label>
+            </div>
+
+            <!-- Non-returnable -->
+            <div class="flex items-center justify-between py-0.5">
+              <span class="text-[12.5px] font-semibold text-slate-700">Non-returnable</span>
+              <label class="relative inline-flex items-center shrink-0 cursor-pointer">
+                <input type="checkbox" formControlName="isReturnWindowDays" class="peer sr-only" />
+                <div class="relative h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
+              </label>
+            </div>
+
+            <!-- Return Days Input (only visible when return window is active) -->
+            @if (!form.controls.isReturnWindowDays.value) {
+              <div class="flex items-center justify-between py-0.5">
+                <span class="text-[12.5px] font-semibold text-slate-500">Return Window (days)</span>
+                <input type="number" formControlName="returnWindowInDays" class="h-7.5 w-20 rounded-lg border border-slate-200 px-2.5 text-[12px] bg-slate-50/50 text-center" />
+              </div>
+            }
+          </div>
+
+          <hr class="border-slate-100 mb-3.5" />
+
+          <span class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2.5 block">Availability Window</span>
+          <div class="flex flex-col gap-2.5 mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-[11.5px] font-semibold text-slate-500 w-9 shrink-0">From</span>
+              <div class="flex-1 min-w-0">
+                <app-date-picker direction="up" formControlName="liveFromDate" placeholder="From Date" />
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11.5px] font-semibold text-slate-500 w-9 shrink-0">To</span>
+              <div class="flex-1 min-w-0">
+                <app-date-picker direction="up" formControlName="liveToDate" placeholder="To Date" />
+              </div>
+            </div>
+          </div>
+          <small class="text-[10.5px] text-slate-400 mt-2 block">Leave "Available to" empty to keep available indefinitely.</small>
+        </form>
       </div>
     </div>
   }
