@@ -17,7 +17,9 @@
 
   <!-- Calendar Dropdown -->
   @if (isOpen() && !disabled) {
-    <div class="absolute z-50 w-[280px] bg-white border border-slate-200/80 rounded-2xl shadow-xl p-4 right-0 sm:left-0 select-none animate-fadeIn"
+    <div class="absolute z-50 w-[280px] bg-white border border-slate-200/80 rounded-2xl shadow-xl p-4 select-none animate-fadeIn"
+         [class.right-0]="align() === 'right'"
+         [class.left-0]="align() === 'left'"
          [class.mt-1.5]="direction() === 'down'"
          [class.bottom-full]="direction() === 'up'"
          [class.mb-1.5]="direction() === 'up'">

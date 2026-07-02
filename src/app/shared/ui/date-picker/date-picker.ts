@@ -24,6 +24,7 @@ export class DatePicker implements ControlValueAccessor {
 
   readonly placeholder = input<string>('Select date');
   readonly direction = input<'down' | 'up'>('down');
+  readonly align = input<'left' | 'right'>('left');
   
   readonly isOpen = signal(false);
   readonly value = signal<string>(''); // YYYY-MM-DD
