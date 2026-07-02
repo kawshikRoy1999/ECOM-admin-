@@ -1,15 +1,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, Observable, map, filter, take } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 
 import { Select } from '../../../shared/ui/select/select';
 import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
-import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
+import { ImageUploadService } from '../../../core/api/image-upload.service';
+import { TooltipService } from '../../../shared/ui/tooltip.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ItemContent } from './item-content';
+import { WysiwygEditor } from '../../../shared/ui/wysiwyg-editor/wysiwyg-editor';
 import { VariantEditModal } from './variant-edit';
 import { ItemService } from './item.service';
 import {
@@ -47,7 +49,7 @@ interface OptionRow {
 
 @Component({
   selector: 'app-item-edit-page',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ImageUpload, ItemContent, VariantEditModal],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ItemContent, VariantEditModal, WysiwygEditor],
   templateUrl: './item-edit.page.html',
 })
 export class ItemEditPage {
@@ -57,10 +59,15 @@ export class ItemEditPage {
   private readonly service = inject(ItemService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly uploader = inject(ImageUploadService);
+  public readonly tooltip = inject(TooltipService);
 
   readonly itemId = signal(0);
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly uploading = signal(false);
+  readonly uploadProgress = signal(0);
+  readonly localPreviews = signal<{ id: string; file: File; dataUrl: string; progress?: number; uploading?: boolean }[]>([]);
 
   readonly brands = signal<NamedOption[]>([]);
   readonly categories = signal<NamedOption[]>([]);
@@ -532,6 +539,131 @@ export class ItemEditPage {
   }
 
   // --- Media ---
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files || files.length === 0) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) {
+        this.toast.error(`"${file.name}" is not an image file.`);
+        continue;
+      }
+
+      const id = Math.random().toString(36).substring(2);
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.localPreviews.update((list) => [
+          ...list,
+          { id, file, dataUrl: reader.result as string },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    }
+    input.value = '';
+  }
+
+  removeLocalPreview(id: string): void {
+    this.localPreviews.update((list) => list.filter((p) => p.id !== id));
+  }
+
+  clearUploadsState(): void {
+    this.localPreviews.set([]);
+    this.uploading.set(false);
+    this.uploadProgress.set(0);
+  }
+
+  uploadFile(file: File): Observable<string> {
+    return this.uploader.upload(file, { entityType: 'Item' }).pipe(
+      map((progress) => (progress.done ? progress.url || '' : '')),
+      filter((url): url is string => !!url),
+      take(1)
+    );
+  }
+
+  uploadPendingImage(previewId: string): void {
+    const list = this.localPreviews();
+    const item = list.find((p) => p.id === previewId);
+    if (!item || item.uploading) return;
+
+    this.localPreviews.update((curr) =>
+      curr.map((p) => (p.id === previewId ? { ...p, uploading: true, progress: 10 } : p))
+    );
+
+    this.uploader.upload(item.file, { entityType: 'Item' }).subscribe({
+      next: (p) => {
+        this.localPreviews.update((curr) =>
+          curr.map((x) => (x.id === previewId ? { ...x, progress: p.progress } : x))
+        );
+
+        if (p.done) {
+          if (p.url) {
+            this.linkUploadedImage(p.url, previewId);
+          } else {
+            this.toast.error('Upload finished but no URL was returned.');
+            this.resetPreviewState(previewId);
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Individual image upload failed:', err);
+        this.toast.error('Image upload failed.');
+        this.resetPreviewState(previewId);
+      },
+    });
+  }
+
+  resetPreviewState(previewId: string): void {
+    this.localPreviews.update((curr) =>
+      curr.map((p) => (p.id === previewId ? { ...p, uploading: false, progress: 0 } : p))
+    );
+  }
+
+  linkUploadedImage(url: string, previewId: string): void {
+    const lastSlashIdx = url.lastIndexOf('/');
+    const filePath = url.slice(0, lastSlashIdx + 1);
+    const fileName = url.slice(lastSlashIdx + 1);
+
+    if (this.itemId() > 0) {
+      this.service
+        .addImage({
+          AlterText: this.form.controls.itemName.value || 'Item Image',
+          Name: fileName,
+          Medium: fileName,
+          Thumbnail: fileName,
+          Description: fileName,
+          FilePath: filePath,
+          Title: fileName,
+          EntityType: 'Item',
+          EntitySubType: 'Image',
+          Height: 0,
+          Width: 0,
+          CompanyId: this.service['auth'].companyId(),
+          IsActive: true,
+          ExternalEntityId: this.itemId(),
+          IsAllocated: true,
+        })
+        .subscribe({
+          next: (res) => {
+            const imageId = Number(res?.data?.imageId ?? 0);
+            this.media.update((list) => [...list, { imageId, imageFullPath: url }]);
+            this.localPreviews.update((list) => list.filter((p) => p.id !== previewId));
+            this.toast.success('Image uploaded and linked.');
+          },
+          error: () => {
+            this.toast.error('Image uploaded but failed to link to item.');
+            this.resetPreviewState(previewId);
+          },
+        });
+    } else {
+      this.newImagesToLink.push(url);
+      this.media.update((list) => [...list, { imageId: 0, imageFullPath: url }]);
+      this.localPreviews.update((list) => list.filter((p) => p.id !== previewId));
+      this.toast.success('Image uploaded and queued.');
+    }
+  }
+
   addMedia(url: string): void {
     if (!url) return;
     const lastSlashIdx = url.lastIndexOf('/');
@@ -592,6 +724,83 @@ export class ItemEditPage {
       this.toast.error('Fill in the required item details.');
       return;
     }
+
+    if (this.localPreviews().length > 0) {
+      this.saving.set(true);
+      this.uploading.set(true);
+      this.uploadProgress.set(10);
+      const files = this.localPreviews().map((p) => p.file);
+      const uploadObs = files.map((file) => this.uploadFile(file));
+
+      forkJoin(uploadObs).subscribe({
+        next: (urls) => {
+          this.uploadProgress.set(100);
+          if (this.itemId() > 0) {
+            // Existing item: link them to DB immediately
+            const linkObs = urls.map((url) => {
+              const lastSlashIdx = url.lastIndexOf('/');
+              const filePath = url.slice(0, lastSlashIdx + 1);
+              const fileName = url.slice(lastSlashIdx + 1);
+              return this.service.addImage({
+                AlterText: this.form.controls.itemName.value || 'Item Image',
+                Name: fileName,
+                Medium: fileName,
+                Thumbnail: fileName,
+                Description: fileName,
+                FilePath: filePath,
+                Title: fileName,
+                EntityType: 'Item',
+                EntitySubType: 'Image',
+                Height: 0,
+                Width: 0,
+                CompanyId: this.service['auth'].companyId(),
+                IsActive: true,
+                ExternalEntityId: this.itemId(),
+                IsAllocated: true,
+              });
+            });
+
+            forkJoin(linkObs).subscribe({
+              next: (resList) => {
+                resList.forEach((res, i) => {
+                  const imageId = Number(res?.data?.imageId ?? 0);
+                  this.media.update((list) => [...list, { imageId, imageFullPath: urls[i] }]);
+                });
+                this.toast.success('Images uploaded and linked.');
+                this.clearUploadsState();
+                this.submitSaveItem();
+              },
+              error: () => {
+                this.toast.error('Images uploaded but failed to link to item.');
+                this.clearUploadsState();
+                this.submitSaveItem();
+              },
+            });
+          } else {
+            // New item: buffer them for linkage after save completes
+            urls.forEach((url) => {
+              this.newImagesToLink.push(url);
+              this.media.update((list) => [...list, { imageId: 0, imageFullPath: url }]);
+            });
+            this.toast.success('Images uploaded.');
+            this.clearUploadsState();
+            this.submitSaveItem();
+          }
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.uploading.set(false);
+          this.uploadProgress.set(0);
+          console.error('Product multi-upload failed:', err);
+          this.toast.error('Product images upload failed.');
+        },
+      });
+    } else {
+      this.submitSaveItem();
+    }
+  }
+
+  submitSaveItem(): void {
     this.saving.set(true);
     const v = this.form.getRawValue();
     const payload: ItemDetail = {
@@ -668,8 +877,12 @@ export class ItemEditPage {
           if (!this.itemId() && this.newImagesToLink.length > 0) {
             this.linkNewImages(savedId);
           } else {
-            this.toast.success(this.itemId() ? 'Item updated.' : 'Item created.');
-            this.router.navigate(['/catalog/items']);
+            const wasNew = !this.itemId();
+            this.toast.success(wasNew ? 'Item created.' : 'Item updated.');
+            if (wasNew) {
+              this.itemId.set(savedId);
+              this.router.navigate(['/catalog/items', savedId], { replaceUrl: true });
+            }
           }
         } else if (savedId === -1) {
           this.toast.error('An item with this name already exists in this brand.');
@@ -713,12 +926,14 @@ export class ItemEditPage {
       next: () => {
         this.toast.success('Item created and images linked.');
         this.newImagesToLink = [];
-        this.router.navigate(['/catalog/items']);
+        this.itemId.set(itemId);
+        this.router.navigate(['/catalog/items', itemId], { replaceUrl: true });
       },
       error: () => {
         this.toast.error('Item saved but some images failed to link.');
         this.newImagesToLink = [];
-        this.router.navigate(['/catalog/items']);
+        this.itemId.set(itemId);
+        this.router.navigate(['/catalog/items', itemId], { replaceUrl: true });
       },
     });
   }

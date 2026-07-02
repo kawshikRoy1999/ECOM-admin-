@@ -19,7 +19,78 @@
   </div>
 
   @if (loading()) {
-    <p class="py-16 text-center text-sm text-slate-400">Loading item…</p>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start animate-pulse">
+      <!-- ============ MAIN COLUMN SKELETON ============ -->
+      <div class="lg:col-span-2 flex flex-col gap-4 min-w-0">
+        <!-- General Info Skeleton Card -->
+        <div class="fluent-card p-5 bg-white">
+          <div class="h-6 w-48 bg-slate-200 rounded-lg mb-6"></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2 flex flex-col gap-2">
+              <div class="h-4 w-24 bg-slate-200 rounded-lg"></div>
+              <div class="h-9 w-full bg-slate-100/80 rounded-xl"></div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <div class="h-4 w-20 bg-slate-200 rounded-lg"></div>
+              <div class="h-9 w-full bg-slate-100/80 rounded-xl"></div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <div class="h-4 w-20 bg-slate-200 rounded-lg"></div>
+              <div class="h-9 w-full bg-slate-100/80 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing Skeleton Card -->
+        <div class="fluent-card p-5 bg-white">
+          <div class="h-6 w-32 bg-slate-200 rounded-lg mb-6"></div>
+          <div class="grid grid-cols-4 gap-3">
+            @for (i of [1, 2, 3, 4]; track i) {
+              <div class="flex flex-col gap-2">
+                <div class="h-4 w-12 bg-slate-200 rounded-lg"></div>
+                <div class="h-9 w-full bg-slate-100/80 rounded-xl"></div>
+              </div>
+            }
+          </div>
+        </div>
+        
+        <!-- Variants Skeleton Card -->
+        <div class="fluent-card p-5 bg-white">
+          <div class="h-6 w-40 bg-slate-200 rounded-lg mb-6"></div>
+          <div class="h-20 w-full bg-slate-100/80 rounded-xl"></div>
+        </div>
+      </div>
+
+      <!-- ============ SIDEBAR SKELETON ============ -->
+      <div class="flex flex-col gap-4">
+        <!-- Status Skeleton Card -->
+        <div class="fluent-card p-5 bg-white">
+          <div class="h-5 w-16 bg-slate-200 rounded-lg mb-4"></div>
+          <div class="h-12 w-full bg-slate-100/80 rounded-xl"></div>
+        </div>
+
+        <!-- Categories Skeleton Card -->
+        <div class="fluent-card p-5 bg-white">
+          <div class="h-5 w-32 bg-slate-200 rounded-lg mb-6"></div>
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+              <div class="h-4 w-16 bg-slate-200 rounded-lg"></div>
+              <div class="h-9 w-full bg-slate-100/80 rounded-xl"></div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <div class="h-4 w-24 bg-slate-200 rounded-lg"></div>
+              <div class="h-9 w-full bg-slate-100/80 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Media Uploader Skeleton Card -->
+        <div class="fluent-card p-5 bg-white">
+          <div class="h-5 w-24 bg-slate-200 rounded-lg mb-4"></div>
+          <div class="h-24 w-full bg-slate-100/80 rounded-2xl"></div>
+        </div>
+      </div>
+    </div>
   } @else {
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
@@ -67,7 +138,7 @@
             </div>
             <div class="flex flex-col gap-1.5 sm:col-span-2">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Description</label>
-              <textarea formControlName="itemDescription" rows="3" class="rounded-xl border border-slate-200 px-3 py-2 text-[13px] bg-slate-50/50 resize-none"></textarea>
+              <app-wysiwyg-editor formControlName="itemDescription" [minHeight]="120" />
               <small class="text-[11px] text-slate-400">Shown on your storefront and invoices.</small>
             </div>
             <div class="flex flex-col gap-1.5">
@@ -742,20 +813,108 @@
 
         <!-- Media -->
         <div class="fluent-card p-5">
-          <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Media</p>
-          <div class="flex flex-wrap gap-3 mb-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <p class="text-[13px] font-bold text-slate-800">Product Media</p>
+            <span class="text-[10px] bg-slate-150/80 text-slate-650 px-2 py-0.5 rounded-full font-bold">
+              {{ media().length + localPreviews().length }} Images
+            </span>
+          </div>
+
+          <!-- Grid of Images -->
+          <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 gap-3.5 mb-5">
+            <!-- Existing Images -->
             @for (img of media(); track img.imageFullPath) {
-              <div class="relative group">
-                <img [src]="img.imageFullPath" alt="" class="h-20 w-20 rounded-xl object-cover border border-slate-200" onerror="this.style.display='none'" />
-                <button (click)="removeMedia(img)" class="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+              <div class="relative group/img aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-2xs hover:shadow-sm bg-slate-50 transition-all">
+                <img [src]="img.imageFullPath" alt="product" class="h-full w-full object-cover transition-transform duration-300 group-hover/img:scale-105" onerror="this.style.display='none'" />
+                
+                <!-- Hover Delete Overlay -->
+                <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
+                  <button type="button" (click)="removeMedia(img)" class="h-8 w-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors cursor-pointer">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            } @empty {
-              <p class="text-[12.5px] text-slate-400">No images yet.</p>
+            }
+
+            <!-- Local Pending Upload Previews -->
+            @for (preview of localPreviews(); track preview.id) {
+              <div class="relative group/preview aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-brand-300 bg-brand-50/5 shadow-2xs hover:shadow-sm transition-all">
+                <img [src]="preview.dataUrl" alt="preview" class="h-full w-full object-cover opacity-80 transition-transform duration-300 group-hover/preview:scale-105" />
+                
+                <!-- Badge tag -->
+                <span class="absolute top-1.5 left-1.5 text-[8.5px] font-extrabold uppercase tracking-wider bg-brand-500 text-white px-1.5 py-0.5 rounded-md shadow-xs select-none">
+                  Pending
+                </span>
+
+                <!-- Hover Actions Overlay -->
+                @if (preview.uploading) {
+                  <div class="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center text-white p-2">
+                    <span class="text-[9.5px] font-bold animate-pulse">Uploading...</span>
+                    <span class="text-[10px] font-extrabold mt-0.5">{{ preview.progress || 10 }}%</span>
+                    <div class="w-full max-w-[64px] bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
+                      <div class="bg-brand-500 h-1 rounded-full transition-all duration-300" [style.width.%]="preview.progress || 10"></div>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/preview:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                    <!-- Upload Icon Button -->
+                    <button type="button"
+                            (click)="uploadPendingImage(preview.id)"
+                            (mouseenter)="tooltip.show($event, 'Upload Image', { info: 'Upload this file directly to the product library.' })"
+                            (mouseleave)="tooltip.hide()"
+                            class="h-7.5 w-7.5 rounded-full bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center shadow-md transition-colors cursor-pointer"
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                    </button>
+
+                    <!-- Remove Icon Button -->
+                    <button type="button"
+                            (click)="removeLocalPreview(preview.id)"
+                            (mouseenter)="tooltip.show($event, 'Remove Selection', { info: 'Remove this file from selection.' })"
+                            (mouseleave)="tooltip.hide()"
+                            class="h-7.5 w-7.5 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center shadow-md transition-colors cursor-pointer"
+                    >
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                }
+              </div>
             }
           </div>
-          <app-image-upload value="" (valueChange)="addMedia($event)" entityType="Item" entitySubType="Image" label="Add image" />
+
+          <!-- Modern Multi-Image Uploader Dropzone -->
+          <div class="border-2 border-dashed border-slate-200 hover:border-brand-500 bg-slate-50/50 hover:bg-brand-50/10 rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group mb-2"
+               (click)="fileInput.click()">
+            <div class="h-10 w-10 rounded-full bg-slate-100/80 flex items-center justify-center text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
+              <svg class="h-5.5 w-5.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </div>
+            <div class="flex flex-col gap-0.5">
+              <span class="text-[12.5px] font-bold text-slate-700 group-hover:text-brand-600 transition-colors">Select Product Images</span>
+              <span class="text-[10px] text-slate-400">Drag and drop or click to upload multiple files</span>
+            </div>
+            <input #fileInput type="file" multiple accept="image/*" class="hidden" (change)="onFilesSelected($event)" />
+          </div>
+
+          <!-- Progress Bar -->
+          @if (uploading()) {
+            <div class="flex flex-col gap-1.5 mt-4 p-3 bg-brand-50/10 border border-brand-100/30 rounded-xl">
+              <div class="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                <span class="text-brand-600 animate-pulse">Uploading product media...</span>
+                <span>{{ uploadProgress() }}%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="bg-brand-500 h-1.5 rounded-full transition-all duration-300" [style.width.%]="uploadProgress()"></div>
+              </div>
+            </div>
+          }
         </div>
       </div>
     </div>
