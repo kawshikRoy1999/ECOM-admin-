@@ -3,7 +3,6 @@ import { FormsModule } from '@angular/forms';
 
 import { Select } from '../../../shared/ui/select/select';
 import { Tabs, TabItem } from '../../../shared/ui/tabs/tabs';
-import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ItemService } from './item.service';
@@ -11,7 +10,7 @@ import { ItemFaq, ItemMeta, ItemTag, NamedOption, SimilarItem, ItemVariantInfo, 
 
 @Component({
   selector: 'app-item-content',
-  imports: [FormsModule, Select, Tabs, Checkbox],
+  imports: [FormsModule, Select, Tabs],
   templateUrl: './item-content.html',
 })
 export class ItemContent implements OnInit {

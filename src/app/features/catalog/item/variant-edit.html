@@ -79,14 +79,7 @@
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Return Info</label>
           <input [ngModel]="m.returnInfo" (ngModelChange)="patch('returnInfo', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
         </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">MRP</label>
-          <input type="number" [ngModel]="m.mrp" (ngModelChange)="patch('mrp', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
-        </div>
-        <div class="flex flex-col gap-1.5">
-          <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Discount</label>
-          <input type="number" [ngModel]="m.discount" (ngModelChange)="patch('discount', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
-        </div>
+        <!-- Top-level MRP / Discount removed: per-batch pricing is set in the Variant Pricing table below. -->
       </div>
 
       <!-- Pricing rows -->
