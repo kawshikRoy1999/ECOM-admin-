@@ -475,61 +475,8 @@
             </div>
           </div>
 
-          @if (variantModalOpen()) {
-            <app-variant-edit
-              [itemId]="itemId()"
-              [itemVariantId]="editingVariantId()"
-              [itemName]="form.controls.itemName.value"
-              [categoryId]="form.controls.categoryId.value"
-              [itemReturnDays]="form.controls.returnWindowInDays.value || 0"
-              (close)="variantModalOpen.set(false)"
-              (saved)="onVariantSaved()"
-            />
-          }
-
-          <!-- Image Mapping Modal -->
-          @if (showImageMapModal()) {
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-[2px] p-4">
-              <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[85vh]">
-                <div class="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-                  <div>
-                    <h3 class="text-base font-bold text-slate-800">Assign Images to Variant</h3>
-                    <p class="text-[12px] text-slate-400 mt-0.5">Select one or more images for: <span class="font-semibold text-slate-700">{{ selectedVariantForImage()?.itemVariantName }}</span></p>
-                  </div>
-                  <button (click)="closeImageMapModal()" class="text-slate-400 hover:text-slate-600">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-6">
-                  @if (media().length === 0) {
-                    <p class="py-12 text-center text-sm text-slate-400">No images uploaded for this item. Please upload images in the Media section first.</p>
-                  } @else {
-                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                      @for (img of media(); track img.imageId) {
-                        @if (img.imageId > 0) {
-                          <div (click)="toggleImageSelect(img.imageId)" [class.border-brand-500]="variantImageSelection().includes(img.imageId)" [class.ring-2]="variantImageSelection().includes(img.imageId)" [class.ring-brand-100]="variantImageSelection().includes(img.imageId)" class="group relative aspect-square rounded-xl border border-slate-150 overflow-hidden bg-slate-50 cursor-pointer transition-all hover:border-slate-300">
-                            <img [src]="img.imageFullPath" class="h-full w-full object-cover" />
-                            <div class="absolute inset-0 bg-slate-900/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div class="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm border border-slate-200" [class.bg-brand-500]="variantImageSelection().includes(img.imageId)" [class.border-brand-500]="variantImageSelection().includes(img.imageId)">
-                              @if (variantImageSelection().includes(img.imageId)) {
-                                <svg class="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                              }
-                            </div>
-                          </div>
-                        }
-                      }
-                    </div>
-                  }
-                </div>
-                <div class="border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3 bg-slate-50/50">
-                  <button (click)="closeImageMapModal()" class="h-9 px-4 text-[13px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50">Cancel</button>
-                  <button (click)="saveImageMapping()" [disabled]="savingImageMapping() || media().length === 0" class="btn-primary h-9 px-4 text-[13px] font-semibold rounded-xl">
-                    @if (savingImageMapping()) { Saving... } @else { Save Mapping }
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
+          <!-- variant add/edit & image-mapping modals are rendered at the template root
+               (below) so they escape the animated step container's transform. -->
         } @else {
           <div class="fluent-card p-8 text-center">
             <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
@@ -843,5 +790,70 @@
         </div>
       </div>
     </div>
+  }
+
+  <!-- Modals rendered at root so `fixed` isn't captured by an animated (transformed) step container -->
+  @if (variantModalOpen()) {
+    <app-variant-edit
+      [itemId]="itemId()"
+      [itemVariantId]="editingVariantId()"
+      [itemName]="form.controls.itemName.value"
+      [categoryId]="form.controls.categoryId.value"
+      [itemReturnDays]="form.controls.returnWindowInDays.value || 0"
+      (close)="variantModalOpen.set(false)"
+      (saved)="onVariantSaved()"
+    />
+  }
+
+  @if (showImageMapModal()) {
+    <app-modal title="Assign Images to Variant" widthClass="max-w-2xl" (close)="closeImageMapModal()">
+      <p class="-mt-1 mb-4 text-[12.5px] text-slate-500">
+        Choose the photo(s) that represent
+        <span class="font-semibold text-slate-700">{{ selectedVariantForImage()?.itemVariantName }}</span>.
+      </p>
+      @if (media().length === 0) {
+        <div class="py-10 text-center">
+          <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          </div>
+          <p class="text-[13px] font-semibold text-slate-500">No images uploaded yet</p>
+          <p class="text-[12px] text-slate-400 mt-0.5">Add product photos in the Media step first.</p>
+        </div>
+      } @else {
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+          @for (img of media(); track img.imageId) {
+            @if (img.imageId > 0) {
+              <button type="button" (click)="toggleImageSelect(img.imageId)"
+                class="group relative aspect-square rounded-xl border overflow-hidden bg-slate-50 cursor-pointer transition-all"
+                [class.border-brand-500]="variantImageSelection().includes(img.imageId)"
+                [class.ring-2]="variantImageSelection().includes(img.imageId)"
+                [class.ring-brand-100]="variantImageSelection().includes(img.imageId)"
+                [class.border-slate-200]="!variantImageSelection().includes(img.imageId)"
+                [class.hover:border-slate-300]="!variantImageSelection().includes(img.imageId)">
+                <img [src]="img.imageFullPath" class="h-full w-full object-cover" onerror="this.style.display='none'" />
+                <div class="absolute inset-0 transition-colors" [class.bg-slate-900/10]="variantImageSelection().includes(img.imageId)"></div>
+                <div class="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full border shadow-sm transition-all"
+                  [class.bg-brand-500]="variantImageSelection().includes(img.imageId)"
+                  [class.border-brand-500]="variantImageSelection().includes(img.imageId)"
+                  [class.bg-white/90]="!variantImageSelection().includes(img.imageId)"
+                  [class.border-slate-200]="!variantImageSelection().includes(img.imageId)">
+                  @if (variantImageSelection().includes(img.imageId)) {
+                    <svg class="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  }
+                </div>
+              </button>
+            }
+          }
+        </div>
+      }
+
+      <div footer class="flex items-center gap-2">
+        <span class="mr-auto text-[12px] font-semibold text-slate-400">{{ variantImageSelection().length }} selected</span>
+        <button (click)="closeImageMapModal()" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
+        <button (click)="saveImageMapping()" [disabled]="savingImageMapping() || media().length === 0" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">
+          @if (savingImageMapping()) { Saving… } @else { Save Mapping }
+        </button>
+      </div>
+    </app-modal>
   }
 </div>

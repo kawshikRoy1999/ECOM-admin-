@@ -13,6 +13,7 @@ import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ItemContent } from './item-content';
 import { WysiwygEditor } from '../../../shared/ui/wysiwyg-editor/wysiwyg-editor';
+import { Modal } from '../../../shared/ui/modal/modal';
 import { VariantEditModal } from './variant-edit';
 import { ItemService } from './item.service';
 import {
@@ -48,7 +49,7 @@ interface OptionRow {
 
 @Component({
   selector: 'app-item-edit-page',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ItemContent, VariantEditModal, WysiwygEditor, DatePicker],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ItemContent, VariantEditModal, WysiwygEditor, DatePicker, Modal],
   templateUrl: './item-edit.page.html',
 })
 export class ItemEditPage {
@@ -189,6 +190,13 @@ export class ItemEditPage {
   constructor() {
     const id = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     this.itemId.set(Number.isNaN(id) ? 0 : id);
+
+    // Preserve the wizard step across the new→saved navigation (the route change
+    // recreates this component), so saving on the Variants step lands back there.
+    if (this.itemId() && typeof history !== 'undefined') {
+      const restored = Number(history.state?.step ?? 0);
+      if (restored >= 1 && restored <= this.lastStep) this.step.set(restored);
+    }
 
     this.form.controls.isReturnWindowDays.valueChanges.subscribe((checked) => {
       const ctrl = this.form.controls.returnWindowInDays;
@@ -932,7 +940,7 @@ export class ItemEditPage {
             this.toast.success(wasNew ? 'Item created.' : 'Item updated.');
             if (wasNew) {
               this.itemId.set(savedId);
-              this.router.navigate(['/catalog/items', savedId], { replaceUrl: true });
+              this.router.navigate(['/catalog/items', savedId], { replaceUrl: true, state: { step: this.step() } });
             }
           }
         } else if (savedId === -1) {
@@ -978,13 +986,13 @@ export class ItemEditPage {
         this.toast.success('Item created and images linked.');
         this.newImagesToLink = [];
         this.itemId.set(itemId);
-        this.router.navigate(['/catalog/items', itemId], { replaceUrl: true });
+        this.router.navigate(['/catalog/items', itemId], { replaceUrl: true, state: { step: this.step() } });
       },
       error: () => {
         this.toast.error('Item saved but some images failed to link.');
         this.newImagesToLink = [];
         this.itemId.set(itemId);
-        this.router.navigate(['/catalog/items', itemId], { replaceUrl: true });
+        this.router.navigate(['/catalog/items', itemId], { replaceUrl: true, state: { step: this.step() } });
       },
     });
   }
