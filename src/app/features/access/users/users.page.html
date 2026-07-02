@@ -69,9 +69,57 @@
         <!-- LEFT SIDEBAR: Avatar & Status & Roles (w-full md:w-[280px] shrink-0) -->
         <div class="w-full md:w-[260px] shrink-0 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-slate-100 pb-5 md:pb-0 md:pr-6">
           <!-- Profile image -->
-          <div class="flex flex-col gap-1">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Profile Image</label>
-            <app-image-upload [(value)]="imagePath" entityType="Users" entitySubType="Profile" />
+          <div class="flex flex-col gap-1.5 align-middle items-center justify-center py-2.5">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-start pl-0.5">Profile Image</label>
+            <div class="relative group/avatar mt-2">
+              <div class="h-28 w-28 rounded-full overflow-hidden border-2 border-slate-200 bg-slate-50 flex items-center justify-center shadow-xs relative transition-all group-hover/avatar:border-brand-500">
+                @if (localImagePreview() || imagePath()) {
+                  <img [src]="localImagePreview() || imagePath()" class="h-full w-full object-cover transition-transform duration-300 group-hover/avatar:scale-105" alt="profile" />
+                } @else {
+                  <div class="flex flex-col items-center justify-center text-slate-400">
+                    <svg class="h-10 w-10 text-slate-350" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                }
+                
+                <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/avatar:opacity-100 flex flex-col items-center justify-center text-white cursor-pointer transition-opacity rounded-full gap-1"
+                     (click)="fileInput.click()">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                  </svg>
+                  <span class="text-[10px] font-bold uppercase tracking-wider">Change</span>
+                </div>
+              </div>
+              
+              @if (localImagePreview() || imagePath()) {
+                <button
+                  type="button"
+                  (click)="clearImageSelection()"
+                  class="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:bg-slate-50 transition-colors text-slate-400 hover:text-slate-700 cursor-pointer z-10"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              }
+            </div>
+
+            @if (uploadProgress() > 0) {
+              <div class="w-full max-w-[140px] bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div class="bg-brand-500 h-1.5 rounded-full transition-all duration-300" [style.width.%]="uploadProgress()"></div>
+              </div>
+              <span class="text-[9.5px] font-bold text-slate-400 mt-1">Uploading... {{ uploadProgress() }}%</span>
+            }
+
+            <input
+              #fileInput
+              type="file"
+              accept="image/*"
+              class="hidden"
+              (change)="onFileSelected($event)"
+            />
           </div>
 
           <!-- Active Status Toggle -->

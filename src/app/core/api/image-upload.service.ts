@@ -31,10 +31,21 @@ export class ImageUploadService {
   private readonly url = `${environment.apiUrl.replace(/\/$/, '')}/frontend/UploadImages`;
 
   upload(file: File, opts: UploadOptions = {}): Observable<UploadProgress> {
+    const typeValue = this.getType(opts.entityType);
+    const companyIdValue = String(this.auth.companyId());
+
+    console.log('Uploading image via frontend/UploadImages:', {
+      url: this.url,
+      companyId: companyIdValue,
+      type: typeValue,
+      fileName: file.name,
+      fileSize: file.size
+    });
+
     const form = new FormData();
+    form.append('CompanyId', companyIdValue);
+    form.append('Type', String(typeValue));
     form.append('Files', file, file.name);
-    form.append('CompanyId', String(this.auth.companyId()));
-    form.append('Type', String(this.getType(opts.entityType)));
 
     return this.http
       .post(this.url, form, { reportProgress: true, observe: 'events' })
@@ -45,6 +56,7 @@ export class ImageUploadService {
             return { progress, done: false };
           }
           if (event.type === HttpEventType.Response) {
+            console.log('Upload response body:', event.body);
             return { progress: 100, done: true, url: this.extractUrl(event.body) };
           }
           return { progress: 0, done: false };
@@ -70,10 +82,18 @@ export class ImageUploadService {
   private extractUrl(body: unknown): string {
     if (!body) return '';
     const res = body as any;
+    
+    // Handle lowercase "data" array (e.g. data: [{ url: '...' }])
+    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+      return res.data[0].url ?? '';
+    }
+    
+    // Handle uppercase "Data" array (e.g. Data: [{ Url: '...' }])
     if (res.Data && Array.isArray(res.Data) && res.Data.length > 0) {
       return res.Data[0].Url ?? '';
     }
-    const data = res.data ?? res;
+    
+    const data = res.data ?? res.Data ?? res;
     if (typeof data === 'string') return data;
     const d = data as Record<string, unknown>;
     return (

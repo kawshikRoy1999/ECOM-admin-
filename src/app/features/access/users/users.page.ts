@@ -3,10 +3,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
 import { Modal } from '../../../shared/ui/modal/modal';
-import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
+import { ImageUploadService } from '../../../core/api/image-upload.service';
 import { of, switchMap } from 'rxjs';
 
 import { UsersService } from './users.service';
@@ -15,7 +15,7 @@ import { TooltipService } from '../../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-users-page',
-  imports: [ReactiveFormsModule, DataTable, Modal, ImageUpload, Checkbox],
+  imports: [ReactiveFormsModule, DataTable, Modal, Checkbox],
   templateUrl: './users.page.html',
 })
 export class UsersPage {
@@ -23,7 +23,12 @@ export class UsersPage {
   private readonly service = inject(UsersService);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly uploader = inject(ImageUploadService);
   public readonly tooltip = inject(TooltipService);
+
+  readonly localImagePreview = signal<string>('');
+  readonly uploadProgress = signal<number>(0);
+  selectedFile: File | null = null;
 
   readonly rows = signal<AdminUser[]>([]);
   readonly loading = signal(false);
@@ -83,6 +88,9 @@ export class UsersPage {
     this.editingId.set('');
     this.selectedRoleIds.set([]);
     this.imagePath.set('');
+    this.localImagePreview.set('');
+    this.selectedFile = null;
+    this.uploadProgress.set(0);
     this.form.reset({
       UserName: '', Email: '', FirstName: '', MiddleName: '', LastName: '', Phone: '', Password: '',
       Address1: '', Address2: '', City: '', State: '', Country: '', Zip: '', IsActive: true,
@@ -96,6 +104,9 @@ export class UsersPage {
     this.editingId.set(user.userId);
     this.selectedRoleIds.set([]);
     this.imagePath.set(user.imagePath ?? '');
+    this.localImagePreview.set('');
+    this.selectedFile = null;
+    this.uploadProgress.set(0);
     this.form.reset({
       UserName: user.userName,
       Email: user.email,
@@ -147,12 +158,79 @@ export class UsersPage {
     return this.selectedRoleIds().includes(roleId);
   }
 
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.toast.error('Please choose an image file.');
+      return;
+    }
+
+    this.selectedFile = file;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.localImagePreview.set(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  clearImageSelection(): void {
+    this.localImagePreview.set('');
+    this.imagePath.set('');
+    this.selectedFile = null;
+    this.uploadProgress.set(0);
+  }
+
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      const invalidControls: string[] = [];
+      Object.keys(this.form.controls).forEach((key) => {
+        const control = this.form.get(key);
+        if (control?.invalid) {
+          invalidControls.push(key);
+        }
+      });
+      console.warn('Form validation failed. Bypassing save and file upload. Invalid controls:', invalidControls);
+      this.toast.error(`Please fill in all required fields: ${invalidControls.join(', ')}`);
       return;
     }
     this.saving.set(true);
+
+    if (this.selectedFile) {
+      this.uploadProgress.set(5);
+      this.uploader.upload(this.selectedFile, { entityType: 'Users' }).subscribe({
+        next: (p) => {
+          this.uploadProgress.set(p.progress);
+          if (p.done) {
+            if (p.url) {
+              this.imagePath.set(p.url);
+              this.selectedFile = null;
+              this.localImagePreview.set('');
+              this.uploadProgress.set(0);
+              this.submitSavePayload();
+            } else {
+              this.saving.set(false);
+              this.toast.error('Upload finished but no URL was returned.');
+            }
+          }
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.uploadProgress.set(0);
+          this.toast.error('Profile image upload failed.');
+          console.error('User profile image upload error details:', err);
+        }
+      });
+    } else {
+      this.submitSavePayload();
+    }
+  }
+
+  submitSavePayload(): void {
     const v = this.form.getRawValue();
     const wasEditing = !!this.editingId();
     this.service
