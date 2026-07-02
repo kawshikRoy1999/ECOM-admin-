@@ -36,6 +36,8 @@ interface OptionRow {
   optionName: string;
   isApplicable: boolean;
   isFilterable: boolean;
+  /** Item-level attribute (option NOT applied on variant) → values are single-select; otherwise multi-select. */
+  singleSelect: boolean;
   values: {
     optionValueId: number; // category value id
     optionValueName: string;
@@ -332,17 +334,26 @@ export class ItemEditPage {
           const savedByName = new Map(
             (saved?.selectedValues ?? []).map((v) => [v.optionValue.trim().toLowerCase(), v]),
           );
+          const singleSelect = !opt.appliedOnVariant;
+          let seenSelected = false;
           return {
             variantOptionId: opt.variantOptionId,
             optionName: opt.optionName,
             isApplicable: saved ? saved.isApplicable : false,
             isFilterable: saved ? saved.isFilterable : false,
+            singleSelect,
             values: opt.optionValues.map((v) => {
               const match = savedByName.get(v.optionValueName.trim().toLowerCase());
+              // Item-level (single-select) options keep only the first saved value.
+              let selected = !!match;
+              if (selected && singleSelect) {
+                if (seenSelected) selected = false;
+                else seenSelected = true;
+              }
               return {
                 optionValueId: v.optionValueId,
                 optionValueName: v.optionValueName,
-                selected: !!match,
+                selected,
                 savedValueId: match?.variantOptionValueId ?? 0,
               };
             }),
@@ -415,16 +426,17 @@ export class ItemEditPage {
 
   toggleOptionValue(optionId: number, valueId: number): void {
     this.optionRows.update((rows) =>
-      rows.map((r) =>
-        r.variantOptionId === optionId
-          ? {
-              ...r,
-              values: r.values.map((v) =>
-                v.optionValueId === valueId ? { ...v, selected: !v.selected } : v,
-              ),
-            }
-          : r,
-      ),
+      rows.map((r) => {
+        if (r.variantOptionId !== optionId) return r;
+        return {
+          ...r,
+          values: r.values.map((v) => {
+            if (v.optionValueId === valueId) return { ...v, selected: !v.selected };
+            // Single-select (item-level) options: picking one clears the others.
+            return r.singleSelect ? { ...v, selected: false } : v;
+          }),
+        };
+      }),
     );
   }
 

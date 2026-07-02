@@ -116,6 +116,11 @@ export interface ItemFaq {
 export interface AvailableVariantOption {
   variantOptionId: number;
   optionName: string;
+  /**
+   * TRUE = option generates variants → values are multi-select.
+   * FALSE = item-level attribute → values are single-select.
+   * (.NET InventoryItem.js: appliedOnVariant ? toggleOptionColor : toggleSingleOptionColor.)
+   */
   appliedOnVariant: boolean;
   optionValues: { optionValueId: number; optionValueName: string }[];
 }
