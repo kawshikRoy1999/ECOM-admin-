@@ -2,7 +2,6 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { DecimalPipe } from '@angular/common';
 import { debounceTime, skip } from 'rxjs';
 
 import { Select } from '../../../shared/ui/select/select';
@@ -13,7 +12,7 @@ import { ItemListRow, NamedOption } from './item.models';
 
 @Component({
   selector: 'app-items-list-page',
-  imports: [FormsModule, Select, DecimalPipe, DataTable],
+  imports: [FormsModule, Select, DataTable],
   templateUrl: './items-list.page.html',
 })
 export class ItemsListPage {
