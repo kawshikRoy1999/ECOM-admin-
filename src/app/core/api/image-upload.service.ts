@@ -28,15 +28,13 @@ export interface UploadOptions {
 export class ImageUploadService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
-  private readonly url = `${environment.apiUrl.replace(/\/$/, '')}/${environment.uploadPath}`;
+  private readonly url = `${environment.apiUrl.replace(/\/$/, '')}/frontend/UploadImages`;
 
   upload(file: File, opts: UploadOptions = {}): Observable<UploadProgress> {
     const form = new FormData();
-    form.append('file', file, file.name);
+    form.append('Files', file, file.name);
     form.append('CompanyId', String(this.auth.companyId()));
-    if (opts.entityType) form.append('EntityType', opts.entityType);
-    if (opts.entitySubType) form.append('EntitySubType', opts.entitySubType);
-    if (opts.imageName) form.append('ImageName', opts.imageName);
+    form.append('Type', String(this.getType(opts.entityType)));
 
     return this.http
       .post(this.url, form, { reportProgress: true, observe: 'events' })
@@ -54,11 +52,28 @@ export class ImageUploadService {
       );
   }
 
-  /** Best-effort URL extraction from the response envelope. Adjust once confirmed. */
+  getType(entityType?: string): number {
+    const t = (entityType ?? '').toLowerCase();
+    if (t.startsWith('review')) return 1;
+    if (t.startsWith('return')) return 2;
+    if (t.startsWith('product') || t === 'item') return 3;
+    if (t.startsWith('category')) return 4;
+    if (t.startsWith('brand')) return 5;
+    if (t.startsWith('profile') || t.startsWith('user')) return 6;
+    if (t.startsWith('banner')) return 7;
+    if (t.startsWith('reel')) return 8;
+    if (t.startsWith('offer')) return 9;
+    return 99; // default to Other
+  }
+
+  /** Extract URL from new Data response envelope with fallbacks */
   private extractUrl(body: unknown): string {
     if (!body) return '';
-    if (typeof body === 'string') return body;
-    const data = (body as { data?: unknown }).data ?? body;
+    const res = body as any;
+    if (res.Data && Array.isArray(res.Data) && res.Data.length > 0) {
+      return res.Data[0].Url ?? '';
+    }
+    const data = res.data ?? res;
     if (typeof data === 'string') return data;
     const d = data as Record<string, unknown>;
     return (
