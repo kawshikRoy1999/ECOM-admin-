@@ -33,12 +33,19 @@ export class ItemsListPage {
   readonly loading = signal(false);
   readonly loadingMore = signal(false);
   readonly brands = signal<NamedOption[]>([]);
+  readonly categories = signal<NamedOption[]>([]);
   readonly itemCount = signal(0);
 
   // Filters
   readonly search = signal('');
   readonly brandFilter = signal(0);
+  readonly categoryFilter = signal(0); // category id (0 = all); endpoint filters by category NAME
   readonly activeFilter = signal<number>(-1); // -1 all, 1 active, 0 inactive
+
+  /** GetItemList filters by category NAME, so resolve the selected id → name. */
+  private categoryName(): string {
+    return this.categories().find((c) => c.id === this.categoryFilter())?.name ?? '';
+  }
 
   readonly pageNumber = signal(1);
   readonly totalPages = signal(0);
@@ -57,6 +64,7 @@ export class ItemsListPage {
     this.service.ddlLists().subscribe({
       next: (d) => {
         this.brands.set(d.brands);
+        this.categories.set(d.categories);
         this.itemCount.set(d.itemCount);
       },
     });
@@ -66,6 +74,7 @@ export class ItemsListPage {
     toObservable(computed(() => ({
       search: this.search(),
       brandId: this.brandFilter(),
+      categoryId: this.categoryFilter(),
       active: this.activeFilter(),
     }))).pipe(
       skip(1),
@@ -77,8 +86,8 @@ export class ItemsListPage {
 
   load(): void {
     const active = this.activeFilter();
-    const currentParams = `${this.search().trim()}_${this.brandFilter()}_${active}_${this.pageNumber()}`;
-    
+    const currentParams = `${this.search().trim()}_${this.brandFilter()}_${this.categoryFilter()}_${active}_${this.pageNumber()}`;
+
     // Prevent duplicate API hits if params haven't changed
     if (currentParams === this.lastLoadedParams) {
       return;
@@ -90,6 +99,7 @@ export class ItemsListPage {
       .list({
         itemName: this.search().trim(),
         brandId: this.brandFilter() || undefined,
+        categoryName: this.categoryName(),
         isAll: active < 0,
         isActive: active === 1,
         pageNumber: this.pageNumber(),
@@ -109,6 +119,22 @@ export class ItemsListPage {
   searchNow(): void {
     this.pageNumber.set(1);
     this.load();
+  }
+
+  /** True when any filter differs from its default. */
+  readonly hasActiveFilters = computed(
+    () => !!this.search().trim() || this.brandFilter() !== 0 || this.categoryFilter() !== 0 || this.activeFilter() !== -1,
+  );
+
+  clearFilters(): void {
+    if (!this.hasActiveFilters()) return;
+    // The button unmounts once filters clear, so mouseleave never fires — hide manually.
+    this.tooltip.hide();
+    this.search.set('');
+    this.brandFilter.set(0);
+    this.categoryFilter.set(0);
+    this.activeFilter.set(-1);
+    this.searchNow();
   }
 
   setActive(v: number): void {
@@ -135,13 +161,14 @@ export class ItemsListPage {
     this.loadingMore.set(true);
 
     const active = this.activeFilter();
-    const currentParams = `${this.search().trim()}_${this.brandFilter()}_${active}_${nextPage}`;
+    const currentParams = `${this.search().trim()}_${this.brandFilter()}_${this.categoryFilter()}_${active}_${nextPage}`;
     this.lastLoadedParams = currentParams;
 
     this.service
       .list({
         itemName: this.search().trim(),
         brandId: this.brandFilter() || undefined,
+        categoryName: this.categoryName(),
         isAll: active < 0,
         isActive: active === 1,
         pageNumber: nextPage,
