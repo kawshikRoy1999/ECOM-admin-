@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-4 w-full pb-6">
+<div class="flex flex-col h-full lg:h-[calc(100vh-96px)] overflow-y-auto lg:overflow-hidden gap-4 pb-4">
   <!-- Header -->
   <div class="flex items-center justify-between flex-wrap gap-3 shrink-0">
     <div class="flex flex-col gap-0.5">
@@ -21,7 +21,7 @@
     <div class="flex flex-wrap items-end gap-3">
       <div class="flex flex-col gap-1 flex-1 min-w-[200px]">
         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-0.5">Search</label>
-        <input [(ngModel)]="search" (keyup.enter)="searchNow()" placeholder="Item name…"
+        <input [value]="search()" (input)="search.set($any($event.target).value)" (keyup.enter)="searchNow()" placeholder="Item name…"
           class="h-8.5 w-full !px-3.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[12.5px]" />
       </div>
       <div class="flex flex-col gap-1 w-48">
@@ -46,73 +46,28 @@
   </div>
 
   <!-- Table -->
-  <div class="fluent-card overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-slate-100 text-[13px]">
-        <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-          <tr>
-            <th class="px-4 py-3 text-left w-14"></th>
-            <th class="px-4 py-3 text-left">Item</th>
-            <th class="px-4 py-3 text-left">Brand</th>
-            <th class="px-4 py-3 text-right">Price</th>
-            <th class="px-4 py-3 text-center">Qty</th>
-            <th class="px-4 py-3 text-center">Status</th>
-            <th class="px-4 py-3 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          @if (loading()) {
-            <tr><td colspan="7" class="px-4 py-10 text-center text-slate-400">Loading items…</td></tr>
-          } @else {
-            @for (r of rows(); track r.id) {
-              <tr class="hover:bg-slate-50/50 transition-colors cursor-pointer" (click)="editItem(r)">
-                <td class="px-4 py-2.5">
-                  @if (r.imageUrl) {
-                    <img [src]="r.imageUrl" alt="" class="h-10 w-10 rounded-lg object-cover border border-slate-100" onerror="this.style.display='none'" />
-                  } @else {
-                    <div class="h-10 w-10 rounded-lg bg-slate-100"></div>
-                  }
-                </td>
-                <td class="px-4 py-2.5">
-                  <p class="font-semibold text-slate-800">{{ r.name }}</p>
-                  @if (r.itemCode) { <p class="text-[11px] text-slate-400 font-mono">{{ r.itemCode }}</p> }
-                </td>
-                <td class="px-4 py-2.5 text-slate-600">{{ r.brand }}</td>
-                <td class="px-4 py-2.5 text-right font-medium text-slate-800">{{ r.price | number:'1.2-2' }}</td>
-                <td class="px-4 py-2.5 text-center text-slate-600">{{ r.quantity }}</td>
-                <td class="px-4 py-2.5 text-center">
-                  <span class="rounded-md px-2 py-0.5 text-[11px] font-semibold" [class]="r.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">{{ r.isActive ? 'Active' : 'Inactive' }}</span>
-                </td>
-                <td class="px-4 py-2.5">
-                  <div class="flex justify-end" (click)="$event.stopPropagation()">
-                    <button (click)="editItem(r)" class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50" title="Edit">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No items found.</td></tr>
-            }
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    @if (totalPages() > 1) {
-      <div class="flex items-center justify-between border-t border-slate-100 px-4 py-2.5">
-        <span class="text-[12px] text-slate-500">{{ totalRecord() }} items</span>
-        <div class="flex items-center gap-1">
-          <button (click)="prevPage()" [disabled]="pageNumber() <= 1" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40">
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <span class="text-[12px] font-semibold text-slate-600 px-1">{{ pageNumber() }} / {{ totalPages() }}</span>
-          <button (click)="nextPage()" [disabled]="pageNumber() >= totalPages()" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40">
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </div>
-      </div>
-    }
+  <div class="flex-1 min-h-0 flex flex-col gap-4">
+    <app-data-table
+      [columns]="columns"
+      [rows]="rows()"
+      [loading]="loading()"
+      [searchable]="false"
+      emptyText="No items found."
+      [actions]="itemActions"
+      [fillHeight]="true"
+      (tableScroll)="onTableScroll($event)"
+      [loadingMore]="loadingMore()"
+    />
+    <ng-template #itemActions let-row>
+      <button (click)="editItem(row)"
+              (mouseenter)="tooltip.show($event, 'Edit Item', { info: 'Edit product details, pricing, variants, and settings.', placement: 'left' })"
+              (mouseleave)="tooltip.hide()"
+              class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50 border border-slate-200/40 hover:border-brand-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+    </ng-template>
   </div>
 </div>
