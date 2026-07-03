@@ -28,6 +28,7 @@ export interface OfferDetailsMaster {
   startDate: string;
   endDate: string;
   bannerImageUrl: string;
+  offerIconUrl: string;
   isActive: boolean;
   isGroupOffer: boolean;
 }

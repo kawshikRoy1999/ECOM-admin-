@@ -37,6 +37,7 @@ export class OffersPage {
 
   readonly searchQuery = signal<string>('');
   readonly bannerUrl = signal('');
+  readonly iconUrl = signal('');
   readonly isGroupOffer = signal(true);
 
   // Staged targeting rules ("Active Rules").
@@ -164,6 +165,7 @@ export class OffersPage {
       next: (d) => {
         const o = d?.offer;
         this.bannerUrl.set(o?.bannerImageUrl ?? '');
+        this.iconUrl.set(o?.offerIconUrl ?? '');
         this.isGroupOffer.set(o?.isGroupOffer ?? true);
         this.rules.set(
           (d?.criteria ?? []).map((c) => {
@@ -261,6 +263,7 @@ export class OffersPage {
   openCreate(): void {
     this.selectedOfferId.set(0);
     this.bannerUrl.set('');
+    this.iconUrl.set('');
     this.isGroupOffer.set(true);
     this.rules.set([]);
     this.resetPickers();
@@ -365,6 +368,7 @@ export class OffersPage {
         startDate: v.startDate,
         endDate: v.endDate,
         bannerImageUrl: this.bannerUrl(),
+        offerIconUrl: this.iconUrl(),
         isActive: v.isActive,
         isGroupOffer: this.isGroupOffer(),
         criteria: this.rules().map((r) => ({ type: r.type, id: r.id, name: r.name })),

@@ -39,6 +39,7 @@ export class OffersService {
     startDate: string;
     endDate: string;
     bannerImageUrl: string;
+    offerIconUrl: string;
     isActive: boolean;
     isGroupOffer: boolean;
     criteria: OfferCriteria[];
@@ -51,6 +52,7 @@ export class OffersService {
       StartDate: offer.startDate,
       EndDate: offer.endDate,
       BannerImageUrl: offer.bannerImageUrl,
+      OfferIconUrl: offer.offerIconUrl,
       IsActive: offer.isActive,
       IsGroupOffer: offer.isGroupOffer,
       UserId: this.auth.userId(),

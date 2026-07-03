@@ -523,6 +523,22 @@
             </div>
           </div>
 
+          <!-- Offer Icon / Logo -->
+          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shadow-inner">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.5 1.5 0 002.122 0l4.318-4.318a1.5 1.5 0 000-2.122L11.16 3.659A2.25 2.25 0 009.568 3z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+                </svg>
+              </div>
+              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Offer Icon / Logo</h2>
+            </div>
+            <div class="w-full">
+              <app-image-upload label="Offer icon (badge shown on storefront)" entityType="Offer" entitySubType="Icon" fit="contain" [(value)]="iconUrl" />
+            </div>
+          </div>
+
         </div>
       </div>
     } @else {
