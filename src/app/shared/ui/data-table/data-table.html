@@ -80,7 +80,9 @@
           </tr>
         } @else {
           @for (row of filtered(); track $index) {
-            <tr class="transition-colors hover:bg-slate-50/50 group animate-fadeIn" [style.animation-delay]="$index * 30 + 'ms'">
+            <tr class="transition-colors hover:bg-slate-50/50 group animate-fadeIn" [style.animation-delay]="$index * 30 + 'ms'"
+              [class.cursor-pointer]="clickableRows()"
+              (click)="clickableRows() && rowClick.emit(row)">
               @for (col of columns(); track col.key) {
                 <td [class]="'px-5 py-3 text-slate-700 font-medium ' + alignClass(col)">
                   @if (isReturnImageList(col, row[col.key])) {
@@ -125,7 +127,7 @@
                 </td>
               }
               @if (actions(); as tpl) {
-                <td class="px-5 py-3 text-right">
+                <td class="px-5 py-3 text-right" (click)="$event.stopPropagation()">
                   <div class="flex justify-end gap-1.5">
                     <ng-container [ngTemplateOutlet]="tpl" [ngTemplateOutletContext]="{ $implicit: row }" />
                   </div>

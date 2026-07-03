@@ -43,8 +43,12 @@ export class DataTable<T extends object> {
   /** When true, the table stretches to fill available parent flex space instead of using fixed max-height. */
   readonly fillHeight = input(false);
   readonly loadingMore = input(false);
+  /** When true, body rows show a pointer cursor and emit (rowClick) on click. */
+  readonly clickableRows = input(false);
 
   readonly tableScroll = output<Event>();
+  /** Emitted when a body row is clicked (rows become clickable when this is bound). */
+  readonly rowClick = output<T>();
 
   onScroll(event: Event): void {
     this.tableScroll.emit(event);

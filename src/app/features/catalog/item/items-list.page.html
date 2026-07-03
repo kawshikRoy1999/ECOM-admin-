@@ -83,6 +83,8 @@
       emptyText="No items found."
       [actions]="itemActions"
       [fillHeight]="true"
+      [clickableRows]="true"
+      (rowClick)="editItem($event)"
       (tableScroll)="onTableScroll($event)"
       [loadingMore]="loadingMore()"
     />
