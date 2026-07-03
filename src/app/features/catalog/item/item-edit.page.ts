@@ -303,6 +303,106 @@ export class ItemEditPage {
     this.generateItemCode();
   }
 
+  // ── Inline "Add new" from the Brand/Category/Sub-category/Family dropdowns ──
+  readonly quickAddOpen = signal(false);
+  readonly quickAddType = signal<'brand' | 'category' | 'subcategory' | 'family' | null>(null);
+  readonly quickAddName = signal('');
+  readonly quickAddSaving = signal(false);
+  readonly quickAddTitle = computed(() => {
+    switch (this.quickAddType()) {
+      case 'brand': return 'Add New Brand';
+      case 'category': return 'Add New Category';
+      case 'subcategory': return 'Add New Sub-category';
+      case 'family': return 'Add New Family';
+      default: return 'Add New';
+    }
+  });
+
+  openQuickAdd(type: 'brand' | 'category' | 'subcategory' | 'family', seed: string): void {
+    if (type === 'subcategory' && !this.form.controls.categoryId.value) {
+      this.toast.error('Select a category first.');
+      return;
+    }
+    if (type === 'family' && !this.selectedSubCategoryId()) {
+      this.toast.error('Select a sub-category first.');
+      return;
+    }
+    this.quickAddType.set(type);
+    this.quickAddName.set((seed || '').trim());
+    this.quickAddOpen.set(true);
+  }
+
+  saveQuickAdd(): void {
+    const type = this.quickAddType();
+    const name = this.quickAddName().trim();
+    if (!type || !name) {
+      this.toast.error('Enter a name.');
+      return;
+    }
+    this.quickAddSaving.set(true);
+    const fail = () => {
+      this.quickAddSaving.set(false);
+      this.toast.error('Could not add. Please try again.');
+    };
+    const finish = (msg: string) => {
+      this.quickAddSaving.set(false);
+      this.quickAddOpen.set(false);
+      this.toast.success(msg);
+    };
+    const eq = (a: string) => a.trim().toLowerCase() === name.toLowerCase();
+
+    if (type === 'brand') {
+      this.service.addBrand(name).subscribe({
+        next: () => this.service.ddlLists().subscribe({
+          next: (d) => {
+            this.brands.set(d.brands);
+            const match = d.brands.find((b) => eq(b.name));
+            if (match) this.form.controls.brandId.setValue(match.id);
+            finish('Brand added.');
+          },
+          error: fail,
+        }),
+        error: fail,
+      });
+    } else if (type === 'category') {
+      this.service.addCategory(name).subscribe({
+        next: () => this.service.ddlLists().subscribe({
+          next: (d) => {
+            this.categories.set(d.categories);
+            const match = d.categories.find((c) => eq(c.name));
+            if (match) this.onCategoryChange(match.id);
+            finish('Category added.');
+          },
+          error: fail,
+        }),
+        error: fail,
+      });
+    } else {
+      const categoryId = Number(this.form.controls.categoryId.value);
+      const parent = type === 'family' ? this.selectedSubCategoryId() : 0;
+      this.service.addSubCategory(name, categoryId, parent).subscribe({
+        next: () => this.service.subCategories(categoryId).subscribe({
+          next: (list) => {
+            this.allSubCategories.set(list);
+            const match = list.find((s) => eq(s.name) && (s.parentSubCategoryId ?? 0) === parent);
+            if (match) {
+              if (type === 'family') {
+                this.selectedFamilyId.set(match.id);
+              } else {
+                this.selectedSubCategoryId.set(match.id);
+                this.selectedFamilyId.set(0);
+              }
+              this.generateItemCode();
+            }
+            finish(type === 'family' ? 'Family added.' : 'Sub-category added.');
+          },
+          error: fail,
+        }),
+        error: fail,
+      });
+    }
+  }
+
   private loadSubCategories(categoryId: number, activeSubCategoryId: number = 0): void {
     this.service.subCategories(categoryId).subscribe({
       next: (s) => {

@@ -78,6 +78,15 @@
           <div class="px-3.5 py-3 text-[12px] text-slate-400 text-center font-medium">No results found</div>
         }
       </div>
+
+      <!-- Add-new action row -->
+      @if (addNewLabel()) {
+        <button type="button" (click)="emitAddNew()"
+          class="flex w-full items-center gap-2 border-t border-slate-100 px-3.5 py-2.5 text-[12.5px] font-semibold text-brand-600 hover:bg-brand-50 transition-colors">
+          <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+          <span class="truncate">{{ searchQuery().trim() ? ('Add "' + searchQuery().trim() + '"') : addNewLabel() }}</span>
+        </button>
+      }
     </div>
   }
 </div>

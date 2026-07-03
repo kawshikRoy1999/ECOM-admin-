@@ -152,19 +152,19 @@
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Brand <span class="text-red-500">*</span></label>
-              <app-select formControlName="brandId" [options]="brands()" labelKey="name" valueKey="id" defaultLabel="- Select Brand -" [defaultValue]="0" [searchable]="true" />
+              <app-select formControlName="brandId" [options]="brands()" labelKey="name" valueKey="id" defaultLabel="- Select Brand -" [defaultValue]="0" [searchable]="true" addNewLabel="Add new brand" (addNew)="openQuickAdd('brand', $event)" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Category <span class="text-red-500">*</span></label>
-              <app-select [options]="categories()" labelKey="name" valueKey="id" [value]="form.controls.categoryId.value" (valueChange)="onCategoryChange($event)" defaultLabel="- Select Category -" [defaultValue]="0" [searchable]="true" />
+              <app-select [options]="categories()" labelKey="name" valueKey="id" [value]="form.controls.categoryId.value" (valueChange)="onCategoryChange($event)" defaultLabel="- Select Category -" [defaultValue]="0" [searchable]="true" addNewLabel="Add new category" (addNew)="openQuickAdd('category', $event)" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sub-category</label>
-              <app-select [options]="subCategories()" labelKey="name" valueKey="id" [value]="selectedSubCategoryId()" (valueChange)="onSubCategoryChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" />
+              <app-select [options]="subCategories()" labelKey="name" valueKey="id" [value]="selectedSubCategoryId()" (valueChange)="onSubCategoryChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" addNewLabel="Add new sub-category" (addNew)="openQuickAdd('subcategory', $event)" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Family</label>
-              <app-select [options]="families()" labelKey="name" valueKey="id" [value]="selectedFamilyId()" (valueChange)="onFamilyChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" [disabled]="!selectedSubCategoryId() || !families().length" />
+              <app-select [options]="families()" labelKey="name" valueKey="id" [value]="selectedFamilyId()" (valueChange)="onFamilyChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" [disabled]="!selectedSubCategoryId()" addNewLabel="Add new family" (addNew)="openQuickAdd('family', $event)" />
             </div>
             <div class="flex flex-col gap-1 sm:col-span-2">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Description</label>
@@ -852,6 +852,25 @@
         <button (click)="closeImageMapModal()" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
         <button (click)="saveImageMapping()" [disabled]="savingImageMapping() || media().length === 0" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">
           @if (savingImageMapping()) { Saving… } @else { Save Mapping }
+        </button>
+      </div>
+    </app-modal>
+  }
+
+  <!-- Quick-add (brand / category / sub-category / family) -->
+  @if (quickAddOpen()) {
+    <app-modal [title]="quickAddTitle()" widthClass="max-w-md" (close)="quickAddOpen.set(false)">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Name <span class="text-red-500">*</span></label>
+        <input [ngModel]="quickAddName()" (ngModelChange)="quickAddName.set($event)" (keyup.enter)="saveQuickAdd()"
+          placeholder="Enter name" autofocus
+          class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-4 focus:ring-brand-500/10 focus:outline-none" />
+        <small class="text-[11px] text-slate-400">Creates the record instantly and selects it here. You can add images &amp; details later in its own section.</small>
+      </div>
+      <div footer class="flex justify-end gap-2">
+        <button (click)="quickAddOpen.set(false)" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
+        <button (click)="saveQuickAdd()" [disabled]="quickAddSaving() || !quickAddName().trim()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">
+          @if (quickAddSaving()) { Adding… } @else { Add }
         </button>
       </div>
     </app-modal>

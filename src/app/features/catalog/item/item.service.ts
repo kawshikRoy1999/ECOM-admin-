@@ -409,6 +409,51 @@ export class ItemService {
     );
   }
 
+  /** Quick-create a brand from the item form (name only; SaveBrandsImage, BrandId=0). */
+  addBrand(name: string): Observable<unknown> {
+    return this.api.post('ProductManagement/SaveBrandsImage', {
+      BrandId: 0,
+      Name: name,
+      Notes: '',
+      LogoPath: '',
+      BannerPath: '',
+      PromoPath: '',
+      CompanyId: this.auth.companyId(),
+      UserId: this.auth.userId(),
+    });
+  }
+
+  /** Quick-create a category (name only; SaveEditCat, CategoryId=0). */
+  addCategory(name: string): Observable<unknown> {
+    return this.api.post('ProductManagement/SaveEditCat', {
+      UserId: this.auth.userId(),
+      CategoryId: 0,
+      CompanyId: this.auth.companyId(),
+      CatName: name,
+      ImagePath: '',
+      IconPath: '',
+      ReturnWindowInDays: 0,
+      NonReturnable: false,
+      BusinessUnitId: 0,
+    });
+  }
+
+  /** Quick-create a sub-category (parentSubCategoryId=0) or family (parentSubCategoryId=parent sub). */
+  addSubCategory(name: string, categoryId: number, parentSubCategoryId: number): Observable<unknown> {
+    return this.api.post('ProductManagement/AddEditSubCategory', {
+      CategoryId: categoryId,
+      SubCategoryId: 0,
+      ParentSubCategoryId: parentSubCategoryId,
+      SubCategoryName: name,
+      IsActive: true,
+      SortOrder: 0,
+      ReturnWindowInDays: 0,
+      NonReturnable: false,
+      CompanyId: this.auth.companyId(),
+      UserId: this.auth.userId(),
+    });
+  }
+
   /** Get custom fields master list. ItemId=0 for a new item. */
   customFieldList(itemId: number): Observable<ItemCustomField[]> {
     return this.api

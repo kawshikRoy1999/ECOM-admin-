@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, Provider, forwardRef, inject, input, model, signal, computed, Input } from '@angular/core';
+import { Component, ElementRef, HostListener, Provider, forwardRef, inject, input, model, output, signal, computed, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 const SELECT_VALUE_ACCESSOR: Provider = {
@@ -24,7 +24,12 @@ export class Select implements ControlValueAccessor {
   
   readonly defaultLabel = input<string>('');
   readonly defaultValue = input<any>(0);
-  
+
+  /** When set, shows an "add new" action row at the bottom of the dropdown. */
+  readonly addNewLabel = input<string>('');
+  /** Emits the current search text (may be empty) when the add-new row is clicked. */
+  readonly addNew = output<string>();
+
   readonly value = model<any>();
   
   readonly isOpen = signal(false);
@@ -137,6 +142,11 @@ export class Select implements ControlValueAccessor {
         this.isOpen.set(false);
         break;
     }
+  }
+
+  emitAddNew(): void {
+    this.addNew.emit(this.searchQuery().trim());
+    this.isOpen.set(false);
   }
 
   selectOption(opt: any): void {
