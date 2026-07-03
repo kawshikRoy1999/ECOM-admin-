@@ -27,6 +27,8 @@
     searchPlaceholder="Search users…"
     [actions]="actionsTpl"
     [fillHeight]="true"
+    [clickableRows]="true"
+    (rowClick)="openEdit($event)"
     class="flex-1 min-h-0 flex flex-col"
   />
 

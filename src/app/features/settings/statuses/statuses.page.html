@@ -31,7 +31,7 @@
           @for (s of statuses(); track s.statusId) {
             @if (editingStatusId() !== s.statusId) {
               <!-- Read-only View -->
-              <div class="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-slate-50/30 transition-all duration-300 group">
+              <div (click)="startEditStatus(s)" class="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-slate-50/30 transition-all duration-300 group cursor-pointer">
                 <!-- Left: Badge + Storefront Label -->
                 <div class="flex items-center gap-3.5 min-w-0">
                   <div class="h-9 w-9 rounded-full flex items-center justify-center shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-105" [class]="statusColorClass(s.statusName)">
@@ -165,6 +165,8 @@
         emptyText="No cancellation reasons yet."
         searchPlaceholder="Search reasons…"
         [actions]="actionsTpl"
+        [clickableRows]="true"
+        (rowClick)="openEdit($event)"
       />
     </div>
 
