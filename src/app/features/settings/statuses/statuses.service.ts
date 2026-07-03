@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
-import { CancellationReason, CompanyStatus } from './status.models';
+import { CancellationReason, CompanyStatus, CompanyOrderProcess } from './status.models';
 
 /** Order status names + cancellation reasons (ProductManagement). */
 @Injectable({ providedIn: 'root' })
@@ -25,6 +25,34 @@ export class StatusesService {
       StatusId: s.statusId,
       StatusName: s.statusName,
       StoreFrontStatus: s.storeFrontStatus,
+      CompanyOrderProcessId: s.companyOrderProcessId || null,
+    });
+  }
+
+  // --- Order-workflow steps (feeds the status → step mapping) ---
+  getOrderSteps(): Observable<CompanyOrderProcess[]> {
+    return this.api.post<CompanyOrderProcess[]>('ProductManagement/GetCompanyOrderProcessList', {
+      UserId: this.auth.userId(),
+      CompanyId: this.auth.companyId(),
+    });
+  }
+
+  saveOrderStep(p: CompanyOrderProcess): Observable<unknown> {
+    return this.api.post('ProductManagement/SaveCompanyOrderProcess', {
+      UserId: this.auth.userId(),
+      CompanyId: this.auth.companyId(),
+      CompanyOrderProcessId: p.companyOrderProcessId,
+      Name: p.name,
+      ImageUrl: p.imageUrl,
+      IsActive: p.isActive,
+    });
+  }
+
+  deleteOrderStep(companyOrderProcessId: number): Observable<unknown> {
+    return this.api.post('ProductManagement/DeleteCompanyOrderProcess', {
+      UserId: this.auth.userId(),
+      CompanyId: this.auth.companyId(),
+      CompanyOrderProcessId: companyOrderProcessId,
     });
   }
 

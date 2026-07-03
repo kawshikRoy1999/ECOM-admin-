@@ -2,16 +2,17 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { Tabs, TabItem } from '../../../shared/ui/tabs/tabs';
-import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
 import { Modal } from '../../../shared/ui/modal/modal';
+import { Select } from '../../../shared/ui/select/select';
+import { ImageUpload } from '../../../shared/ui/image-upload/image-upload';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { StatusesService } from './statuses.service';
-import { CancellationReason, CompanyStatus } from './status.models';
+import { CancellationReason, CompanyStatus, CompanyOrderProcess } from './status.models';
 
 @Component({
   selector: 'app-statuses-page',
-  imports: [FormsModule, ReactiveFormsModule, Tabs, DataTable, Modal],
+  imports: [FormsModule, ReactiveFormsModule, Tabs, Modal, Select, ImageUpload],
   templateUrl: './statuses.page.html',
 })
 export class StatusesPage {
@@ -22,6 +23,7 @@ export class StatusesPage {
 
   readonly tabs: TabItem[] = [
     { id: 'statuses', label: 'Status Names' },
+    { id: 'orderSteps', label: 'Order Steps' },
     { id: 'cancellations', label: 'Cancellation Reasons' },
   ];
   readonly active = signal('statuses');
@@ -32,6 +34,17 @@ export class StatusesPage {
   readonly savingStatusId = signal<number | null>(null);
   readonly editingStatusId = signal<number | null>(null);
   editStoreFrontStatus = '';
+  readonly editCompanyOrderProcessId = signal<number>(0);
+
+  // Order-workflow steps (master list + feeds the status → step mapping dropdown)
+  readonly orderSteps = signal<CompanyOrderProcess[]>([]);
+  readonly orderStepsLoading = signal(false);
+  readonly stepModalOpen = signal(false);
+  readonly editingStepId = signal(0);
+  readonly savingStep = signal(false);
+  readonly stepName = signal('');
+  readonly stepIsActive = signal(true);
+  readonly stepImage = signal('');
 
   // Cancellation reasons
   readonly reasons = signal<CancellationReason[]>([]);
@@ -39,12 +52,6 @@ export class StatusesPage {
   readonly modalOpen = signal(false);
   readonly editingId = signal(0);
   readonly savingReason = signal(false);
-
-  readonly reasonColumns: Column<CancellationReason>[] = [
-    { key: 'reasonName', header: 'Reason' },
-    { key: 'explanationRequired', header: 'Explanation', align: 'center', format: (r) => (r.explanationRequired ? 'Required' : 'Optional') },
-    { key: 'isActive', header: 'Status', align: 'center', format: (r) => (r.isActive ? 'Active' : 'Inactive') },
-  ];
 
   readonly reasonForm = this.fb.nonNullable.group({
     reasonName: ['', [Validators.required]],
@@ -55,6 +62,71 @@ export class StatusesPage {
   constructor() {
     this.loadStatuses();
     this.loadReasons();
+    this.loadOrderSteps();
+  }
+
+  // --- Order steps (master) ---
+  loadOrderSteps(): void {
+    this.orderStepsLoading.set(true);
+    this.service.getOrderSteps().subscribe({
+      next: (s) => {
+        this.orderSteps.set(s ?? []);
+        this.orderStepsLoading.set(false);
+      },
+      error: () => this.orderStepsLoading.set(false),
+    });
+  }
+
+  openCreateStep(): void {
+    this.editingStepId.set(0);
+    this.stepName.set('');
+    this.stepIsActive.set(true);
+    this.stepImage.set('');
+    this.stepModalOpen.set(true);
+  }
+
+  openEditStep(p: CompanyOrderProcess): void {
+    this.editingStepId.set(p.companyOrderProcessId);
+    this.stepName.set(p.name);
+    this.stepIsActive.set(p.isActive);
+    this.stepImage.set(p.imageUrl ?? '');
+    this.stepModalOpen.set(true);
+  }
+
+  saveStep(): void {
+    const name = this.stepName().trim();
+    if (!name) {
+      this.toast.error('Enter a step name.');
+      return;
+    }
+    this.savingStep.set(true);
+    this.service
+      .saveOrderStep({
+        companyOrderProcessId: this.editingStepId(),
+        name,
+        imageUrl: this.stepImage(),
+        isActive: this.stepIsActive(),
+      })
+      .subscribe({
+        next: () => {
+          this.savingStep.set(false);
+          this.stepModalOpen.set(false);
+          this.toast.success(this.editingStepId() ? 'Step updated.' : 'Step created.');
+          this.loadOrderSteps();
+        },
+        error: () => this.savingStep.set(false),
+      });
+  }
+
+  async removeStep(p: CompanyOrderProcess): Promise<void> {
+    const ok = await this.confirm.ask(`Delete order step "${p.name}"?`, { confirmLabel: 'Delete', danger: true });
+    if (!ok) return;
+    this.service.deleteOrderStep(p.companyOrderProcessId).subscribe({
+      next: () => {
+        this.toast.success('Step deleted.');
+        this.loadOrderSteps();
+      },
+    });
   }
 
   // --- Statuses ---
@@ -72,15 +144,18 @@ export class StatusesPage {
   startEditStatus(s: CompanyStatus): void {
     this.editingStatusId.set(s.statusId);
     this.editStoreFrontStatus = s.storeFrontStatus ?? '';
+    this.editCompanyOrderProcessId.set(s.companyOrderProcessId ?? 0);
   }
 
   cancelEditStatus(): void {
     this.editingStatusId.set(null);
     this.editStoreFrontStatus = '';
+    this.editCompanyOrderProcessId.set(0);
   }
 
   saveStatus(s: CompanyStatus): void {
     s.storeFrontStatus = this.editStoreFrontStatus;
+    s.companyOrderProcessId = this.editCompanyOrderProcessId() || null;
     this.savingStatusId.set(s.statusId);
     this.service.saveStatus(s).subscribe({
       next: () => {
