@@ -89,16 +89,8 @@ export class Select implements ControlValueAccessor {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!this.elementRef.nativeElement.contains(event.target)) {
+      if (this.isOpen()) this.onTouched();
       this.isOpen.set(false);
-    }
-  }
-
-  /** Close and mark touched when focus leaves the component (keyboard Tab out). */
-  @HostListener('focusout', ['$event'])
-  onFocusOut(event: FocusEvent): void {
-    if (!this.elementRef.nativeElement.contains(event.relatedTarget)) {
-      this.isOpen.set(false);
-      this.onTouched();
     }
   }
 
