@@ -123,6 +123,42 @@ export class AdminLayout {
     },
   ];
 
+  /**
+   * Maps each nav route to the .NET menu name/url tokens used for role-based access.
+   * A nav item is shown when any of its tokens matches a permitted menu (see
+   * AuthService.canAccess). Fail-open when the session has no permission data.
+   */
+  private readonly menuTokens: Record<string, string[]> = {
+    '/dashboard': ['dashboard'],
+    '/catalog/items': ['item', 'inventory'],
+    '/catalog/categories': ['category', 'brand'],
+    '/catalog/reviews': ['review'],
+    '/orders': ['order'],
+    '/offers': ['offer'],
+    '/settings/banners': ['banner'],
+    '/reports/batch': ['batch'],
+    '/settings/locations': ['location'],
+    '/settings/taxes': ['tax'],
+    '/settings/zones': ['zone'],
+    '/settings/templates': ['template', 'storefront'],
+    '/settings/invoice-template': ['invoice'],
+    '/settings/order-template': ['ordertemplate'],
+    '/access/users': ['user'],
+    '/access/roles': ['role'],
+    '/access/permissions': ['permission'],
+    '/settings/company': ['company'],
+    '/settings/notifications': ['notification'],
+    '/settings/social': ['social'],
+    '/settings/statuses': ['status', 'cancellation'],
+  };
+
+  /** The nav filtered to the current user's role-permitted menus (empty groups dropped). */
+  readonly visibleNav = computed(() =>
+    this.nav
+      .map((g) => ({ group: g.group, items: g.items.filter((i) => this.auth.canAccess(this.menuTokens[i.path] ?? [])) }))
+      .filter((g) => g.items.length > 0),
+  );
+
   toggleSidebar(): void {
     this.sidebarOpen.update((v) => !v);
     this.hideTooltip();
@@ -169,8 +205,9 @@ export class AdminLayout {
 
   readonly filteredCommands = computed(() => {
     const q = this.commandQuery().trim().toLowerCase();
-    if (!q) return this.commands;
-    return this.commands.filter((c) =>
+    const allowed = this.commands.filter((c) => this.auth.canAccess(this.menuTokens[c.path] ?? []));
+    if (!q) return allowed;
+    return allowed.filter((c) =>
       c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)
     );
   });
