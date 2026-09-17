@@ -1,9 +1,16 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { ApiError, ApiResponse } from './api.models';
+import {
+  ApiError,
+  ApiResponse,
+  SESSION_EXPIRED_MESSAGE,
+  isGatewayAuthFailure,
+} from './api.models';
+import { AuthService } from '../auth/auth.service';
 import { noAuth } from '../auth/skip-auth';
 
 /**
@@ -14,6 +21,7 @@ import { noAuth } from '../auth/skip-auth';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
+  private readonly injector = inject(Injector);
   private readonly baseUrl = environment.apiUrl.replace(/\/$/, '');
 
   /** POST {body} to `path` (e.g. 'UserManagement/GetRoleList') and unwrap Data. */
@@ -47,8 +55,25 @@ export class ApiService {
         requestBody: body,
         response: res,
       });
-      throw new ApiError(res.message || 'Request failed.');
+      throw this.toError(res.message, path);
     }
     return res?.data as T;
+  }
+
+  /**
+   * Turns an envelope message into an error, bouncing to /login when the
+   * gateway has wrapped a downstream 401 into a `status: false` body (those
+   * arrive as HTTP 200, so the error interceptor never sees them).
+   */
+  toError(message: string | undefined, path: string): ApiError {
+    if (isGatewayAuthFailure(message)) {
+      console.warn(`[ApiService] Gateway reported an auth failure on ${path}; signing out.`);
+      // Resolved lazily: AuthService depends on ApiService, so injecting it
+      // eagerly here would be a circular dependency.
+      this.injector.get(AuthService).logout();
+      this.injector.get(Router).navigateByUrl('/login');
+      return new ApiError(SESSION_EXPIRED_MESSAGE);
+    }
+    return new ApiError(message || 'Request failed.');
   }
 }

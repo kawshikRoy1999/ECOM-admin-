@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -17,10 +17,31 @@ export class UsersService {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
 
+  /**
+   * User list + assignable roles.
+   *
+   * Uses postRaw because the gateway answers `status: false` with a "No data
+   * found."-style message on an empty/partial result, which `post` would turn
+   * into a thrown ApiError and leave the page silently blank. Anything that
+   * carries a `userList` is treated as a success.
+   */
   list(): Observable<UserListResponse> {
-    return this.api.post<UserListResponse>('UserManagement/GetUserList', {
-      CompanyId: this.auth.companyId(),
-    });
+    return this.api
+      .postRaw<UserListResponse>('UserManagement/GetUserList', {
+        CompanyId: this.auth.companyId(),
+      })
+      .pipe(
+        map((res) => {
+          const data = res?.data;
+          if (!data && res?.status === false) {
+            throw this.api.toError(res.message || 'Could not load users.', 'GetUserList');
+          }
+          return {
+            userList: data?.userList ?? [],
+            roleList: data?.roleList ?? [],
+          };
+        }),
+      );
   }
 
   save(

@@ -84,7 +84,15 @@ export class AuthService {
       ),
       // Load the role-based menu/action permissions (mirrors .NET GetPermittedMenusAndActions).
       switchMap((user) =>
-        this.api.post<MenuActionsResponse>('UserManagement/MenuActions', { UserId: user.id }).pipe(
+        this.api
+          .post<MenuActionsResponse>('UserManagement/MenuActions', {
+            // .NET sends BOTH (LoginController.GetPermittedMenusAndActions uses
+            // RequestForgotUserPassword { CompanyId, UserId }); omitting CompanyId
+            // can come back with an empty permission set.
+            CompanyId: user.companyId,
+            UserId: user.id,
+          })
+          .pipe(
           catchError(() => of(null)),
           tap((res) => {
             if (res) {

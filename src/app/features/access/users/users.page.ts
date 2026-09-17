@@ -7,6 +7,7 @@ import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ImageUploadService } from '../../../core/api/image-upload.service';
+import { ApiError } from '../../../core/api/api.models';
 import { of, switchMap } from 'rxjs';
 
 import { UsersService } from './users.service';
@@ -80,7 +81,11 @@ export class UsersPage {
         this.roleOptions.set(res?.roleList ?? []);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.loading.set(false);
+        this.rows.set([]);
+        this.toast.error(err?.message || 'Could not load users.');
+      },
     });
   }
 
@@ -253,11 +258,17 @@ export class UsersPage {
         isActive: v.IsActive,
       })
       .pipe(
-        // Once the user exists, assign the selected roles (uses the returned id for new users).
+        // AddEditUser answers `status: true` even when it fails — the real outcome
+        // is in data.type / data.msg (see SettingController.AddEditUser). Reject
+        // anything that isn't "success" so duplicates don't look like a save.
         switchMap((res) => {
+          if (res?.type && res.type.toLowerCase() !== 'success') {
+            throw new ApiError(res.msg || 'Could not save the user.');
+          }
           const userId = res?.userId || this.editingId();
-          const roleIds = this.selectedRoleIds();
-          return userId && roleIds.length ? this.service.assignRoles(userId, roleIds) : of(null);
+          // Always sync roles once the user exists — an empty list is how you
+          // remove every role, so skipping it would make that a silent no-op.
+          return userId ? this.service.assignRoles(userId, this.selectedRoleIds()) : of(null);
         }),
       )
       .subscribe({
@@ -267,7 +278,10 @@ export class UsersPage {
           this.toast.success(wasEditing ? 'User updated.' : 'User created.');
           this.load();
         },
-        error: () => this.saving.set(false),
+        error: (err) => {
+          this.saving.set(false);
+          this.toast.error(err?.message || 'Could not save the user.');
+        },
       });
   }
 
