@@ -37,7 +37,7 @@ export class ZonesPage {
 
   readonly zoneForm = this.fb.nonNullable.group({
     zoneName: ['', [Validators.required]],
-    country: [''],
+    country: ['INDIA'], // the .NET form always sends INDIA
     patterns: this.fb.array<ReturnType<ZonesPage['patternGroup']>>([]),
   });
 
@@ -88,7 +88,7 @@ export class ZonesPage {
 
   selectZone(zone: Zone): void {
     this.selectedZoneId.set(zone.zoneId);
-    this.zoneForm.reset({ zoneName: zone.zoneName, country: '' });
+    this.zoneForm.reset({ zoneName: zone.zoneName, country: 'INDIA' });
     this.patterns.clear();
     if (zone.patterns.length) {
       zone.patterns.forEach((p) =>
@@ -101,7 +101,7 @@ export class ZonesPage {
 
   openCreate(): void {
     this.selectedZoneId.set(0);
-    this.zoneForm.reset({ zoneName: '', country: '' });
+    this.zoneForm.reset({ zoneName: '', country: 'INDIA' });
     this.patterns.clear();
     this.addPattern();
   }
@@ -110,15 +110,22 @@ export class ZonesPage {
     this.patterns.push(this.patternGroup());
   }
 
-  removePattern(index: number): void {
+  async removePattern(index: number): Promise<void> {
     const group = this.patterns.at(index);
     const zonePatternId = group.value.zonePatternId as number;
     if (zonePatternId > 0 && this.selectedZoneId()) {
+      const ok = await this.confirm.ask(`Delete zip pattern "${group.value.zipPattern}"?`, { confirmLabel: 'Delete', danger: true });
+      if (!ok) return;
       this.service.deletePattern(this.selectedZoneId()!, zonePatternId).subscribe({
-        next: () => {
+        next: (res) => {
+          if (!this.isOk(res)) {
+            this.toast.error(this.resultText(res) || 'Could not delete the pattern.');
+            return;
+          }
           this.patterns.removeAt(index);
           this.toast.success('Pattern removed.');
         },
+        error: (e: { message?: string }) => this.toast.error(e?.message || 'Could not delete the pattern.'),
       });
     } else {
       this.patterns.removeAt(index);
@@ -128,25 +135,48 @@ export class ZonesPage {
   save(): void {
     if (this.zoneForm.invalid) {
       this.zoneForm.markAllAsTouched();
+      this.toast.error('Zone name is required.');
       return;
     }
-    this.saving.set(true);
     const v = this.zoneForm.getRawValue();
+    // Blank rows are ignored; duplicates are rejected (the .NET page refuses to add the same pattern twice).
+    const patterns = (v.patterns as { zonePatternId: number; zipPattern: string }[])
+      .map((p) => ({ ...p, zipPattern: (p.zipPattern ?? '').trim() }))
+      .filter((p) => p.zipPattern);
+    const seen = new Set<string>();
+    for (const p of patterns) {
+      const k = p.zipPattern.toLowerCase();
+      if (seen.has(k)) {
+        this.toast.error(`Zip pattern "${p.zipPattern}" is listed twice.`);
+        return;
+      }
+      seen.add(k);
+    }
+    this.saving.set(true);
     const id = this.selectedZoneId() ?? 0;
     this.service
       .saveZone({
         zoneId: id,
         zoneName: v.zoneName,
         country: v.country,
-        patterns: v.patterns as { zonePatternId: number; zipPattern: string }[],
+        patterns,
       })
       .subscribe({
-        next: () => {
+        next: (res) => {
           this.saving.set(false);
+          // The API answers 200 with data "ok", or e.g. "Allready_Exit" when the zone name is taken.
+          if (!this.isOk(res)) {
+            const r = this.resultText(res);
+            this.toast.error(/exit|exist/i.test(r) ? 'A zone with this name already exists.' : r || 'Could not save the zone.');
+            return;
+          }
           this.toast.success(id ? 'Zone updated.' : 'Zone created.');
           this.load(id || undefined);
         },
-        error: () => this.saving.set(false),
+        error: (e: { message?: string }) => {
+          this.saving.set(false);
+          this.toast.error(e?.message || 'Could not save the zone.');
+        },
       });
   }
 
@@ -159,11 +189,26 @@ export class ZonesPage {
     });
     if (!ok) return;
     this.service.deleteZone(zone.zoneId).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isOk(res)) {
+          this.toast.error(this.resultText(res) || 'Could not delete the zone.');
+          return;
+        }
         this.toast.success('Zone deleted.');
         this.selectedZoneId.set(null);
         this.load();
       },
+      error: (e: { message?: string }) => this.toast.error(e?.message || 'Could not delete the zone.'),
     });
+  }
+
+  /** Zone endpoints return a plain string in data: "ok" on success. */
+  private resultText(res: unknown): string {
+    return typeof res === 'string' ? res : String((res as Record<string, unknown> | null)?.['result'] ?? '');
+  }
+
+  private isOk(res: unknown): boolean {
+    const r = this.resultText(res).trim().toLowerCase();
+    return r === '' || r === 'ok';
   }
 }

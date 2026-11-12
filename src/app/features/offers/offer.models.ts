@@ -29,6 +29,8 @@ export interface OfferDetailsMaster {
   endDate: string;
   bannerImageUrl: string;
   offerIconUrl: string;
+  /** Max quantity per item a customer can order at the offer price (0 = no limit). */
+  maxOrderQtyPerItem?: number;
   isActive: boolean;
   isGroupOffer: boolean;
 }

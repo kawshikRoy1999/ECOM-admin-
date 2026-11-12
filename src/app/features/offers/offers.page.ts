@@ -7,6 +7,7 @@ import { DatePicker } from '../../shared/ui/date-picker/date-picker';
 import { Select } from '../../shared/ui/select/select';
 import { ToastService } from '../../shared/ui/toast/toast.service';
 import { TooltipService } from '../../shared/ui/tooltip.service';
+import { ConfirmService } from '../../shared/ui/confirm/confirm.service';
 import { OffersService } from './offers.service';
 import {
   ActiveRule,
@@ -27,6 +28,8 @@ export class OffersPage {
   private readonly service = inject(OffersService);
   private readonly toast = inject(ToastService);
   public readonly tooltip = inject(TooltipService);
+  private readonly confirm = inject(ConfirmService);
+  readonly deleting = signal(false);
 
   readonly offers = signal<OfferListItem[]>([]);
   readonly loading = signal(false);
@@ -77,9 +80,11 @@ export class OffersPage {
 
   readonly form = this.fb.nonNullable.group({
     offerName: ['', [Validators.required]],
-    discountPercentage: [0, [Validators.required]],
-    startDate: ['', [Validators.required]],
-    endDate: ['', [Validators.required]],
+    discountPercentage: [0, [Validators.required, Validators.min(0.01), Validators.max(100)]],
+    // Optional, as in the .NET page — blank dates are sent as today.
+    startDate: [''],
+    endDate: [''],
+    maxOrderQtyPerItem: [0, [Validators.min(0)]],
     isActive: [true],
   });
 
@@ -166,7 +171,7 @@ export class OffersPage {
         const o = d?.offer;
         this.bannerUrl.set(o?.bannerImageUrl ?? '');
         this.iconUrl.set(o?.offerIconUrl ?? '');
-        this.isGroupOffer.set(o?.isGroupOffer ?? true);
+        this.isGroupOffer.set(o?.isGroupOffer ?? false);
         this.rules.set(
           (d?.criteria ?? []).map((c) => {
             const type = this.normalizeRuleType(c.criteriaType);
@@ -183,6 +188,7 @@ export class OffersPage {
           discountPercentage: o?.discountPercentage ?? 0,
           startDate: this.fmtDate(o?.startDate ?? ''),
           endDate: this.fmtDate(o?.endDate ?? ''),
+          maxOrderQtyPerItem: Number(o?.maxOrderQtyPerItem ?? 0),
           isActive: o?.isActive ?? true,
         });
         this.loadingDetails.set(false);
@@ -264,10 +270,10 @@ export class OffersPage {
     this.selectedOfferId.set(0);
     this.bannerUrl.set('');
     this.iconUrl.set('');
-    this.isGroupOffer.set(true);
+    this.isGroupOffer.set(false); // .NET starts a new offer in individual-variant mode
     this.rules.set([]);
     this.resetPickers();
-    this.form.reset({ offerName: '', discountPercentage: 0, startDate: '', endDate: '', isActive: true });
+    this.form.reset({ offerName: '', discountPercentage: 0, startDate: '', endDate: '', maxOrderQtyPerItem: 0, isActive: true });
   }
 
   toggleGroupMode(group: boolean): void {
@@ -355,8 +361,10 @@ export class OffersPage {
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.error('Title and a discount between 0 and 100 are required.');
       return;
     }
+    const today = new Date().toISOString().slice(0, 10);
     this.saving.set(true);
     const v = this.form.getRawValue();
     const id = this.selectedOfferId() ?? 0;
@@ -365,10 +373,11 @@ export class OffersPage {
         offerId: id,
         offerName: v.offerName,
         discountPercentage: Number(v.discountPercentage),
-        startDate: v.startDate,
-        endDate: v.endDate,
+        startDate: v.startDate || today,
+        endDate: v.endDate || today,
         bannerImageUrl: this.bannerUrl(),
         offerIconUrl: this.iconUrl(),
+        maxOrderQtyPerItem: Number(v.maxOrderQtyPerItem) || 0,
         isActive: v.isActive,
         isGroupOffer: this.isGroupOffer(),
         criteria: this.rules().map((r) => ({ type: r.type, id: r.id, name: r.name })),
@@ -379,7 +388,10 @@ export class OffersPage {
           this.toast.success(id ? 'Offer updated.' : 'Offer created.');
           this.load(id || undefined);
         },
-        error: () => this.saving.set(false),
+        error: (e: { message?: string }) => {
+          this.saving.set(false);
+          this.toast.error(e?.message || 'Could not save the offer.');
+        },
       });
   }
 
@@ -396,18 +408,36 @@ export class OffersPage {
     });
   }
 
+  /**
+   * Activate / deactivate. The .NET page has no separate toggle — active is a field saved with the offer —
+   * so this flips the switch and saves the offer as it stands.
+   */
   toggleActive(): void {
+    if (!this.selectedOfferId()) return;
+    this.form.controls.isActive.setValue(!this.form.controls.isActive.value);
+    this.save();
+  }
+
+  /** Delete the offer (the .NET list's trash action: AdminToggleOfferStatus with ActionType "Delete"). */
+  async deleteOffer(): Promise<void> {
     const id = this.selectedOfferId();
     if (!id) return;
-    const currentActive = this.form.controls.isActive.value;
-    this.service.toggle(id, !currentActive).subscribe({
+    const ok = await this.confirm.ask(`Delete offer "${this.form.controls.offerName.value}"? This permanently removes it from your store.`, {
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
+    this.deleting.set(true);
+    this.service.delete(id).subscribe({
       next: () => {
-        const nextActive = !currentActive;
-        this.form.controls.isActive.setValue(nextActive);
-        this.offers.update((list) =>
-          list.map((o) => (o.offerId === id ? { ...o, isActive: nextActive } : o))
-        );
-        this.toast.success(nextActive ? 'Offer activated.' : 'Offer deactivated.');
+        this.deleting.set(false);
+        this.toast.success('Offer deleted.');
+        this.openCreate();
+        this.load();
+      },
+      error: (e: { message?: string }) => {
+        this.deleting.set(false);
+        this.toast.error(e?.message || 'Could not delete the offer.');
       },
     });
   }

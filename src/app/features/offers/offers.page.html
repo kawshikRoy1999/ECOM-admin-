@@ -235,6 +235,14 @@
             </button>
           }
 
+          <!-- Delete (the .NET list's trash action) -->
+          @if (selectedOfferId()! > 0) {
+            <button (click)="deleteOffer()" [disabled]="deleting()" title="Delete offer"
+              class="btn-secondary h-9 rounded-xl px-3 text-[12.5px] font-semibold border border-red-200 !text-red-600 hover:!bg-red-50 bg-white disabled:opacity-60 cursor-pointer">
+              {{ deleting() ? 'Deleting…' : 'Delete' }}
+            </button>
+          }
+
           <!-- Save Button -->
           <button
             (click)="save()"
@@ -258,284 +266,152 @@
         </div>
       </div>
 
-      <!-- Scrollable Editor Canvas -->
-      <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-        <div class="flex flex-col gap-5 pb-4">
-          
-          <!-- Campaign Details Card -->
-          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
-            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 shadow-inner">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Campaign Details</h2>
-            </div>
+      <!-- Editor: details + targeting on the left, media on the right — fits on one screen -->
+      <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
+        <div class="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_280px] gap-4 pb-4 items-start">
 
-            <form [formGroup]="form" class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-              <div class="flex flex-col gap-1.5 sm:col-span-2">
-                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Offer Name</label>
-                <input
-                  formControlName="offerName"
-                  placeholder="e.g. Summer Clearance Sale"
-                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5 font-semibold text-slate-700"
-                />
-                @if (form.controls.offerName.touched && form.controls.offerName.invalid) {
-                  <p class="text-[11px] text-red-500 font-semibold mt-0.5">Required</p>
-                }
+          <div class="flex flex-col gap-4 min-w-0">
+            <!-- Details -->
+            <form [formGroup]="form" class="fluent-card p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-3">
+                <p class="text-[12.5px] font-bold text-slate-800">Details</p>
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none" title="Active offers apply on the storefront">
+                  <span class="text-[12px] font-semibold" [class]="form.controls.isActive.value ? 'text-emerald-600' : 'text-slate-400'">
+                    {{ form.controls.isActive.value ? 'Active' : 'Inactive' }}
+                  </span>
+                  <input type="checkbox" formControlName="isActive" class="peer sr-only" />
+                  <div class="relative h-4.5 w-8 rounded-full bg-slate-200 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 peer-checked:after:translate-x-3.5"></div>
+                </label>
               </div>
 
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Discount Percentage (%)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  formControlName="discountPercentage"
-                  class="w-full !px-3.5 !py-1.5 border border-slate-200 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13.5px] h-9.5 font-semibold text-slate-700"
-                />
+              <div class="flex flex-col gap-1">
+                <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">Offer name <span class="text-red-500">*</span></label>
+                <input formControlName="offerName" placeholder="e.g. Summer Clearance Sale" class="h-8 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50 focus:bg-white font-medium text-slate-700"
+                  [class.!border-red-400]="form.controls.offerName.touched && form.controls.offerName.invalid" />
               </div>
 
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Campaign Active Status</label>
-                <div class="flex items-center h-9.5 px-3.5 border border-slate-200 bg-slate-50/20 rounded-xl">
-                  <label class="relative inline-flex cursor-pointer items-center shrink-0 select-none w-full justify-between">
-                    <span class="text-[12.5px] font-bold text-slate-600">Online & Deployable</span>
-                    <input
-                      type="checkbox"
-                      formControlName="isActive"
-                      class="peer sr-only"
-                    />
-                    <div class="relative h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
-                  </label>
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">Discount % <span class="text-red-500">*</span></label>
+                  <input type="number" step="0.01" min="0" max="100" formControlName="discountPercentage" class="h-8 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50 focus:bg-white font-medium text-slate-700"
+                    [class.!border-red-400]="form.controls.discountPercentage.touched && form.controls.discountPercentage.invalid" />
                 </div>
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Start Date</label>
-                <app-date-picker formControlName="startDate" placeholder="Select start date" />
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">End Date</label>
-                <app-date-picker formControlName="endDate" placeholder="Select end date" />
+                <div class="flex flex-col gap-1">
+                  <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider" title="Most units of each item a customer can buy at the offer price">Max qty / item</label>
+                  <input type="number" min="0" step="1" formControlName="maxOrderQtyPerItem" placeholder="0 = no limit" class="h-8 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50 focus:bg-white font-medium text-slate-700" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">Start date</label>
+                  <app-date-picker formControlName="startDate" placeholder="Today" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">End date</label>
+                  <app-date-picker formControlName="endDate" placeholder="Today" />
+                </div>
               </div>
             </form>
-          </div>
 
-          <!-- Targeting Logic Card -->
-          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div class="flex items-center gap-2">
-                <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 shadow-inner">
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                  </svg>
+            <!-- Targeting -->
+            <div class="fluent-card p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p class="text-[12.5px] font-bold text-slate-800">Applies to</p>
+                  <p class="text-[11px] text-slate-400">{{ isGroupOffer() ? 'Whole brands, categories or families' : 'Specific product variants' }}</p>
                 </div>
-                <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Targeting Criteria</h2>
+                <div class="inline-flex rounded-lg bg-slate-100 p-0.5">
+                  <button type="button" (click)="toggleGroupMode(false)" class="px-2.5 py-1 text-[11.5px] font-semibold rounded-md cursor-pointer"
+                    [class]="!isGroupOffer() ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500'">Variants</button>
+                  <button type="button" (click)="toggleGroupMode(true)" class="px-2.5 py-1 text-[11.5px] font-semibold rounded-md cursor-pointer"
+                    [class]="isGroupOffer() ? 'bg-white text-brand-700 shadow-xs' : 'text-slate-500'">Group</button>
+                </div>
               </div>
 
-              <!-- Group vs Variant toggle -->
-              <div class="flex items-center gap-3 bg-slate-100 p-0.5 rounded-lg border border-slate-200/40">
-                <button
-                  type="button"
-                  (click)="toggleGroupMode(true)"
-                  class="px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors"
-                  [class.bg-white]="isGroupOffer()"
-                  [class.text-brand-700]="isGroupOffer()"
-                  [class.shadow-2xs]="isGroupOffer()"
-                  [class.text-slate-500]="!isGroupOffer()"
-                >
-                  Group Mode
-                </button>
-                <button
-                  type="button"
-                  (click)="toggleGroupMode(false)"
-                  class="px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors"
-                  [class.bg-white]="!isGroupOffer()"
-                  [class.text-brand-700]="!isGroupOffer()"
-                  [class.shadow-2xs]="!isGroupOffer()"
-                  [class.text-slate-500]="isGroupOffer()"
-                >
-                  Variant Mode
-                </button>
-              </div>
-            </div>
-
-            <!-- Cascade select fields for Group targeting -->
-            @if (isGroupOffer()) {
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/40 border border-slate-100 p-3 rounded-xl">
-                <div class="flex flex-col gap-1">
-                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Brand</label>
-                  <app-select
-                    [options]="brandOptions()"
-                    [(value)]="selBrand"
-                    defaultLabel="-- All Brands --"
-                    [defaultValue]="0"
-                    [searchable]="true"
-                  />
+              @if (isGroupOffer()) {
+                <div class="grid grid-cols-2 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] gap-2 items-end">
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">Brand</label>
+                    <app-select [options]="brandOptions()" [(value)]="selBrand" defaultLabel="All brands" [defaultValue]="0" [searchable]="true" />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">Category</label>
+                    <app-select [options]="categoryOptions()" [value]="selCategory()" (valueChange)="onCategoryChange($event)" defaultLabel="All categories" [defaultValue]="0" [searchable]="true" />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">Subcategory</label>
+                    <app-select [options]="subcategories()" [value]="selSubCategory()" (valueChange)="onSubCategoryChange($event)" [disabled]="!subcategories().length" defaultLabel="All" [defaultValue]="0" />
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <label class="text-[10.5px] font-semibold text-slate-500 uppercase tracking-wider">Family</label>
+                    <app-select [options]="families()" [(value)]="selFamily" [disabled]="!families().length" defaultLabel="All" [defaultValue]="0" />
+                  </div>
+                  <button type="button" (click)="stageGroupRule()" class="btn-primary h-8 px-3.5 text-[12px] font-semibold rounded-lg whitespace-nowrap col-span-2 md:col-span-1">+ Add</button>
                 </div>
-                <div class="flex flex-col gap-1">
-                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Category</label>
-                  <app-select
-                    [options]="categoryOptions()"
-                    [value]="selCategory()"
-                    (valueChange)="onCategoryChange($event)"
-                    defaultLabel="-- All Categories --"
-                    [defaultValue]="0"
-                    [searchable]="true"
-                  />
-                </div>
-                <div class="flex flex-col gap-1">
-                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Subcategory</label>
-                  <app-select
-                    [options]="subcategories()"
-                    [value]="selSubCategory()"
-                    (valueChange)="onSubCategoryChange($event)"
-                    [disabled]="!subcategories().length"
-                    defaultLabel="-- All Subcategories --"
-                    [defaultValue]="0"
-                  />
-                </div>
-                <div class="flex flex-col gap-1">
-                  <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Product Family</label>
-                  <app-select
-                    [options]="families()"
-                    [(value)]="selFamily"
-                    [disabled]="!families().length"
-                    defaultLabel="-- All Families --"
-                    [defaultValue]="0"
-                  />
-                </div>
-              </div>
-              <div class="flex justify-end shrink-0">
-                <button
-                  type="button"
-                  (click)="stageGroupRule()"
-                  class="btn-secondary h-8 rounded-lg px-3.5 text-[11.5px] font-semibold gap-1 transition-all cursor-pointer border border-slate-200 hover:border-slate-300 text-slate-700 bg-white"
-                >
-                  + Add Targeting Rule
-                </button>
-              </div>
-            } @else {
-              <!-- Autocomplete search field for Variant targeting -->
-              <div class="flex flex-col gap-2.5">
+              } @else {
                 <div class="relative">
-                  <input
-                    type="text"
-                    [value]="variantTerm()"
-                    (input)="onVariantTerm($any($event.target).value)"
-                    placeholder="Search variants by name, SKU or code…"
-                    class="w-full !px-3.5 !py-2 border border-slate-200/80 !rounded-xl focus:border-brand-600 focus:!ring-4 focus:!ring-brand-500/10 bg-slate-50/50 text-[13px] h-9.5 font-semibold text-slate-700"
-                  />
+                  <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>
+                  <input type="text" [value]="variantTerm()" (input)="onVariantTerm($any($event.target).value)"
+                    placeholder="Search variants by name, SKU or code — click a result to add it"
+                    class="h-8 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50 focus:bg-white font-medium text-slate-700 !pl-8" />
                   @if (variantSearching()) {
-                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 flex h-4 w-4">
-                      <svg class="animate-spin h-4 w-4 text-brand-600" viewBox="0 0 24 24" fill="none">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                      </svg>
-                    </span>
+                    <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin h-3.5 w-3.5 text-brand-600" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                  }
+                  @if (variantResults().length) {
+                    <div class="absolute left-0 right-0 top-full mt-1 z-20 max-h-56 overflow-y-auto rounded-lg border border-slate-200 divide-y divide-slate-100 bg-white shadow-lg custom-scrollbar">
+                      @for (v of variantResults(); track v.id) {
+                        <button type="button" (click)="stageVariant(v)" class="flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left hover:bg-brand-50/50 cursor-pointer">
+                          @if (v.imageUrl) {
+                            <img [src]="v.imageUrl" (error)="v.imageUrl = ''" class="h-7 w-7 rounded object-cover border border-slate-100 shrink-0" />
+                          } @else {
+                            <span class="h-7 w-7 rounded bg-slate-100 shrink-0"></span>
+                          }
+                          <span class="text-[12px] text-slate-700 leading-tight">{{ v.text }}</span>
+                          <span class="ml-auto text-[11px] font-semibold text-brand-600 shrink-0">+ Add</span>
+                        </button>
+                      }
+                    </div>
                   }
                 </div>
+              }
 
-                @if (variantResults().length) {
-                  <div class="max-h-48 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-white shadow-sm pr-1.5 custom-scrollbar">
-                    @for (v of variantResults(); track v.id) {
-                      <button
-                        type="button"
-                        (click)="stageVariant(v)"
-                        class="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-slate-50 transition-colors cursor-pointer"
-                      >
-                        @if (v.imageUrl) {
-                          <img [src]="v.imageUrl" (error)="v.imageUrl = ''" class="h-7 w-7 rounded object-cover border border-slate-100 shrink-0" />
-                        }
-                        <span class="text-[12.5px] font-semibold text-slate-600 leading-tight">{{ v.text }}</span>
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-            }
-
-            <!-- Active Staged Rules List Container -->
-            <div class="rounded-xl border border-slate-200/80 bg-slate-50/30 p-4 mt-2">
-              <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Targeted Rules ({{ rules().length }})
-                </span>
+              <!-- Selected rules -->
+              <div class="flex items-center justify-between pt-1 border-t border-slate-100">
+                <span class="text-[11px] font-semibold text-slate-500">{{ rules().length }} selected</span>
                 @if (rules().length) {
-                  <button
-                    type="button"
-                    (click)="clearRules()"
-                    class="text-[10px] font-bold text-red-500 hover:text-red-700 transition-colors uppercase tracking-wider cursor-pointer"
-                  >
-                    Clear All
-                  </button>
+                  <button type="button" (click)="clearRules()" class="text-[11px] font-semibold text-red-500 hover:underline cursor-pointer">Clear all</button>
                 }
               </div>
-
               @if (rules().length) {
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                   @for (r of rules(); track $index) {
-                    <span class="inline-flex items-center gap-2 rounded-lg bg-white border border-slate-200/80 px-2.5 py-1.5 text-[11.5px] shadow-2xs hover:shadow-xs transition-shadow relative pr-7.5 group/chip">
+                    <span class="inline-flex items-center gap-1.5 h-7 rounded-md border border-slate-200 bg-white pl-1.5 pr-0.5 text-[12px]" [title]="r.type + ': ' + r.name">
                       @if (r.type === 'Variant' && r.imageUrl) {
-                        <img [src]="r.imageUrl" (error)="r.imageUrl = ''" class="h-6 w-6 rounded object-cover border border-slate-100 shrink-0" />
+                        <img [src]="r.imageUrl" (error)="r.imageUrl = ''" class="h-5 w-5 rounded object-cover shrink-0" />
+                      } @else {
+                        <span class="text-[9.5px] font-bold uppercase text-brand-600">{{ r.type === 'SubCategory' ? 'Sub' : r.type }}</span>
                       }
-                      <span class="flex flex-col leading-none">
-                        <span class="text-[8px] font-bold uppercase tracking-wider text-brand-600">{{ r.type }}</span>
-                        <span class="font-bold text-slate-700 mt-1 truncate max-w-[150px]">{{ r.name }}</span>
-                      </span>
-                      <button
-                        type="button"
-                        (click)="removeRule($index)"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center h-4.5 w-4.5 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-transparent hover:border-red-200/20 cursor-pointer"
-                        title="Remove Targeting Rule"
-                      >
-                        ✕
+                      <span class="font-medium text-slate-700 truncate max-w-[220px]">{{ r.name || r.id }}</span>
+                      <button type="button" (click)="removeRule($index)" title="Remove" class="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-red-50 hover:text-red-600 cursor-pointer">
+                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </span>
                   }
                 </div>
               } @else {
-                <div class="flex flex-col items-center justify-center py-5 text-center">
-                  <svg class="h-8 w-8 text-slate-300 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                  <span class="text-xs font-bold text-slate-400">Global Offer (No Target Rules)</span>
-                  <span class="text-[10px] text-slate-400/80 mt-0.5">This discount will apply to the entire active storefront catalog.</span>
-                </div>
+                <p class="text-[11.5px] text-slate-400">Nothing selected — the discount applies to the whole catalogue.</p>
               }
             </div>
           </div>
 
-          <!-- Offer Banner Card -->
-          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
-            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 shadow-inner">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+          <!-- Media -->
+          <div class="fluent-card p-4 flex flex-col gap-3 2xl:sticky 2xl:top-0">
+            <p class="text-[12.5px] font-bold text-slate-800">Media</p>
+            <div class="flex flex-wrap gap-6 2xl:flex-col 2xl:gap-3">
+              <div>
+                <app-image-upload label="Banner" entityType="Offer" entitySubType="Banner" [(value)]="bannerUrl" />
               </div>
-              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Promotion Banner</h2>
-            </div>
-            <div class="w-full">
-              <app-image-upload label="Offer marketing banner image" entityType="Offer" entitySubType="Banner" [(value)]="bannerUrl" />
-            </div>
-          </div>
-
-          <!-- Offer Icon / Logo -->
-          <div class="fluent-card bg-white border border-slate-200/80 rounded-xl p-5 flex flex-col gap-4 shadow-2xs">
-            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shadow-inner">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581a1.5 1.5 0 002.122 0l4.318-4.318a1.5 1.5 0 000-2.122L11.16 3.659A2.25 2.25 0 009.568 3z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
-                </svg>
+              <div>
+                <app-image-upload label="Icon / badge" entityType="Offer" entitySubType="Icon" fit="contain" [(value)]="iconUrl" />
               </div>
-              <h2 class="text-[11.5px] font-bold text-slate-700 uppercase tracking-wider">Offer Icon / Logo</h2>
-            </div>
-            <div class="w-full">
-              <app-image-upload label="Offer icon (badge shown on storefront)" entityType="Offer" entitySubType="Icon" fit="contain" [(value)]="iconUrl" />
             </div>
           </div>
 

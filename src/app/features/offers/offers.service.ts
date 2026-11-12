@@ -40,6 +40,7 @@ export class OffersService {
     endDate: string;
     bannerImageUrl: string;
     offerIconUrl: string;
+    maxOrderQtyPerItem: number;
     isActive: boolean;
     isGroupOffer: boolean;
     criteria: OfferCriteria[];
@@ -53,6 +54,7 @@ export class OffersService {
       EndDate: offer.endDate,
       BannerImageUrl: offer.bannerImageUrl,
       OfferIconUrl: offer.offerIconUrl,
+      MaxOrderQtyPerItem: offer.maxOrderQtyPerItem,
       IsActive: offer.isActive,
       IsGroupOffer: offer.isGroupOffer,
       UserId: this.auth.userId(),
@@ -68,11 +70,12 @@ export class OffersService {
     });
   }
 
-  toggle(offerId: number, activate: boolean): Observable<unknown> {
+  /** Deletes the offer — the only ActionType the .NET page sends to AdminToggleOfferStatus. */
+  delete(offerId: number): Observable<unknown> {
     return this.api.post('ProductManagement/AdminToggleOfferStatus', {
       OfferId: offerId,
       CompanyId: this.auth.companyId(),
-      ActionType: activate ? 'Activate' : 'Deactivate',
+      ActionType: 'Delete',
     });
   }
 
@@ -96,6 +99,7 @@ export class OffersService {
   subcategories(categoryId: number): Observable<SubCategoryNode[]> {
     return this.api
       .post<unknown[]>('ProductManagement/GetSubCategoryByCategoryId', {
+        CompId: this.auth.companyId(), // the .NET request model names it CompId
         CompanyId: this.auth.companyId(),
         CategoryId: categoryId,
         UserId: this.auth.userId(),

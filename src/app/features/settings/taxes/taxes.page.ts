@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
@@ -15,7 +16,7 @@ interface TaxComponent {
 
 @Component({
   selector: 'app-taxes-page',
-  imports: [ReactiveFormsModule, DataTable, Modal],
+  imports: [ReactiveFormsModule, DataTable, Modal, DecimalPipe],
   templateUrl: './taxes.page.html',
 })
 export class TaxesPage {
@@ -46,6 +47,13 @@ export class TaxesPage {
 
   readonly columns = computed<Column<TaxDetail>[]>(() => [
     { key: 'taxName', header: 'Tax slab' },
+    // One column per named component (CGST, SGST…), as the .NET tax list shows.
+    ...this.components().map((c) => ({
+      key: c.pctKey,
+      header: `${c.name} %`,
+      align: 'right' as const,
+      format: (d: TaxDetail) => Number(d[c.pctKey] ?? 0).toFixed(2),
+    })),
     { key: 'tax1Percentage', header: 'Total %', align: 'right', format: (d) => `${this.total(d).toFixed(2)}%` },
     { key: 'isDefault', header: 'Default', align: 'center', format: (d) => (d.isDefault ? '✓' : '') },
   ]);
@@ -60,16 +68,23 @@ export class TaxesPage {
 
   readonly detailForm = this.fb.nonNullable.group({
     taxName: ['', [Validators.required]],
-    tax1Percentage: [0],
-    tax2Percentage: [0],
-    tax3Percentage: [0],
-    tax4Percentage: [0],
-    tax5Percentage: [0],
+    tax1Percentage: [0, [Validators.min(0), Validators.max(100)]],
+    tax2Percentage: [0, [Validators.min(0), Validators.max(100)]],
+    tax3Percentage: [0, [Validators.min(0), Validators.max(100)]],
+    tax4Percentage: [0, [Validators.min(0), Validators.max(100)]],
+    tax5Percentage: [0, [Validators.min(0), Validators.max(100)]],
     isDefault: [false],
   });
 
   constructor() {
     this.load();
+  }
+
+  /** Live total of the slab in the editor (the .NET form updates it as you type). */
+  formTotal(): number {
+    const v = this.detailForm.getRawValue();
+    return [v.tax1Percentage, v.tax2Percentage, v.tax3Percentage, v.tax4Percentage, v.tax5Percentage]
+      .reduce((sum, x) => sum + (Number(x) || 0), 0);
   }
 
   total(d: TaxDetail): number {
@@ -105,7 +120,8 @@ export class TaxesPage {
       },
       error: () => this.loading.set(false),
     });
-    this.service.getInclusive().subscribe({ next: (v) => this.inclusive.set(!!v) });
+    // Prices Include Tax is not needed for now — its load call is disabled (the switch is commented out in the template).
+    // this.service.getInclusive().subscribe({ next: (v) => this.inclusive.set(!!v) });
   }
 
   saveNames(): void {
@@ -116,15 +132,24 @@ export class TaxesPage {
         this.names.update((n) => ({ ...n, ...this.namesForm.getRawValue() }));
         this.toast.success('Tax names saved.');
       },
-      error: () => this.savingNames.set(false),
+      error: (e: { message?: string }) => {
+        this.savingNames.set(false);
+        this.toast.error(e?.message || 'Could not save the tax names.');
+      },
     });
   }
 
   toggleInclusive(checked: boolean): void {
+    // Set first so the binding can flip the switch back if the save fails.
+    this.inclusive.set(checked);
     this.service.setInclusive(checked).subscribe({
       next: () => {
-        this.inclusive.set(checked);
         this.toast.success(checked ? 'Prices set to tax-inclusive.' : 'Prices set to tax-exclusive.');
+      },
+      error: (e: { message?: string }) => {
+        // put the switch back so it reflects what is actually saved
+        this.inclusive.set(!checked);
+        this.toast.error(e?.message || 'Could not update the setting.');
       },
     });
   }
@@ -160,6 +185,7 @@ export class TaxesPage {
   saveDetail(): void {
     if (this.detailForm.invalid) {
       this.detailForm.markAllAsTouched();
+      this.toast.error('Enter a slab name and percentages between 0 and 100.');
       return;
     }
     this.savingDetail.set(true);
@@ -170,7 +196,10 @@ export class TaxesPage {
         this.toast.success(this.editingId() ? 'Tax slab updated.' : 'Tax slab created.');
         this.load();
       },
-      error: () => this.savingDetail.set(false),
+      error: (e: { message?: string }) => {
+        this.savingDetail.set(false);
+        this.toast.error(e?.message || 'Could not save the tax slab.');
+      },
     });
   }
 }
