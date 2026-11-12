@@ -2,18 +2,18 @@
   @if (loading()) {
     <p class="py-10 text-center text-[13px] text-slate-400">Loading variant…</p>
   } @else if (model(); as m) {
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-3">
 
       <!-- Variant Option Selectors (only for new variants) -->
       @if (isNew() && variantOptions().length) {
-        <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex items-end gap-3 flex-wrap rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
           @for (opt of variantOptions(); track opt.variantOptionId) {
             <div class="flex flex-col gap-1">
               <label class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{{ opt.optionName }}</label>
               <select
                 [ngModel]="opt.selectedValueId"
                 (ngModelChange)="onOptionValueChange(opt.variantOptionId, $event)"
-                class="h-9 min-w-[140px] rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50">
+                class="h-8 min-w-[130px] rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50">
                 <option [value]="0">Select {{ opt.optionName }}</option>
                 @for (val of opt.values; track val.optionValueId) {
                   <option [value]="val.optionValueId">{{ val.optionValueName }}</option>
@@ -24,7 +24,7 @@
 
           <!-- Sync With Repository button -->
           <button (click)="openRepoModal()" type="button"
-            class="h-9 px-3.5 rounded-xl border border-slate-200 bg-transparent text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 self-end transition-colors">
+            class="h-8 px-3 rounded-lg border border-slate-200 bg-transparent text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 self-end ml-auto transition-colors">
             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -37,7 +37,7 @@
         <!-- Sync button when no variant options configured -->
         <div class="flex items-center">
           <button (click)="openRepoModal()" type="button"
-            class="h-9 px-3.5 rounded-xl border border-slate-200 bg-transparent text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 transition-colors">
+            class="h-8 px-3 rounded-lg border border-slate-200 bg-transparent text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 transition-colors">
             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -47,76 +47,83 @@
       }
 
       <!-- Core fields -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-1.5 sm:col-span-2">
+      <div class="grid grid-cols-1 sm:grid-cols-6 gap-x-3 gap-y-2.5">
+        <div class="flex flex-col gap-1 sm:col-span-2">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Variant Name <span class="text-red-500">*</span></label>
           <input [ngModel]="m.itemVariantName" (ngModelChange)="patch('itemVariantName', $event)" (keyup)="onVariantNameKeyup()"
-            class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+            class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
         </div>
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-1 sm:col-span-2">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">SKU</label>
-          <input [ngModel]="m.sku" (ngModelChange)="patch('sku', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 font-mono" />
+          <input [ngModel]="m.sku" readonly title="Auto-generated" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-100 text-slate-500 font-mono cursor-not-allowed" />
         </div>
-        <div class="flex flex-col gap-1.5 relative">
+        <div class="flex flex-col gap-1 relative sm:col-span-2">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Barcode</label>
           <div class="relative">
             <input [ngModel]="m.barcode" (ngModelChange)="patch('barcode', $event)" class="h-9 w-full rounded-xl border border-slate-200 pl-3 pr-20 text-[13px] bg-slate-50/50 font-mono" />
-            <button type="button" (click)="generateRandomBarcode()" class="absolute right-1.5 top-1.5 h-6 px-2.5 text-[10px] font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors">
+            <button type="button" (click)="generateRandomBarcode()" class="absolute right-1 top-1 h-6 px-2.5 text-[10px] font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors">
               Generate
             </button>
           </div>
         </div>
         @if (m.skuBarcodeImage) {
-          <div class="sm:col-span-2 flex justify-center bg-slate-50/50 rounded-xl border border-slate-100 py-2">
+          <div class="sm:col-span-6 flex justify-center bg-slate-50/50 rounded-xl border border-slate-100 py-2">
             <img [src]="m.skuBarcodeImage" alt="barcode" class="h-14" />
           </div>
         }
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-1 sm:col-span-2">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Return Days</label>
-          <input type="number" [ngModel]="m.returnDays" (ngModelChange)="patch('returnDays', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+          <input type="number" min="0" (keydown)="onlyDigits($event)" [ngModel]="m.returnDays" (ngModelChange)="patch('returnDays', $event)" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
         </div>
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-1 sm:col-span-4">
           <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Return Info</label>
-          <input [ngModel]="m.returnInfo" (ngModelChange)="patch('returnInfo', $event)" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+          <input [ngModel]="m.returnInfo" (ngModelChange)="patch('returnInfo', $event)" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
         </div>
         <!-- Top-level MRP / Discount removed: per-batch pricing is set in the Variant Pricing table below. -->
       </div>
 
       <!-- Pricing rows -->
-      <div class="border-t border-slate-100 pt-3">
-        <div class="flex items-center justify-between mb-2">
+      <div class="border-t border-slate-100 pt-2.5">
+        <div class="flex items-center justify-between mb-1.5">
           <p class="text-[12px] font-bold text-slate-700 uppercase tracking-wider">Variant Pricing</p>
           <button (click)="addPricing()" class="btn-primary h-8 px-3 text-[12px] font-semibold rounded-lg gap-1">
             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
             Add Row
           </button>
         </div>
-        <div class="relative">
-          <table class="min-w-full text-[12.5px]">
-            <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+        <div class="relative overflow-x-auto">
+          <table class="w-full min-w-[640px] table-fixed text-[12.5px]">
+            <thead class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
               <tr>
-                <th class="px-2 py-1.5 text-left">MRP</th>
-                <th class="px-2 py-1.5 text-left">Discount</th>
-                <th class="px-2 py-1.5 text-left">Price</th>
-                <th class="px-2 py-1.5 text-left">Cost</th>
-                <th class="px-2 py-1.5 text-left">Batch</th>
-                <th class="px-2 py-1.5 text-left">Start</th>
-                <th class="px-2 py-1.5 text-left">End</th>
-                <th class="px-2 py-1.5"></th>
+                <th class="w-[19%] px-1 py-1 text-left">Warehouse <span class="text-red-500">*</span></th>
+                <th class="w-[16%] px-1 py-1 text-left">Batch Code <span class="text-red-500">*</span></th>
+                <th class="w-[11%] px-1 py-1 text-left">MRP <span class="text-red-500">*</span></th>
+                <th class="w-[11%] px-1 py-1 text-left">Discount <span class="text-red-500">*</span></th>
+                <th class="w-[11%] px-1 py-1 text-left">Price <span class="text-red-500">*</span></th>
+                <th class="w-[11%] px-1 py-1 text-left">Cost <span class="text-red-500">*</span></th>
+                <th class="w-[10%] px-1 py-1 text-left">Qty <span class="text-red-500">*</span></th>
+                <th class="w-9"></th>
               </tr>
             </thead>
             <tbody>
               @for (p of m.pricing; track $index) {
                 <tr>
-                  <td class="px-1 py-1"><input type="number" [ngModel]="p.mrp" (ngModelChange)="updatePricing($index,'mrp',$event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
-                  <td class="px-1 py-1"><input type="number" [ngModel]="p.discount" (ngModelChange)="updatePricing($index,'discount',$event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
-                  <td class="px-1 py-1"><input type="number" [ngModel]="p.price" (ngModelChange)="updatePricing($index,'price',$event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
-                  <td class="px-1 py-1"><input type="number" [ngModel]="p.cost" (ngModelChange)="updatePricing($index,'cost',$event)" class="h-8 w-20 rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
-                  <td class="px-1 py-1"><input [ngModel]="p.batchCode" (ngModelChange)="updatePricing($index,'batchCode',$event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 bg-slate-50/50 font-mono" /></td>
-                  <td class="px-1 py-1"><div class="w-32"><app-date-picker align="right" direction="up" [ngModel]="p.startDate" (ngModelChange)="updatePricing($index,'startDate',$event)" placeholder="Start Date" /></div></td>
-                  <td class="px-1 py-1"><div class="w-32"><app-date-picker align="right" direction="up" [ngModel]="p.endDate" (ngModelChange)="updatePricing($index,'endDate',$event)" placeholder="End Date" /></div></td>
                   <td class="px-1 py-1">
-                    <button (click)="removePricing($index)" [disabled]="m.pricing.length <= 1" class="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-30">
+                    <select [ngModel]="p.wareHouseId" (ngModelChange)="updatePricing($index,'wareHouseId',$event)" class="h-8 w-full rounded-lg border border-slate-200 px-1.5 text-[12.5px] bg-slate-50/50">
+                      <option [ngValue]="null">-- Select --</option>
+                      @for (st of stores(); track st.storeId) {
+                        <option [ngValue]="st.storeId">{{ st.storeName }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td class="px-1 py-1"><input [ngModel]="p.batchCode" (ngModelChange)="updatePricing($index,'batchCode',$event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 bg-slate-50/50 font-mono" /></td>
+                  <td class="px-1 py-1"><input type="number" min="0" [ngModel]="p.mrp" (ngModelChange)="updatePricing($index,'mrp',$event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
+                  <td class="px-1 py-1"><input type="number" min="0" max="100" [ngModel]="p.discount" (ngModelChange)="updatePricing($index,'discount',$event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
+                  <td class="px-1 py-1"><input type="number" min="0" [ngModel]="p.price" (ngModelChange)="updatePricing($index,'price',$event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
+                  <td class="px-1 py-1"><input type="number" min="0" [ngModel]="p.cost" (ngModelChange)="updatePricing($index,'cost',$event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
+                  <td class="px-1 py-1"><input type="number" min="0" [ngModel]="p.physicalQty" (ngModelChange)="updatePricing($index,'physicalQty',$event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 bg-slate-50/50" /></td>
+                  <td class="px-1 py-1">
+                    <button (click)="removePricing($index)" [disabled]="m.pricing.length <= 1" class="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-30" title="Remove row">
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   </td>
@@ -132,8 +139,8 @@
   }
 
   <div footer class="flex justify-end gap-2">
-    <button (click)="close.emit()" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
-    <button (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl min-w-[90px] disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save Variant' }}</button>
+    <button (click)="close.emit()" class="btn-secondary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">Cancel</button>
+    <button (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-8 px-4 text-[12.5px] font-semibold rounded-lg min-w-[90px] disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save Variant' }}</button>
   </div>
 </app-modal>
 
@@ -144,11 +151,11 @@
       <div class="flex gap-2">
         <input
           [ngModel]="repoSearchQuery()"
-          (ngModelChange)="repoSearchQuery.set($event)"
+          (ngModelChange)="onRepoQueryChange($event)"
           (keyup.enter)="searchRepo()"
           placeholder="Search item..."
-          class="flex-1 h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
-        <button (click)="searchRepo()" [disabled]="repoSearching()" class="btn-primary h-9 px-4 text-[12.5px] font-semibold rounded-xl">
+          class="flex-1 h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
+        <button (click)="searchRepo()" [disabled]="repoSearching()" class="btn-primary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">
           {{ repoSearching() ? 'Searching…' : 'Search' }}
         </button>
       </div>
@@ -160,11 +167,11 @@
           <table class="min-w-full text-[12.5px]">
             <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold sticky top-0 bg-white">
               <tr>
-                <th class="px-2 py-1.5 text-left">Item Code</th>
-                <th class="px-2 py-1.5 text-left">Item Name</th>
-                <th class="px-2 py-1.5 text-left">Design Code</th>
-                <th class="px-2 py-1.5 text-left">Design Name</th>
-                <th class="px-2 py-1.5 text-left">Variant</th>
+                <th class="px-1 py-1 text-left">Item Code</th>
+                <th class="px-1 py-1 text-left">Item Name</th>
+                <th class="px-1 py-1 text-left">Design Code</th>
+                <th class="px-1 py-1 text-left">Design Name</th>
+                <th class="px-1 py-1 text-left">Variant</th>
                 <th class="px-2 py-1.5"></th>
               </tr>
             </thead>
@@ -193,7 +200,7 @@
     </div>
 
     <div footer class="flex justify-end">
-      <button (click)="closeRepoModal()" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Close</button>
+      <button (click)="closeRepoModal()" class="btn-secondary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">Close</button>
     </div>
   </app-modal>
 }

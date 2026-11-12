@@ -16,7 +16,7 @@ import { Component, input, output } from '@angular/core';
         [class]="widthClass()"
         (click)="$event.stopPropagation()"
       >
-        <header class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+        <header class="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-5 py-3">
           <h3 class="text-[13px] font-bold text-slate-800 tracking-wider uppercase">{{ title() }}</h3>
           <button
             type="button"
@@ -30,11 +30,11 @@ import { Component, input, output } from '@angular/core';
           </button>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-6 py-6 bg-white text-[13.5px]">
+        <div class="flex-1 overflow-y-auto px-5 py-4 bg-white text-[13px]">
           <ng-content />
         </div>
 
-        <footer class="flex justify-end gap-3 border-t border-slate-100 bg-slate-50/50 px-6 py-4">
+        <footer class="flex justify-end gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3">
           <ng-content select="[footer]" />
         </footer>
       </div>

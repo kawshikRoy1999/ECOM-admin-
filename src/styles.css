@@ -297,7 +297,7 @@
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.15s ease-out both;
+  animation: fadeIn 0.15s ease-out backwards;
 }
 
 @keyframes scaleIn {

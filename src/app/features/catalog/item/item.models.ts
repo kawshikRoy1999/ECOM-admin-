@@ -134,6 +134,8 @@ export interface ItemVariantOptionSel {
   defaultDisplayOrder: number;
   isApplicable: boolean;
   isFilterable: boolean;
+  /** .NET AppliedOnVariant: non-zero = this option is used to build variants. */
+  appliedOnVariant?: number;
   /**
    * value ids selected for this option. `optionValueId` = category value id (OptionValueId),
    * `variantOptionValueId` = the item's existing value mapping id (0/null for new).
@@ -168,6 +170,17 @@ export interface VariantPricing {
   startDate: string;
   endDate: string;
   batchCode: string;
+  /** Warehouse/store the batch is held in (StoreId). */
+  wareHouseId?: number | null;
+  /** Opening/physical quantity of the batch. */
+  physicalQty?: number | null;
+  batchId?: number | null;
+}
+
+/** A store/warehouse option (GetStores). */
+export interface StoreOption {
+  storeId: number;
+  storeName: string;
 }
 
 /** The add/edit variant editor payload (GetAddVariant load / SaveInventoryVariant). */

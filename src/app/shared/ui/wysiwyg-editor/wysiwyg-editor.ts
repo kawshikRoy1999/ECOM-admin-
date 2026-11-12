@@ -45,7 +45,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
         (input)="onInput()"
         (blur)="onBlur()"
         [style.minHeight.px]="minHeight()"
-        class="p-3 w-full bg-white text-[13px] text-slate-700 leading-relaxed focus:outline-none overflow-y-auto max-h-[300px]"
+        class="p-3 w-full bg-white text-[13px] text-slate-700 leading-relaxed focus:outline-none overflow-y-auto resize-y max-h-[80vh]"
       ></div>
     </div>
   `,

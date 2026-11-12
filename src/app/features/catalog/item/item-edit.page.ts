@@ -1,12 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { forkJoin, of, Observable, map, filter, take } from 'rxjs';
+import { forkJoin, of, Observable, map, filter, take, catchError } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 
 import { Select } from '../../../shared/ui/select/select';
-import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
-import { DatePicker } from '../../../shared/ui/date-picker/date-picker';
 import { ImageUploadService } from '../../../core/api/image-upload.service';
 import { TooltipService } from '../../../shared/ui/tooltip.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
@@ -49,7 +47,7 @@ interface OptionRow {
 
 @Component({
   selector: 'app-item-edit-page',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, Select, Checkbox, ItemContent, VariantEditModal, WysiwygEditor, DatePicker, Modal],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, NgTemplateOutlet, Select, ItemContent, VariantEditModal, WysiwygEditor, Modal],
   templateUrl: './item-edit.page.html',
 })
 export class ItemEditPage {
@@ -102,6 +100,9 @@ export class ItemEditPage {
   // Variant options (per-value selection merged from category options + item's saved selection)
   readonly optionRows = signal<OptionRow[]>([]);
   readonly loadingOptions = signal(false);
+  /** Options applied on variants (multi-select) vs item-level attributes (single-select). */
+  readonly variantLevelOptions = computed(() => this.optionRows().filter((r) => !r.singleSelect));
+  readonly itemLevelOptions = computed(() => this.optionRows().filter((r) => r.singleSelect));
   private itemSavedOptions: ItemVariantOptionSel[] = [];
 
   // Generated variants of the item
@@ -136,6 +137,27 @@ export class ItemEditPage {
   detailsValid(): boolean {
     const c = this.form.controls;
     return c.itemName.valid && Number(c.brandId.value) > 0 && Number(c.categoryId.value) > 0;
+  }
+
+  /**
+   * When the last input of the current step is filled, scroll down to the
+   * wizard footer and focus Continue so the user can proceed without hunting for it.
+   */
+  onFieldChange(ev: Event): void {
+    if (this.step() >= this.lastStep) return;
+    const target = ev.target as HTMLElement | null;
+    const footer = document.getElementById('wizard-footer');
+    if (!target || !footer || !footer.parentElement) return;
+    const skip = '#wizard-footer, app-modal';
+    if (target.closest(skip)) return;
+    const fields = Array.from(
+      footer.parentElement.querySelectorAll<HTMLElement>(
+        'input:not([type=hidden]):not([disabled]), textarea:not([disabled]), select:not([disabled])',
+      ),
+    ).filter((e) => !e.closest(skip) && e.getClientRects().length > 0);
+    if (fields[fields.length - 1] !== target) return;
+    footer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    document.getElementById('wizard-continue')?.focus({ preventScroll: true });
   }
 
   goToStep(n: number): void {
@@ -176,11 +198,13 @@ export class ItemEditPage {
     categoryId: [0, [Validators.required]],
     taxId: [0],
     hsn: [''],
-    liveFromDate: [''],
-    liveToDate: [''],
+    // Like the .NET form, a new item is live from today (the date pickers are hidden for now).
+    liveFromDate: [new Date().toISOString().slice(0, 10)],
+    liveToDate: [new Date().toISOString().slice(0, 10)],
     itemSortOrderInCategory: [0],
     returnWindowInDays: [{ value: 0, disabled: false }],
     isReturnWindowDays: [false],
+    showAvailableQtyIfBelow: [null as number | null],
     isActive: [true],
     isFeatureItem: [false],
     isSoldOut: [false],
@@ -250,6 +274,7 @@ export class ItemEditPage {
           itemSortOrderInCategory: item.itemSortOrderInCategory,
           returnWindowInDays: { value: item.returnWindowInDays ?? 0, disabled: !!item.isReturnWindowDays },
           isReturnWindowDays: !!item.isReturnWindowDays,
+          showAvailableQtyIfBelow: item.showAvailableQtyIfBelow ?? null,
           isActive: item.isActive,
           isFeatureItem: item.isFeatureItem,
           isSoldOut: item.isSoldOut,
@@ -498,8 +523,9 @@ export class ItemEditPage {
           return {
             variantOptionId: opt.variantOptionId,
             optionName: opt.optionName,
-            isApplicable: saved ? saved.isApplicable : false,
-            isFilterable: saved ? saved.isFilterable : false,
+            // The .NET admin hides these checkboxes and always saves them as checked.
+            isApplicable: true,
+            isFilterable: true,
             singleSelect,
             values: opt.optionValues.map((v) => {
               const match = savedByName.get(v.optionValueName.trim().toLowerCase());
@@ -573,7 +599,8 @@ export class ItemEditPage {
 
   toggleOptionApplicable(optionId: number, on: boolean): void {
     this.optionRows.update((rows) =>
-      rows.map((r) => (r.variantOptionId === optionId ? { ...r, isApplicable: on } : r)),
+      // Ticking Applicable also ticks Filterable by default; it can be unticked afterwards.
+      rows.map((r) => (r.variantOptionId === optionId ? { ...r, isApplicable: on, ...(on ? { isFilterable: true } : {}) } : r)),
     );
   }
 
@@ -583,7 +610,37 @@ export class ItemEditPage {
     );
   }
 
+  /** Re-read the item's saved option values so freshly saved ones become locked. */
+  private refreshSavedOptions(): void {
+    this.service.getItem(this.itemId()).subscribe({
+      next: (item) => {
+        this.itemSavedOptions = item.variantOptions ?? [];
+        if (item.categoryId) this.loadVariantOptions(item.categoryId);
+        this.loadVariants();
+      },
+    });
+  }
+
+  selectedCount(row: OptionRow): number {
+    return row.values.filter((v) => v.selected).length;
+  }
+
+  totalSelectedValues(): number {
+    return this.optionRows().reduce((n, r) => n + this.selectedCount(r), 0);
+  }
+
+  /** A saved variant-level value is locked: variants were generated from it, so it can't be removed. */
+  isValueLocked(row: OptionRow, v: { selected: boolean; savedValueId: number }): boolean {
+    return !row.singleSelect && v.selected && v.savedValueId > 0;
+  }
+
   toggleOptionValue(optionId: number, valueId: number): void {
+    const row = this.optionRows().find((r) => r.variantOptionId === optionId);
+    const target = row?.values.find((v) => v.optionValueId === valueId);
+    if (row && target && this.isValueLocked(row, target)) {
+      this.toast.error(`"${target.optionValueName}" is already saved on this item and can't be unselected.`);
+      return;
+    }
     this.optionRows.update((rows) =>
       rows.map((r) => {
         if (r.variantOptionId !== optionId) return r;
@@ -700,7 +757,16 @@ export class ItemEditPage {
   // --- Media ---
   onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const files = input.files;
+    this.addFiles(input.files);
+    input.value = '';
+  }
+
+  onDropFiles(event: DragEvent): void {
+    event.preventDefault();
+    this.addFiles(event.dataTransfer?.files ?? null);
+  }
+
+  private addFiles(files: FileList | null): void {
     if (!files || files.length === 0) return;
 
     for (let i = 0; i < files.length; i++) {
@@ -720,7 +786,6 @@ export class ItemEditPage {
       };
       reader.readAsDataURL(file);
     }
-    input.value = '';
   }
 
   removeLocalPreview(id: string): void {
@@ -883,6 +948,21 @@ export class ItemEditPage {
       this.toast.error('Fill in the required item details.');
       return;
     }
+    if (!(this.form.controls.itemCode.value ?? '').trim()) {
+      this.toast.error('Item Code is required.');
+      return;
+    }
+    if (!this.pricing().length) {
+      this.toast.error('At least one Pricing required.');
+      return;
+    }
+    for (const p of this.pricing()) {
+      const blank = (x: unknown) => x === null || x === undefined || (x as unknown) === '';
+      if (blank(p.mrp)) return void this.toast.error('MRP is required.');
+      if (blank(p.discount)) return void this.toast.error('Discount is required.');
+      if (blank(p.price)) return void this.toast.error('Price is required.');
+      if (blank(p.cost)) return void this.toast.error('Actual Cost Per Item is required.');
+    }
 
     if (this.localPreviews().length > 0) {
       this.saving.set(true);
@@ -970,8 +1050,8 @@ export class ItemEditPage {
       itemName: v.itemName,
       itemCode: v.itemCode,
       itemDescription: v.itemDescription,
-      liveFromDate: v.liveFromDate,
-      liveToDate: v.liveToDate,
+      liveFromDate: v.liveFromDate || new Date().toISOString().slice(0, 10),
+      liveToDate: v.liveToDate || new Date().toISOString().slice(0, 10),
       itemSortOrderInCategory: Number(v.itemSortOrderInCategory),
       isActive: v.isActive,
       isFeatureItem: v.isFeatureItem,
@@ -979,13 +1059,14 @@ export class ItemEditPage {
       isSerialized: v.isSerialized,
       taxId: Number(v.taxId),
       hsn: v.hsn,
-      showAvailableQtyIfBelow: null,
+      showAvailableQtyIfBelow: v.showAvailableQtyIfBelow === null || (v.showAvailableQtyIfBelow as unknown) === '' ? null : Number(v.showAvailableQtyIfBelow),
       returnWindowInDays: Number(v.returnWindowInDays) || null,
       isReturnWindowDays: v.isReturnWindowDays === true,
       pricing: this.pricing().map((p) => {
+        // The .NET admin hides the pricing dates and always sends today .. today + 2 years.
         const today = new Date();
-        const startDate = p.startDate || today.toISOString().slice(0, 10);
-        const endDate = p.endDate || new Date(today.getFullYear() + 2, today.getMonth(), today.getDate()).toISOString().slice(0, 10);
+        const startDate = today.toISOString().slice(0, 10);
+        const endDate = new Date(today.getFullYear() + 2, today.getMonth(), today.getDate()).toISOString().slice(0, 10);
         return {
           ...p,
           mrp: Number(p.mrp),
@@ -1038,6 +1119,7 @@ export class ItemEditPage {
           } else {
             const wasNew = !this.itemId();
             this.toast.success(wasNew ? 'Item created.' : 'Item updated.');
+            if (!wasNew) this.refreshSavedOptions();
             if (wasNew) {
               this.itemId.set(savedId);
               this.router.navigate(['/catalog/items', savedId], { replaceUrl: true, state: { step: this.step() } });
@@ -1163,18 +1245,28 @@ export class ItemEditPage {
   }
 
   // --- Variant Image Mapping Modal ---
+  /** Images offered in the "assign to variant" popup (fetched fresh each time, like the .NET GetItemImageDetailDtl). */
+  readonly mapImages = signal<ItemImage[]>([]);
+  readonly loadingMapImages = signal(false);
+
   openVariantImageMap(variant: ItemVariantRow): void {
     this.selectedVariantForImage.set(variant);
     this.variantImageSelection.set([]);
-    this.service.getVariantImageDtl(this.itemId(), variant.itemVariantId).subscribe({
-      next: (ids) => {
-        this.variantImageSelection.set(ids);
-        this.showImageMapModal.set(true);
-      },
-      error: () => {
-        this.variantImageSelection.set([]);
-        this.showImageMapModal.set(true);
-      },
+    this.mapImages.set(this.media().filter((m) => m.imageId > 0));
+    this.loadingMapImages.set(true);
+    this.showImageMapModal.set(true);
+
+    forkJoin({
+      images: this.service.getItemWiseImageList(this.itemId()).pipe(catchError(() => of(null))),
+      selected: this.service.getVariantImageDtl(this.itemId(), variant.itemVariantId).pipe(catchError(() => of([] as number[]))),
+    }).subscribe(({ images, selected }) => {
+      if (images) {
+        this.mapImages.set(images.filter((m) => m.imageId > 0));
+      } else if (!this.mapImages().length) {
+        this.toast.error('Could not load the item images.');
+      }
+      this.variantImageSelection.set(selected);
+      this.loadingMapImages.set(false);
     });
   }
 
@@ -1204,9 +1296,9 @@ export class ItemEditPage {
         this.toast.success('Images assigned to variant successfully.');
         this.loadVariants();
       },
-      error: () => {
+      error: (e: { message?: string }) => {
         this.savingImageMapping.set(false);
-        this.toast.error('Failed to assign images to variant.');
+        this.toast.error(e?.message ? `Failed to assign images: ${e.message}` : 'Failed to assign images to variant.');
       },
     });
   }

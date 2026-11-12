@@ -28,6 +28,7 @@ import {
   RequestSaveRolMoqDetails,
   Bin,
   ItemVariantInfo,
+  StoreOption,
 } from './item.models';
 
 @Injectable({ providedIn: 'root' })
@@ -159,7 +160,7 @@ export class ItemService {
           (res?.data?.variantOptions ?? []).map((o) => ({
             variantOptionId: Number(o['variantOptionId'] ?? 0),
             optionName: String(o['optionName'] ?? ''),
-            appliedOnVariant: o['appliedOnVariant'] === true,
+            appliedOnVariant: [true, 1, '1', 'true', 'True'].includes(o['appliedOnVariant'] as never) || [true, 1, '1', 'true', 'True'].includes(o['AppliedOnVariant'] as never),
             optionValues: ((o['optionValues'] as Record<string, unknown>[]) ?? []).map((v) => ({
               optionValueId: Number(v['optionValueId'] ?? 0),
               optionValueName: String(v['optionValueName'] ?? ''),
@@ -238,6 +239,9 @@ export class ItemService {
               startDate: String(p['startDate'] ?? p['StartDate'] ?? '').slice(0, 10),
               endDate: String(p['endDate'] ?? p['EndDate'] ?? '').slice(0, 10),
               batchCode: String(p['batchCode'] ?? p['BatchCode'] ?? ''),
+              wareHouseId: (p['wareHouseId'] ?? p['WareHouseId']) != null ? Number(p['wareHouseId'] ?? p['WareHouseId']) : null,
+              physicalQty: (p['physicalQty'] ?? p['PhysicalQty']) != null ? Number(p['physicalQty'] ?? p['PhysicalQty']) : null,
+              batchId: (p['batchId'] ?? p['BatchId']) != null ? Number(p['batchId'] ?? p['BatchId']) : null,
             })),
             options: options.map((o) => ({
               variantOptionId: Number(o['variantOptionId'] ?? o['VariantOptionId'] ?? 0),
@@ -245,6 +249,7 @@ export class ItemService {
               defaultDisplayOrder: Number(o['defaultDisplayOrder'] ?? o['DefaultDisplayOrder'] ?? 0),
               isApplicable: o['isApplicable'] === true || o['IsApplicable'] === true || Number(o['appliedOnVariant'] ?? o['AppliedOnVariant'] ?? 0) !== 0,
               isFilterable: o['isFilterable'] === true || o['IsFilterable'] === true,
+              appliedOnVariant: Number(o['appliedOnVariant'] ?? o['AppliedOnVariant'] ?? 0),
               selectedValues: (((o['variantOptionValue'] ?? o['VariantOptionValue']) as Record<string, unknown>[]) ?? []).map((v) => ({
                 optionValueId: Number(v['optionValueId'] ?? v['OptionValueId'] ?? 0),
                 variantOptionValueId: Number(v['variantOptionValueId'] ?? v['VariantOptionValueId'] ?? 0),
@@ -260,6 +265,26 @@ export class ItemService {
 
   /** Create/update a variant (SaveInventoryVariant). */
   saveVariant(v: VariantEdit): Observable<unknown> {
+    // The ProductManagement API parses variant-pricing dates with ParseExact("dd/MM/yyyy") and swallows
+    // failures, so an ISO date (yyyy-MM-dd) makes the pricing rows silently not save.
+    const ddMMyyyy = (d: string): string => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d ?? '');
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : (d ?? '');
+    };
+    const pricingList = v.pricing.map((p) => ({
+      ItemVariantPriceId: p.itemPricingId,
+      MRP: p.mrp,
+      Discount: p.discount,
+      Price: p.price,
+      Cost: p.cost,
+      ActualCostPerItem: p.cost,
+      StartDate: ddMMyyyy(p.startDate),
+      EndDate: ddMMyyyy(p.endDate),
+      BatchCode: p.batchCode,
+      BatchId: p.batchId ?? null,
+      WareHouseId: p.wareHouseId ?? null,
+      PhysicalQty: p.physicalQty ?? null,
+    }));
     const payload = {
       CompanyId: this.auth.companyId(),
       companyId: this.auth.companyId(),
@@ -302,83 +327,24 @@ export class ItemService {
       RepoId: v.repoId || null,
       repoId: v.repoId || null,
       repoid: v.repoId || null,
-      InventoryItemVariantPricingList: v.pricing.map((p) => ({
-        ItemVariantPriceId: p.itemPricingId,
-        itemVariantPriceId: p.itemPricingId,
-        itemvariantpriceid: p.itemPricingId,
-        MRP: p.mrp,
-        mrp: p.mrp,
-        Discount: p.discount,
-        discount: p.discount,
-        Price: p.price,
-        price: p.price,
-        Cost: p.cost,
-        cost: p.cost,
-        ActualCostPerItem: p.cost,
-        actualCostPerItem: p.cost,
-        actualcostperitem: p.cost,
-        StartDate: p.startDate,
-        startDate: p.startDate,
-        startdate: p.startDate,
-        EndDate: p.endDate,
-        endDate: p.endDate,
-        enddate: p.endDate,
-        BatchCode: p.batchCode,
-        batchCode: p.batchCode,
-        batchcode: p.batchCode,
-      })),
-      inventoryItemVariantPricingList: v.pricing.map((p) => ({
-        ItemVariantPriceId: p.itemPricingId,
-        itemVariantPriceId: p.itemPricingId,
-        itemvariantpriceid: p.itemPricingId,
-        MRP: p.mrp,
-        mrp: p.mrp,
-        Discount: p.discount,
-        discount: p.discount,
-        Price: p.price,
-        price: p.price,
-        Cost: p.cost,
-        cost: p.cost,
-        ActualCostPerItem: p.cost,
-        actualCostPerItem: p.cost,
-        actualcostperitem: p.cost,
-        StartDate: p.startDate,
-        startDate: p.startDate,
-        startdate: p.startDate,
-        EndDate: p.endDate,
-        endDate: p.endDate,
-        enddate: p.endDate,
-        BatchCode: p.batchCode,
-        batchCode: p.batchCode,
-        batchcode: p.batchCode,
-      })),
-      inventoryitemvariantpricinglist: v.pricing.map((p) => ({
-        ItemVariantPriceId: p.itemPricingId,
-        itemVariantPriceId: p.itemPricingId,
-        itemvariantpriceid: p.itemPricingId,
-        MRP: p.mrp,
-        mrp: p.mrp,
-        Discount: p.discount,
-        discount: p.discount,
-        Price: p.price,
-        price: p.price,
-        Cost: p.cost,
-        cost: p.cost,
-        ActualCostPerItem: p.cost,
-        actualCostPerItem: p.cost,
-        actualcostperitem: p.cost,
-        StartDate: p.startDate,
-        startDate: p.startDate,
-        startdate: p.startDate,
-        EndDate: p.endDate,
-        endDate: p.endDate,
-        enddate: p.endDate,
-        BatchCode: p.batchCode,
-        batchCode: p.batchCode,
-        batchcode: p.batchCode,
-      })),
+      InventoryItemVariantPricingList: pricingList,
+      inventoryItemVariantPricingList: pricingList,
     };
     return this.api.post('ProductManagement/SaveInventoryVariant', payload);
+  }
+
+  /** Stores/warehouses for the variant batch rows (GetStores). */
+  stores(): Observable<StoreOption[]> {
+    return this.postList<Record<string, unknown>>('ProductManagement/GetStores', {
+      CompanyId: this.auth.companyId(),
+    }).pipe(
+      map((rows) =>
+        rows.map((r) => ({
+          storeId: Number(r['storeId'] ?? r['StoreId'] ?? 0),
+          storeName: String(r['storeName'] ?? r['StoreName'] ?? ''),
+        })),
+      ),
+    );
   }
 
   /** Delete a variant (DeleteVariant). */
@@ -1270,17 +1236,14 @@ export class ItemService {
 
   /** Save mapping between variant and item images (SaveItemImageVariant). */
   saveVariantImages(itemId: number, variantId: number, imageIds: number[]): Observable<unknown> {
+    // RequestItemVariantImage.ItemVariantId is a List<long>, so it must be sent as an array
+    // (a bare number is rejected with HTTP 400). ImageIds is a List<int>.
     return this.api.post('ProductManagement/SaveItemImageVariant', {
       ItemId: itemId,
-      itemId: itemId,
-      ItemVariantId: variantId,
-      itemVariantId: variantId,
+      ItemVariantId: [variantId],
       ImageIds: imageIds,
-      imageIds: imageIds,
       CompanyId: this.auth.companyId(),
-      companyId: this.auth.companyId(),
       UserId: this.auth.userId(),
-      userId: this.auth.userId(),
     });
   }
 

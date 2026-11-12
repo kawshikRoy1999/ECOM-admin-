@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpEventType } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, from, map, switchMap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
@@ -30,7 +30,69 @@ export class ImageUploadService {
   private readonly auth = inject(AuthService);
   private readonly url = `${environment.apiUrl.replace(/\/$/, '')}/frontend/UploadImages`;
 
+  /** Longest side after resizing (px). Product photos rarely need more on screen. */
+  private static readonly MAX_DIMENSION = 1600;
+  /** Files at or below this size are uploaded untouched. */
+  private static readonly SKIP_BELOW_BYTES = 300 * 1024;
+  private static readonly JPEG_QUALITY = 0.82;
+
+  /**
+   * Downscales and re-encodes a photo in the browser before upload. SVG and GIF are left alone
+   * (vector / animation), small files are skipped, and if the result isn't smaller the original is used.
+   * Photos become JPEG; PNGs with transparency stay PNG (resized only). Never throws — falls back to the original.
+   */
+  async compress(file: File): Promise<File> {
+    try {
+      if (!/^image\/(jpeg|png|webp|bmp)$/i.test(file.type)) return file;
+      if (file.size <= ImageUploadService.SKIP_BELOW_BYTES) return file;
+
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, ImageUploadService.MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+      const w = Math.max(1, Math.round(bitmap.width * scale));
+      const h = Math.max(1, Math.round(bitmap.height * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return file;
+
+      const mayHaveAlpha = /^image\/(png|webp)$/i.test(file.type);
+      let keepPng = false;
+      if (mayHaveAlpha) {
+        ctx.drawImage(bitmap, 0, 0, w, h);
+        const px = ctx.getImageData(0, 0, w, h).data;
+        for (let i = 3; i < px.length; i += 4) {
+          if (px[i] < 255) { keepPng = true; break; }
+        }
+      }
+      if (!keepPng) {
+        ctx.fillStyle = '#ffffff'; // JPEG has no alpha — flatten onto white
+        ctx.fillRect(0, 0, w, h);
+      } else {
+        ctx.clearRect(0, 0, w, h);
+      }
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close?.();
+
+      const mime = keepPng ? 'image/png' : 'image/jpeg';
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, mime, ImageUploadService.JPEG_QUALITY),
+      );
+      if (!blob || blob.size >= file.size) return file;
+
+      const base = file.name.replace(/\.[^.]+$/, '');
+      return new File([blob], `${base}.${keepPng ? 'png' : 'jpg'}`, { type: mime, lastModified: Date.now() });
+    } catch {
+      return file;
+    }
+  }
+
   upload(file: File, opts: UploadOptions = {}): Observable<UploadProgress> {
+    return from(this.compress(file)).pipe(switchMap((f) => this.send(f, opts)));
+  }
+
+  private send(file: File, opts: UploadOptions): Observable<UploadProgress> {
     const typeValue = this.getType(opts.entityType);
     const companyIdValue = String(this.auth.companyId());
 

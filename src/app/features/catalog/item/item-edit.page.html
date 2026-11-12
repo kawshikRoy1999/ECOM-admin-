@@ -11,8 +11,8 @@
       </div>
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <button (click)="discard()" class="btn-secondary h-9 px-4 text-[13px] rounded-xl">Discard</button>
-      <button (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-9 px-5 rounded-xl disabled:opacity-60">
+      <button (click)="discard()" class="btn-secondary h-8 px-3.5 text-[12.5px] rounded-lg">Discard</button>
+      <button (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-8 px-4 text-[12.5px] rounded-lg disabled:opacity-60">
         {{ saving() ? 'Saving…' : 'Save Item' }}
       </button>
     </div>
@@ -93,7 +93,7 @@
     </div>
   } @else {
 
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4" (change)="onFieldChange($event)">
       <!-- Step indicator -->
       <div class="fluent-card px-3 py-2.5 sm:px-4">
         <div class="flex items-center gap-1 overflow-x-auto">
@@ -129,8 +129,8 @@
       @if (step() === 1) {
       <div class="flex flex-col gap-4 animate-fadeIn">
         <!-- General information -->
-        <form [formGroup]="form" class="fluent-card p-5">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <form [formGroup]="form" class="fluent-card p-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
             <div>
               <p class="text-[13px] font-bold text-slate-800">General information</p>
               <p class="text-[11.5px] text-slate-400">Basic details customers see and how the item is organized.</p>
@@ -140,15 +140,15 @@
             </span>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-2.5">
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item Name <span class="text-red-500">*</span></label>
-              <input formControlName="itemName" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50"
+              <input formControlName="itemName" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50"
                 [class.!border-red-500]="form.controls.itemName.touched && form.controls.itemName.invalid" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item code</label>
-              <input formControlName="itemCode" [placeholder]="itemCodeFormat() ? ('Format: ' + itemCodeFormat()) : ''" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+              <input formControlName="itemCode" [placeholder]="itemCodeFormat() ? ('Format: ' + itemCodeFormat()) : ''" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Brand <span class="text-red-500">*</span></label>
@@ -166,29 +166,31 @@
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Family</label>
               <app-select [options]="families()" labelKey="name" valueKey="id" [value]="selectedFamilyId()" (valueChange)="onFamilyChange($event)" defaultLabel="- None -" [defaultValue]="0" [searchable]="true" [disabled]="!selectedSubCategoryId()" addNewLabel="Add new family" (addNew)="openQuickAdd('family', $event)" />
             </div>
-            <div class="flex flex-col gap-1 sm:col-span-2">
+            <div class="flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Description</label>
-              <app-wysiwyg-editor formControlName="itemDescription" [minHeight]="100" />
+              <app-wysiwyg-editor formControlName="itemDescription" [minHeight]="64" />
             </div>
 
             <!-- Secondary fields packed into one dense row -->
-            <div class="sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
+            <div class="contents">
               <div class="flex flex-col gap-1">
                 <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Tax</label>
                 <app-select formControlName="taxId" [options]="taxes()" labelKey="taxName" valueKey="taxDetailsId" defaultLabel="- None -" [defaultValue]="0" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">HSN Code</label>
-                <input formControlName="hsn" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+                <input formControlName="hsn" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
               </div>
+              <!-- Sort Order and Currency hidden for now. Remove this comment wrapper to restore.
               <div class="flex flex-col gap-1">
                 <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sort Order</label>
-                <input type="number" formControlName="itemSortOrderInCategory" class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50" />
+                <input type="number" formControlName="itemSortOrderInCategory" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Currency</label>
-                <input type="text" [value]="currency()" disabled class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-100 text-slate-500" />
+                <input type="text" [value]="currency()" disabled class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-100 text-slate-500" />
               </div>
+              -->
             </div>
           </div>
         </form>
@@ -197,7 +199,7 @@
 
       <!--
         @if (itemId() && stockTransactions().length) {
-          <div class="fluent-card p-5">
+          <div class="fluent-card p-4">
             <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Stock Transaction Details</p>
             <div class="overflow-x-auto">
               <table class="min-w-full text-[13px]">
@@ -224,8 +226,8 @@
       <!-- STEP 2 · PRICING -->
       @if (step() === 2) {
         <!-- Pricing -->
-        <div class="fluent-card p-5 animate-fadeIn">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div class="fluent-card p-4 animate-fadeIn">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
             <div>
               <p class="text-[13px] font-bold text-slate-800">Pricing</p>
               <p class="text-[11.5px] text-slate-400">Base MRP, discount and cost for this item.</p>
@@ -236,28 +238,24 @@
             </button>
           </div>
           <div class="overflow-x-auto">
-            <table class="min-w-full text-[13px]">
-              <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+            <table class="w-full table-fixed text-[13px]">
+              <thead class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">
                 <tr>
-                  <th class="px-2 py-2 text-left">MRP</th>
-                  <th class="px-2 py-2 text-left">Discount</th>
-                  <th class="px-2 py-2 text-left">Price</th>
-                  <th class="px-2 py-2 text-left">Cost</th>
-                  <th class="px-2 py-2 text-left">Start</th>
-                  <th class="px-2 py-2 text-left">End</th>
-                  <th class="px-2 py-2"></th>
+                  <th class="px-1.5 pb-1 text-left">MRP</th>
+                  <th class="px-1.5 pb-1 text-left">Discount</th>
+                  <th class="px-1.5 pb-1 text-left">Price</th>
+                  <th class="px-1.5 pb-1 text-left">Cost</th>
+                  <th class="w-9 pb-1"></th>
                 </tr>
               </thead>
               <tbody>
                 @for (p of pricing(); track $index) {
                   <tr>
-                    <td class="px-2 py-1.5"><input type="number" [ngModel]="p.mrp" (ngModelChange)="updatePricing($index, 'mrp', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
-                    <td class="px-2 py-1.5"><input type="number" [ngModel]="p.discount" (ngModelChange)="updatePricing($index, 'discount', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
-                    <td class="px-2 py-1.5"><input type="number" [ngModel]="p.price" (ngModelChange)="updatePricing($index, 'price', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
-                    <td class="px-2 py-1.5"><input type="number" [ngModel]="p.cost" (ngModelChange)="updatePricing($index, 'cost', $event)" class="h-8 w-24 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
-                    <td class="px-2 py-1.5"><input type="date" [ngModel]="p.startDate" (ngModelChange)="updatePricing($index, 'startDate', $event)" class="h-8 w-36 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
-                    <td class="px-2 py-1.5"><input type="date" [ngModel]="p.endDate" (ngModelChange)="updatePricing($index, 'endDate', $event)" class="h-8 w-36 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
-                    <td class="px-2 py-1.5">
+                    <td class="px-1.5 py-1"><input type="number" [ngModel]="p.mrp" (ngModelChange)="updatePricing($index, 'mrp', $event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-1.5 py-1"><input type="number" [ngModel]="p.discount" (ngModelChange)="updatePricing($index, 'discount', $event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-1.5 py-1"><input type="number" [ngModel]="p.price" (ngModelChange)="updatePricing($index, 'price', $event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-1.5 py-1"><input type="number" [ngModel]="p.cost" (ngModelChange)="updatePricing($index, 'cost', $event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12.5px] bg-slate-50/50" /></td>
+                    <td class="px-1.5 py-1">
                       <button (click)="removePricing($index)" [disabled]="pricing().length <= 1" class="flex h-8 w-8 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-30">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
@@ -271,7 +269,7 @@
       }
 
         <!-- Tiered Pricing
-        <div class="fluent-card p-5">
+        <div class="fluent-card p-4">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <div>
               <p class="text-[13px] font-bold text-slate-800">Tiered Pricing</p>
@@ -330,57 +328,74 @@
       @if (step() === 4) {
       <div class="flex flex-col gap-4 animate-fadeIn">
         <!-- Variant Options -->
-        <div class="fluent-card p-5">
-          <div class="border-b border-slate-100 pb-3 mb-4">
-            <p class="text-[13px] font-bold text-slate-800">Variant Options</p>
-            <p class="text-[11.5px] text-slate-400">Choose which of the category's options &amp; values apply to this item. These generate the item's variants on save.</p>
+        <div class="fluent-card p-4">
+          <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-2.5 mb-1">
+            <div>
+              <p class="text-[13px] font-bold text-slate-800">Variant Options</p>
+              <p class="text-[11.5px] text-slate-400">Pick the values that apply to this item. Variant-level values generate the item's variants on save.</p>
+            </div>
+            @if (optionRows().length) {
+              <span class="status-chip neutral shrink-0"><span class="dot"></span>{{ totalSelectedValues() }} selected</span>
+            }
           </div>
+
+          <!-- One option row: label on the left, value chips on the right -->
+          <ng-template #optRow let-o>
+            <div class="grid grid-cols-1 sm:grid-cols-[130px_1fr] gap-x-4 gap-y-1.5 py-2.5 border-b border-slate-100 last:border-0">
+              <div class="flex sm:flex-col items-center sm:items-start gap-x-2 gap-y-0.5 pt-0.5">
+                <span class="text-[12.5px] font-bold text-slate-800">{{ o.optionName }}</span>
+                <span class="text-[11px] text-slate-400">
+                  {{ selectedCount(o) ? selectedCount(o) + ' selected' : 'None selected' }}
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                @for (v of o.values; track v.optionValueId) {
+                  <button type="button" (click)="toggleOptionValue(o.variantOptionId, v.optionValueId)"
+                    class="inline-flex items-center gap-1 h-7 px-2.5 border text-[12px] font-semibold transition-colors cursor-pointer"
+                    [class.rounded-full]="o.singleSelect"
+                    [class.rounded-md]="!o.singleSelect"
+                    [title]="isValueLocked(o, v) ? 'Saved on this item and cannot be unselected' : ''"
+                    [class]="v.selected ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300 hover:bg-brand-50/40'">
+                    @if (isValueLocked(o, v)) {
+                      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4m-1 0h10a1 1 0 011 1v7a1 1 0 01-1 1H7a1 1 0 01-1-1v-7a1 1 0 011-1z" /></svg>
+                    } @else if (v.selected) {
+                      <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    }
+                    {{ v.optionValueName }}
+                  </button>
+                } @empty {
+                  <span class="text-[12px] text-slate-400">No values defined for this option.</span>
+                }
+              </div>
+            </div>
+          </ng-template>
 
           @if (!form.controls.categoryId.value) {
             <p class="py-10 text-center text-[13px] text-slate-400">Select a category in General information first.</p>
           } @else if (loadingOptions()) {
             <p class="py-10 text-center text-[13px] text-slate-400">Loading variant options…</p>
           } @else {
-            <div class="flex flex-col gap-1">
-              @for (o of optionRows(); track o.variantOptionId) {
-                <div class="border-b border-slate-100 last:border-0 pb-4 mb-4 last:pb-0 last:mb-0">
-                  <div class="flex items-center justify-between flex-wrap gap-3 mb-2.5">
-                    <div class="flex items-center gap-2">
-                      <span class="text-[13px] font-bold text-slate-800">{{ o.optionName }}</span>
-                      <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md"
-                        [class]="o.singleSelect ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'">
-                        {{ o.singleSelect ? 'Single select' : 'Multi-select' }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-6">
-                      <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <app-checkbox [checked]="o.isApplicable" (checkedChange)="toggleOptionApplicable(o.variantOptionId, $event)" />
-                        <span class="text-[12px] font-semibold text-slate-600">Applicable</span>
-                      </label>
-                      <label class="flex items-center gap-2 cursor-pointer select-none" [class.opacity-40]="!o.isApplicable">
-                        <app-checkbox [checked]="o.isFilterable" (checkedChange)="toggleOptionFilterable(o.variantOptionId, $event)" [disabled]="!o.isApplicable" />
-                        <span class="text-[12px] font-semibold text-slate-600">Filterable</span>
-                      </label>
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap gap-2" [class.opacity-40]="!o.isApplicable" [class.pointer-events-none]="!o.isApplicable">
-                    @for (v of o.values; track v.optionValueId) {
-                      <button type="button" (click)="toggleOptionValue(o.variantOptionId, v.optionValueId)"
-                        class="border px-2.5 py-1 text-[11.5px] font-semibold transition-all"
-                        [class.rounded-full]="o.singleSelect"
-                        [class.rounded-lg]="!o.singleSelect"
-                        [class]="v.selected ? 'bg-brand-600 text-white border-brand-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-brand-300'">
-                        {{ v.optionValueName }}
-                      </button>
-                    } @empty {
-                      <span class="text-[12px] text-slate-400">No values defined for this option.</span>
-                    }
-                  </div>
-                </div>
-              } @empty {
-                <p class="py-10 text-center text-[13px] text-slate-400">This category has no variant options. Define them under Categories → Options.</p>
+            @if (variantLevelOptions().length) {
+              <div class="flex items-baseline gap-2 pt-3 pb-0.5">
+                <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Variant level</span>
+                <span class="text-[11px] text-slate-400">Choose one or more — each combination becomes a variant</span>
+              </div>
+              @for (o of variantLevelOptions(); track o.variantOptionId) {
+                <ng-container *ngTemplateOutlet="optRow; context: { $implicit: o }" />
               }
-            </div>
+            }
+            @if (itemLevelOptions().length) {
+              <div class="flex items-baseline gap-2 pt-4 pb-0.5">
+                <span class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Item level</span>
+                <span class="text-[11px] text-slate-400">Choose one value — applies to the whole item</span>
+              </div>
+              @for (o of itemLevelOptions(); track o.variantOptionId) {
+                <ng-container *ngTemplateOutlet="optRow; context: { $implicit: o }" />
+              }
+            }
+            @if (!optionRows().length) {
+              <p class="py-10 text-center text-[13px] text-slate-400">This category has no variant options. Define them under Categories → Options.</p>
+            }
           }
         </div>
 
@@ -405,7 +420,8 @@
             <div class="border-b border-slate-100 px-5 py-3 flex items-center justify-between flex-wrap gap-4 bg-slate-50/30">
               <div class="flex items-center gap-4 flex-wrap">
                 <span class="text-[12px] font-semibold text-slate-500 uppercase tracking-wider">Filters:</span>
-                @for (o of optionRows(); track o.variantOptionId) {
+                <!-- Only variant-level options can filter variants; item-level attributes are the same for every variant. -->
+                @for (o of variantLevelOptions(); track o.variantOptionId) {
                   @if (o.isApplicable && o.isFilterable) {
                     <div class="flex items-center gap-1.5">
                       <span class="text-[12.5px] text-slate-600 font-medium">{{ o.optionName }}:</span>
@@ -509,7 +525,7 @@
 
                 @if (f.fieldTypeId === 1) {
                   <input type="text" [ngModel]="f.fieldValue" (ngModelChange)="updateCustomFieldValue(idx, $event)"
-                    class="h-9 w-full rounded-xl border border-slate-200 px-3 text-[13px] bg-white" />
+                    class="h-8 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-white" />
                 } @else if (f.fieldTypeId === 2) {
                   <div class="relative w-full max-w-xs">
                     <app-select [options]="f.fields" labelKey="name" valueKey="name" [value]="f.fieldValue"
@@ -570,31 +586,34 @@
       <!-- STEP 3 · MEDIA -->
       @if (step() === 3) {
         <!-- Media -->
-        <div class="fluent-card p-5 animate-fadeIn">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-            <p class="text-[13px] font-bold text-slate-800">Product Media</p>
+        <div class="fluent-card p-4 animate-fadeIn">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+            <div>
+              <p class="text-[13px] font-bold text-slate-800">Product Media</p>
+              <p class="text-[11.5px] text-slate-400">Drag &amp; drop images or click to browse. JPG, PNG, SVG or GIF.</p>
+            </div>
             <span class="text-[10px] bg-slate-150/80 text-slate-650 px-2 py-0.5 rounded-full font-bold">
               {{ media().length + localPreviews().length }} Images
             </span>
           </div>
 
           <!-- Grid of Images -->
-          <div class="grid grid-cols-3 xl:grid-cols-4 gap-3">
+          <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
             <!-- Add Image Trigger Card -->
-            <div class="relative aspect-square rounded-2xl overflow-hidden border border-dashed border-slate-300 hover:border-brand-500 bg-slate-50/50 hover:bg-brand-50/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all group"
+            <div [class.aspect-square]="media().length + localPreviews().length > 0" [class.col-span-full]="media().length + localPreviews().length === 0" [class.h-28]="media().length + localPreviews().length === 0" (dragover)="$event.preventDefault()" (drop)="onDropFiles($event)" class="relative rounded-xl overflow-hidden border border-dashed border-slate-300 hover:border-brand-500 bg-slate-50/50 hover:bg-brand-50/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all group"
                  (click)="fileInput.click()">
               <div class="h-8 w-8 rounded-full bg-slate-100/80 group-hover:bg-brand-50 flex items-center justify-center text-slate-400 group-hover:text-brand-600 transition-colors">
                 <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
               </div>
-              <span class="text-[9.5px] font-bold text-slate-500 group-hover:text-brand-600 transition-colors">Add Image</span>
+              <span class="text-[10.5px] font-bold text-slate-500 group-hover:text-brand-600 transition-colors">{{ media().length + localPreviews().length === 0 ? 'Drop images here or click to upload' : 'Add' }}</span>
               <input #fileInput type="file" multiple accept="image/*" class="hidden" (change)="onFilesSelected($event)" />
             </div>
 
             <!-- Existing Images -->
             @for (img of media(); track img.imageFullPath) {
-              <div class="relative group/img aspect-square rounded-2xl overflow-hidden border border-slate-200 shadow-2xs hover:shadow-sm bg-slate-50 transition-all">
+              <div class="relative group/img aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-2xs hover:shadow-sm bg-slate-50 transition-all">
                 <img [src]="img.imageFullPath" alt="product" class="h-full w-full object-cover transition-transform duration-300 group-hover/img:scale-105" onerror="this.style.display='none'" />
                 
                 <!-- Hover Delete Overlay -->
@@ -610,7 +629,7 @@
 
             <!-- Local Pending Upload Previews -->
             @for (preview of localPreviews(); track preview.id) {
-              <div class="relative group/preview aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-brand-300 bg-brand-50/5 shadow-2xs hover:shadow-sm transition-all">
+              <div class="relative group/preview aspect-square rounded-xl overflow-hidden border-2 border-dashed border-brand-300 bg-brand-50/5 shadow-2xs hover:shadow-sm transition-all">
                 <img [src]="preview.dataUrl" alt="preview" class="h-full w-full object-cover opacity-80 transition-transform duration-300 group-hover/preview:scale-105" />
                 
                 <!-- Badge tag -->
@@ -675,7 +694,7 @@
 
       <!-- Visibility & Availability → part of STEP 1 · DETAILS -->
       @if (step() === 1) {
-        <form [formGroup]="form" class="fluent-card p-5 animate-fadeIn">
+        <form [formGroup]="form" class="fluent-card p-4 animate-fadeIn">
           <p class="text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">Visibility &amp; Availability</p>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-4">
@@ -707,7 +726,8 @@
               </label>
             </div>
 
-            <!-- Sold Out -->
+            <!-- Sold Out and Serialized hidden for now. Remove this comment wrapper to restore.
+            [Sold Out]
             <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <span class="text-[12.5px] font-semibold text-slate-700">Sold Out</span>
               <label class="relative inline-flex items-center shrink-0 cursor-pointer">
@@ -716,7 +736,7 @@
               </label>
             </div>
 
-            <!-- Serialized -->
+            [Serialized]
             <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <span class="text-[12.5px] font-semibold text-slate-700">Serialized</span>
               <label class="relative inline-flex items-center shrink-0 cursor-pointer">
@@ -725,6 +745,7 @@
               </label>
             </div>
 
+            -->
             <!-- Non-returnable -->
             <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-2">
               <span class="text-[12.5px] font-semibold text-slate-700">Non-returnable</span>
@@ -732,6 +753,12 @@
                 <input type="checkbox" formControlName="isReturnWindowDays" class="peer sr-only" />
                 <div class="relative h-4.5 w-8 rounded-full bg-slate-200 peer-focus:outline-none transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-brand-600 peer-checked:after:translate-x-3.5 shadow-xs"></div>
               </label>
+            </div>
+
+            <!-- Show Available Qty If Below -->
+            <div class="flex items-center justify-between gap-2 rounded-xl border border-slate-150 bg-slate-50/40 px-3 py-1.5" title="Show the remaining stock count on the storefront only when it falls below this number">
+              <span class="text-[12px] font-semibold text-slate-500">Show Available Qty If Below</span>
+              <input type="number" min="0" formControlName="showAvailableQtyIfBelow" placeholder="-" class="h-7.5 w-16 rounded-lg border border-slate-200 px-2 text-[12px] bg-white text-center" />
             </div>
 
             <!-- Return Days Input (only visible when return window is active) -->
@@ -743,6 +770,7 @@
             }
           </div>
 
+          <!-- Availability Window hidden for now (not needed). Restore by removing this comment wrapper.
           <hr class="border-slate-100 mb-3.5" />
 
           <span class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2.5 block">Availability Window</span>
@@ -761,11 +789,12 @@
             </div>
           </div>
           <small class="text-[10.5px] text-slate-400 mt-2 block">Leave "Available to" empty to keep available indefinitely.</small>
+          -->
         </form>
       }
 
       <!-- Wizard footer navigation (sticky floating toolbar, always visible) -->
-      <div class="sticky bottom-0 z-30 -mx-1">
+      <div id="wizard-footer" class="sticky bottom-0 z-30 -mx-1">
         <!-- Fade so page content visibly scrolls UNDER the bar -->
         <div class="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-[#f0f2f5] to-transparent"></div>
         <div class="relative mb-1 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.28)]">
@@ -780,7 +809,7 @@
             <span class="ml-1.5 text-[12px] font-bold text-slate-500">Step {{ step() }} of {{ steps.length }}</span>
           </div>
           @if (step() < lastStep) {
-            <button type="button" (click)="nextStep()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl gap-1.5">
+            <button id="wizard-continue" type="button" (click)="nextStep()" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl gap-1.5">
               Continue
               <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
             </button>
@@ -811,7 +840,9 @@
         Choose the photo(s) that represent
         <span class="font-semibold text-slate-700">{{ selectedVariantForImage()?.itemVariantName }}</span>.
       </p>
-      @if (media().length === 0) {
+      @if (loadingMapImages() && mapImages().length === 0) {
+        <p class="py-10 text-center text-[13px] text-slate-400">Loading images…</p>
+      } @else if (mapImages().length === 0) {
         <div class="py-10 text-center">
           <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -821,7 +852,7 @@
         </div>
       } @else {
         <div class="grid grid-cols-3 sm:grid-cols-4 gap-3">
-          @for (img of media(); track img.imageId) {
+          @for (img of mapImages(); track img.imageId) {
             @if (img.imageId > 0) {
               <button type="button" (click)="toggleImageSelect(img.imageId)"
                 class="group relative aspect-square rounded-xl border overflow-hidden bg-slate-50 cursor-pointer transition-all"
@@ -850,7 +881,7 @@
       <div footer class="flex items-center gap-2">
         <span class="mr-auto text-[12px] font-semibold text-slate-400">{{ variantImageSelection().length }} selected</span>
         <button (click)="closeImageMapModal()" class="btn-secondary h-9 px-4 text-[12.5px] font-semibold rounded-xl">Cancel</button>
-        <button (click)="saveImageMapping()" [disabled]="savingImageMapping() || media().length === 0" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">
+        <button (click)="saveImageMapping()" [disabled]="savingImageMapping() || mapImages().length === 0" class="btn-primary h-9 px-5 text-[12.5px] font-semibold rounded-xl disabled:opacity-60">
           @if (savingImageMapping()) { Saving… } @else { Save Mapping }
         </button>
       </div>
@@ -864,7 +895,7 @@
         <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Name <span class="text-red-500">*</span></label>
         <input [ngModel]="quickAddName()" (ngModelChange)="quickAddName.set($event)" (keyup.enter)="saveQuickAdd()"
           placeholder="Enter name" autofocus
-          class="h-9 rounded-xl border border-slate-200 px-3 text-[13px] bg-slate-50/50 focus:border-brand-600 focus:ring-4 focus:ring-brand-500/10 focus:outline-none" />
+          class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50 focus:border-brand-600 focus:ring-4 focus:ring-brand-500/10 focus:outline-none" />
         <small class="text-[11px] text-slate-400">Creates the record instantly and selects it here. You can add images &amp; details later in its own section.</small>
       </div>
       <div footer class="flex justify-end gap-2">
