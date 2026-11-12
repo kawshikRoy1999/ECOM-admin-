@@ -1,0 +1,98 @@
+    @page { size: 80mm auto; margin: 0; }
+
+    html, body {
+        margin: 0; padding: 0; background: #fff;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+
+    /* Neutralise the _PdfLayout wrapper, which is sized for A4. */
+    body > .container, body > .container.body-content { width: auto !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+
+    /* Source stays laid out (so getComputedStyle sees the template's own
+       display:none rules) but off-screen, and never prints. */
+    .thermal-src { position: absolute; left: -10000px; top: 0; width: 210mm; }
+    @media print { .thermal-src { display: none !important; } }
+
+    .rcpt, .rcpt * { box-sizing: border-box; }
+
+    .rcpt {
+        width: 80mm;
+        padding: 4mm 4mm 10mm;   /* bottom pad keeps the auto-cutter clear of content */
+        margin: 0 auto;
+        color: #000;
+        background: #fff;
+        font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: 11.5px;
+        line-height: 1.38;
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .rcpt-logo { display: block; max-width: 42mm; max-height: 22mm; margin: 0 auto 6px; }
+
+    /* Headings, in the order the template declares them. */
+    .rcpt-h1 {
+        text-align: center; font-size: 15px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .4px; line-height: 1.25;
+        margin-bottom: 2px;
+    }
+    .rcpt-h2 {
+        text-align: center; font-size: 10.5px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px;
+    }
+
+    .rcpt-line { font-size: 10.5px; line-height: 1.4; }
+    .rcpt-line b { font-weight: 700; }   /* emphasis carried over from the template */
+
+    .rcpt-rule       { border-top: 1px dashed #000; margin: 6px 0; }
+    .rcpt-rule-solid { border-top: 1px solid #000;  margin: 6px 0; }
+
+    /* "Label: value" pairs */
+    .rcpt-row {
+        display: flex; justify-content: space-between; align-items: baseline;
+        gap: 8px; font-size: 10.5px; padding: 1px 0;
+    }
+    .rcpt-row .k { flex: 0 1 auto; }
+    .rcpt-row .v { flex: 1 1 auto; text-align: right; font-weight: 600; }
+
+    /* Items */
+    .rcpt-items-head {
+        display: flex; justify-content: space-between; gap: 8px;
+        font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .6px; padding-bottom: 3px;
+    }
+    .rcpt-items-head .amt { flex: 0 0 auto; text-align: right; }
+    .rcpt-item { padding: 4px 0; }
+    .rcpt-item + .rcpt-item { border-top: 1px dotted #999; }
+    .rcpt-item-name { font-size: 11.5px; font-weight: 700; line-height: 1.3; }
+    .rcpt-item-calc {
+        display: flex; justify-content: space-between; align-items: baseline;
+        gap: 8px; font-size: 10.5px; margin-top: 1px;
+    }
+    .rcpt-item-calc .qty { flex: 1 1 auto; }
+    .rcpt-item-calc .amt { flex: 0 0 auto; font-weight: 700; }
+    /* Columns the receipt has no dedicated slot for (Tax, HSN...) - kept verbatim. */
+    .rcpt-item-meta { font-size: 9.5px; line-height: 1.35; margin-top: 1px; }
+
+    /* Money carries more weight than the label it sits against. */
+    .rcpt-total-row { font-size: 11px; }
+    .rcpt-total-row .v { font-weight: 700; }
+    .rcpt-grand {
+        display: flex; justify-content: space-between; align-items: baseline;
+        gap: 8px; font-size: 14px; font-weight: 700; text-transform: uppercase;
+        padding: 5px 0; border-top: 1px solid #000; border-bottom: 1px solid #000;
+        margin: 4px 0;
+    }
+
+    .rcpt-copy-gap { height: 10mm; }
+
+    @media screen {
+        body { background: #f3f4f6; padding: 24px 0; }
+        .rcpt { box-shadow: 0 2px 14px rgba(0,0,0,.16); border-radius: 2px; }
+    }
+    @media print {
+        body { background: #fff; padding: 0; }
+        .rcpt { box-shadow: none; }
+    }

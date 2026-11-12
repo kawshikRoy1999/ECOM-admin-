@@ -20,6 +20,20 @@ export interface OrderListItem {
   isDeliver: boolean;
   invoiceNo?: string;
   invoiceNumber?: string;
+  billAddress1?: string;
+  billAddress2?: string;
+  /** Invoices raised against the order (InvoiceList). */
+  invoiceList?: OrderListInvoice[];
+  /** Ordered lines as display text (OrderDetails[].Items), with serial numbers when present. */
+  orderDetails?: { items: string; serialNumber?: string; orderId?: number; orderDetailId?: number; invoiceId?: number; invoiceDetailId?: number }[];
+}
+
+export interface OrderListInvoice {
+  invoiceId: number;
+  invoiceNumber: string;
+  invoiceDate: string;
+  invoiceStatus: string;
+  cancelRequestExist?: boolean;
 }
 
 export interface OrderListResponse {

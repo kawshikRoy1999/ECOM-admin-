@@ -88,24 +88,41 @@ export class OrdersService {
   }
 
   /** Return tab — return-item rows. */
-  listReturns(filters: Partial<OrderFilters>): Observable<ReturnItem[]> {
+  /** @param statusId 15 = return requested (default, as in .NET), 17 = returned/approved, 18 = rejected. */
+  listReturns(filters: Partial<OrderFilters>, statusId = 15): Observable<ReturnItem[]> {
     return this.api
       .post<{ returnItems?: ReturnItem[] }>('ProductManagement/GetReturnItems', {
         CompanyId: this.auth.companyId(),
         PageNo: filters.pageNo ?? 1,
         PageSize: 20,
+        StatusId: statusId,
       })
       .pipe(map((d) => d?.returnItems ?? []));
   }
 
-  updateReturnStatus(r: ReturnItem, statusId: number): Observable<unknown> {
+  /** 17 = accept the return (needs an expected pickup date), 18 = reject — same ids as the .NET page. */
+  updateReturnStatus(r: ReturnItem, statusId: 17 | 18, pickupDate: string): Observable<unknown> {
     return this.api.post('ProductManagement/UpdateReturnItemStatus', {
       ReturnItemId: r.returnItemId,
       StatusId: statusId,
       CompanyId: this.auth.companyId(),
       OrderDetailId: r.orderDetaiId,
       OrderId: r.orderId,
-      PickupDate: r.pickupDate,
+      PickupDate: pickupDate || '',
+    });
+  }
+
+  /** Approve a customer's cancel request for one order line (CreateCancelRequestApprove). */
+  approveCancel(line: { orderId: number; orderDetailId: number; invoiceId: number; invoiceDetailId: number }, explanation: string): Observable<unknown> {
+    return this.api.post('ProductManagement/CreateCancelRequestApprove', {
+      OrderId: line.orderId,
+      OrderDetailId: line.orderDetailId,
+      InvoiceId: line.invoiceId,
+      InvoiceDetailId: line.invoiceDetailId,
+      Explanation: explanation,
+      CompanyId: this.auth.companyId(),
+      UserId: this.auth.userId(),
+      UserName: this.auth.displayName(),
     });
   }
 
@@ -140,17 +157,14 @@ export class OrdersService {
   generateInvoice(
     orderId: number,
     allocations: InvoiceAllocation[],
-    payment: { mode: string; status: string; note: string; isLastInvoice: boolean },
+    isLastInvoice: boolean,
   ): Observable<unknown> {
     return this.api.post('ProductManagement/GenerateInvoiceForDelivery', {
       CompanyId: this.auth.companyId(),
       OrderId: orderId,
       UserId: this.auth.userId(),
       UserName: this.auth.displayName(),
-      PaymentMode: payment.mode,
-      PaymentStatus: payment.status,
-      PaymentNote: payment.note,
-      IsLastInvoice: payment.isLastInvoice,
+      IsLastInvoice: isLastInvoice,
       InvoiceOrderDetail: allocations.map((a, i) => ({
         ItemId: a.item.itemId,
         ItemVariantId: a.item.itemVariantId,
@@ -162,7 +176,11 @@ export class OrdersService {
         SerialNumber: '',
         IsSerialized: a.item.isSerialized ? '1' : '0',
       })),
-      WarehouseData: allocations.map((a, i) => ({
+      // Warehouse/bin is optional (as in the .NET page): send allocation only where both were picked.
+      WarehouseData: allocations
+        .map((a, i) => ({ a, i }))
+        .filter(({ a }) => a.warehouseId && a.binId)
+        .map(({ a, i }) => ({
         VariantId: a.item.itemVariantId,
         ItemId: a.item.itemId,
         Index: i,
@@ -199,11 +217,12 @@ export class OrdersService {
   }
 
   /** Fetch the rendered invoice HTML for display/print (GetStatementInv). */
-  getStatement(invoiceNo: string): Observable<{ html: string; htmlc: string }> {
+  getStatement(invoiceNo: string, isThermal = false): Observable<{ html: string; htmlc: string }> {
     return this.api
       .postRaw<{ html: string; htmlc: string }>('ProductManagement/GetStatementInv', {
         invoiceNo,
         companyId: this.auth.companyId(),
+        isThermal,
       })
       .pipe(
         map((res) => {

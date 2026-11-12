@@ -2,11 +2,12 @@ import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, DatePipe } from '@angular/common';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, map, switchMap, catchError, Observable } from 'rxjs';
 
 import { ToastService } from '../../shared/ui/toast/toast.service';
-import { OrdersService } from './orders.service';
+import { InvoiceAllocation, OrdersService } from './orders.service';
 import { InvoiceGenerate } from './invoice-generate';
+import { InvoicePrint } from './invoice-print';
 import { DeliveryPersonOption, InvoiceTracking, ItemRateQty, OrderDetail, OrderItem } from './order.models';
 import { Tabs, TabItem } from '../../shared/ui/tabs/tabs';
 import { Select } from '../../shared/ui/select/select';
@@ -14,7 +15,7 @@ import { TooltipService } from '../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-order-detail-page',
-  imports: [RouterLink, FormsModule, InvoiceGenerate, DecimalPipe, DatePipe, Tabs, Select],
+  imports: [RouterLink, InvoicePrint, FormsModule, InvoiceGenerate, DecimalPipe, DatePipe, Tabs, Select],
   templateUrl: './order-detail.page.html',
 })
 export class OrderDetailPage {
@@ -36,7 +37,14 @@ export class OrderDetailPage {
   readonly savingStatus = signal(false);
   readonly sendingEmail = signal(false);
   readonly sendingTracking = signal(false);
+  /**
+   * Send Tracking, Send Invoice Email and the order-level "Update Status Details" form are not on the
+   * .NET order page, so they are hidden. Flip to true to bring them back.
+   */
+  readonly showNonLegacyActions = false;
   readonly invoiceModalOpen = signal(false);
+  /** True while checking stock locations / generating a one-click invoice. */
+  readonly preparingInvoice = signal(false);
   readonly viewingInvoice = signal(false);
   readonly deliveryPersons = signal<DeliveryPersonOption[]>([]);
   readonly assigningDelivery = signal(false);
@@ -155,6 +163,28 @@ export class OrderDetailPage {
     });
   }
 
+  /** Item name without the "CODE - " prefix the API prepends (the code has its own column). */
+  displayName(it: OrderItem): string {
+    const name = (it.itemName || '').trim();
+    const code = (it.itemCode || '').trim();
+    if (code && name.toLowerCase().startsWith(code.toLowerCase())) {
+      return name.slice(code.length).replace(/^\s*[-–:]\s*/, '') || name;
+    }
+    return name;
+  }
+
+  /** Only the distinguishing part of the variant name (e.g. "250 GM" from "Garam Masala/250 GM"). */
+  variantLabel(it: OrderItem): string {
+    const v = (it.itemVariantName || '').trim();
+    if (!v) return '';
+    const base = this.displayName(it).toLowerCase();
+    if (v.toLowerCase().startsWith(base)) {
+      const rest = v.slice(base.length).replace(/^\s*[/\-–:]\s*/, '').trim();
+      return rest;
+    }
+    return v.toLowerCase() === base ? '' : v;
+  }
+
   /** Build delivery address string, skipping blanks. */
   formatAddress(parts: (string | undefined | null)[]): string {
     return parts.filter(Boolean).join(', ');
@@ -212,34 +242,85 @@ export class OrderDetailPage {
     });
   }
 
+  /**
+   * Generate Invoice. When every item still to deliver has exactly one warehouse holding it, and that
+   * warehouse has exactly one bin, there is nothing to choose — invoice everything straight away.
+   * Otherwise (several locations, serialized items, or a lookup failing) open the allocation popup.
+   */
+  startInvoice(): void {
+    const d = this.detail();
+    if (!d || this.preparingInvoice()) return;
+    const pending = (d.orderDtl ?? []).filter((it) => it.orderQty - (it.deliveredQty ?? 0) > 0);
+    if (!pending.length) {
+      this.toast.error('All items are already invoiced or delivered.');
+      return;
+    }
+    if (pending.some((it) => it.isSerialized)) {
+      this.invoiceModalOpen.set(true);
+      return;
+    }
+
+    this.preparingInvoice.set(true);
+    const lookups: Observable<InvoiceAllocation | null>[] = pending.map((it) =>
+      this.service.warehouses(it.itemId, it.itemVariantId).pipe(
+        switchMap((whs) => {
+          if (whs.length !== 1) return of(null);
+          const wh = whs[0];
+          return this.service.bins(it.itemId, it.itemVariantId, wh.storeId).pipe(
+            map((bins) =>
+              bins.length === 1
+                ? {
+                    item: it,
+                    warehouseId: wh.storeId,
+                    warehouseName: wh.storeName,
+                    binId: bins[0].id,
+                    binName: bins[0].name,
+                    qty: it.orderQty - (it.deliveredQty ?? 0),
+                  }
+                : null,
+            ),
+          );
+        }),
+        catchError(() => of(null)),
+      ),
+    );
+
+    forkJoin(lookups).subscribe((allocs) => {
+      if (allocs.some((a) => a === null)) {
+        this.preparingInvoice.set(false);
+        this.invoiceModalOpen.set(true);
+        return;
+      }
+      // Every pending line is invoiced in full, so this is the last invoice.
+      this.service.generateInvoice(d.order?.orderId || this.orderId, allocs as InvoiceAllocation[], true).subscribe({
+        next: () => {
+          this.preparingInvoice.set(false);
+          this.toast.success('Invoice generated.');
+          this.onInvoiceGenerated();
+        },
+        error: (e: { message?: string }) => {
+          this.preparingInvoice.set(false);
+          this.toast.error(e?.message || 'Could not generate the invoice.');
+        },
+      });
+    });
+  }
+
   onInvoiceGenerated(): void {
     this.invoiceModalOpen.set(false);
     this.load();
   }
 
+  /** Invoice number whose print-format chooser is open (null = closed). */
+  readonly printChoiceFor = signal<string | null>(null);
+
+  /** Opens the format chooser, like the .NET "Print Invoice" popup. */
   viewInvoice(invoiceNo: string): void {
-    if (!invoiceNo) return;
-    this.viewingInvoice.set(true);
-    this.service.getStatement(invoiceNo).subscribe({
-      next: (stmt) => {
-        this.viewingInvoice.set(false);
-        const w = window.open('', '_blank');
-        if (w) {
-          w.document.write(`<!DOCTYPE html><html><head><title>Invoice ${invoiceNo}</title>
-            <style>body{margin:0;padding:0;} @media print{.no-print{display:none}}</style>
-            </head><body>
-            <div class="no-print" style="padding:12px;background:#f1f5f9;display:flex;gap:8px;align-items:center">
-              <button onclick="window.print()" style="padding:6px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Print / Save PDF</button>
-              <button onclick="window.close()" style="padding:6px 16px;background:#e2e8f0;border:none;border-radius:6px;cursor:pointer;font-size:13px">Close</button>
-            </div>
-            ${stmt.html}${stmt.htmlc ? `<hr style="margin:20px 0">${stmt.htmlc}` : ''}
-            </body></html>`);
-          w.document.close();
-        }
-      },
-      error: () => this.viewingInvoice.set(false),
-    });
+    if (invoiceNo) this.printChoiceFor.set(invoiceNo);
   }
+
+
+
 
   sendTrackingEmail(): void {
     const d = this.detail();

@@ -5,15 +5,17 @@
         <table class="min-w-full divide-y divide-slate-100 text-[13px]">
           <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
             <tr>
+              <th class="w-9 px-3 py-2"><input type="checkbox" [checked]="allSelected()" (change)="toggleAll($any($event.target).checked)" class="h-4 w-4 accent-brand-600 cursor-pointer" title="Select all" /></th>
               <th class="px-3 py-2 text-left">Item</th>
-              <th class="px-3 py-2 text-left">Warehouse</th>
-              <th class="px-3 py-2 text-left">Bin</th>
+              <th class="px-3 py-2 text-left">Warehouse <span class="normal-case font-normal text-slate-400">(optional)</span></th>
+              <th class="px-3 py-2 text-left">Bin <span class="normal-case font-normal text-slate-400">(optional)</span></th>
               <th class="px-3 py-2 text-center">Qty</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             @for (row of rows(); track row.item.orderDetailId) {
-              <tr>
+              <tr [class.opacity-50]="!row.selected">
+                <td class="px-3 py-2"><input type="checkbox" [checked]="row.selected" (change)="toggle(row, $any($event.target).checked)" class="h-4 w-4 accent-brand-600 cursor-pointer" /></td>
                 <td class="px-3 py-2 text-slate-700">
                   {{ row.item.itemName }} <span class="text-slate-400">{{ row.item.itemVariantName }}</span>
                   @if (row.item.isSerialized) { <span class="ml-1 rounded bg-amber-50 px-1.5 text-[10px] font-bold text-amber-600">Serialized</span> }
@@ -35,7 +37,7 @@
                   </select>
                 </td>
                 <td class="px-3 py-2 text-center">
-                  <input type="number" min="0" [(ngModel)]="row.qty" class="h-8 w-16 rounded-lg border border-slate-200 px-2 text-center text-[12px] bg-slate-50/50" />
+                  <input type="number" min="0" [max]="row.item.orderQty - (row.item.deliveredQty ?? 0)" [disabled]="!row.selected" [(ngModel)]="row.qty" class="h-8 w-16 rounded-lg border border-slate-200 px-2 text-center text-[12px] bg-slate-50/50" />
                 </td>
               </tr>
             }
@@ -46,34 +48,12 @@
       <p class="py-6 text-center text-[13px] text-slate-400">All items already invoiced / delivered.</p>
     }
 
-    <!-- Payment -->
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 border-t border-slate-100 pt-4">
-      <div class="flex flex-col gap-1.5">
-        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Payment mode</label>
-        <select [(ngModel)]="mode" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50">
-          <option>Cash</option><option>Card</option><option>UPI</option><option>Online</option><option>Credit</option>
-        </select>
-      </div>
-      <div class="flex flex-col gap-1.5">
-        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Payment status</label>
-        <select [(ngModel)]="status" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50">
-          <option>Paid</option><option>Partial</option><option>Unpaid</option>
-        </select>
-      </div>
-      <div class="flex flex-col gap-1.5">
-        <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Payment note</label>
-        <input [(ngModel)]="note" class="h-9 rounded-xl border border-slate-200 px-2.5 text-[13px] bg-slate-50/50" />
-      </div>
-      <label class="flex items-center gap-2.5 cursor-pointer select-none sm:col-span-3">
-        <input type="checkbox" [(ngModel)]="isLastInvoice" class="h-4 w-4 rounded border-slate-300 text-brand-600" />
-        <span class="text-[13px] font-medium text-slate-700">This is the final invoice for the order</span>
-      </label>
-    </div>
+    <p class="text-[11.5px] text-slate-400">Untick items to leave them for a later invoice. Warehouse and bin can be skipped.</p>
   </div>
 
   <div footer class="flex justify-end gap-2">
-    <button (click)="close.emit()" class="btn-secondary h-8.5 px-4 text-[12px] font-semibold">Cancel</button>
-    <button (click)="generate()" [disabled]="generating()" class="btn-primary h-8.5 px-4 text-[12px] font-semibold min-w-[110px]">
+    <button (click)="close.emit()" class="btn-secondary h-8 px-4 text-[12px] font-semibold rounded-lg">Cancel</button>
+    <button (click)="generate()" [disabled]="generating()" class="btn-primary h-8 px-4 text-[12px] font-semibold rounded-lg min-w-[110px] disabled:opacity-60">
       {{ generating() ? 'Generating…' : 'Generate invoice' }}
     </button>
   </div>

@@ -13,6 +13,8 @@ interface AllocRow {
   warehouseId: number;
   binId: number;
   qty: number;
+  /** Include this item in the invoice (the .NET page uses a checkbox per row). */
+  selected: boolean;
 }
 
 @Component({
@@ -32,11 +34,6 @@ export class InvoiceGenerate implements OnInit {
   readonly rows = signal<AllocRow[]>([]);
   readonly generating = signal(false);
 
-  // Payment — plain properties so [(ngModel)] two-way binding works
-  mode = 'Cash';
-  status = 'Paid';
-  note = '';
-  isLastInvoice = true;
 
   ngOnInit(): void {
     const rows: AllocRow[] = this.items()
@@ -48,6 +45,7 @@ export class InvoiceGenerate implements OnInit {
         warehouseId: 0,
         binId: 0,
         qty: it.orderQty - (it.deliveredQty ?? 0),
+        selected: true,
       }));
     this.rows.set(rows);
     rows.forEach((r) => this.loadWarehouses(r));
@@ -89,38 +87,62 @@ export class InvoiceGenerate implements OnInit {
     return row.bins.find((b) => b.id === row.binId)?.name ?? '';
   }
 
-  generate(): void {
-    const allocations: InvoiceAllocation[] = this.rows()
-      .filter((r) => r.warehouseId && r.binId && r.qty > 0)
-      .map((r) => ({
-        item: r.item,
-        warehouseId: r.warehouseId,
-        warehouseName: this.warehouseName(r),
-        binId: r.binId,
-        binName: this.binName(r),
-        qty: Number(r.qty),
-      }));
+  toggle(row: AllocRow, on: boolean): void {
+    row.selected = on;
+    this.rows.set([...this.rows()]);
+  }
 
-    if (!allocations.length) {
-      this.toast.error('Allocate at least one item to a warehouse and bin.');
+  allSelected(): boolean {
+    return this.rows().length > 0 && this.rows().every((r) => r.selected);
+  }
+
+  toggleAll(on: boolean): void {
+    this.rows().forEach((r) => (r.selected = on));
+    this.rows.set([...this.rows()]);
+  }
+
+  /**
+   * Like the .NET GenerateInvoice: only the ticked items are required. Warehouse and bin are optional —
+   * stock allocation is sent only for rows where both were chosen. "Last invoice" is worked out from the
+   * quantities (every order line fully covered by delivered + invoiced) instead of being asked.
+   */
+  generate(): void {
+    const picked = this.rows().filter((r) => r.selected && Number(r.qty) > 0);
+    if (!picked.length) {
+      this.toast.error('Select at least one item to invoice.');
+      return;
+    }
+    const over = picked.find((r) => Number(r.qty) > r.item.orderQty - (r.item.deliveredQty ?? 0));
+    if (over) {
+      this.toast.error(`Quantity for "${over.item.itemName}" is more than what is left to deliver.`);
       return;
     }
 
+    const allocations: InvoiceAllocation[] = picked.map((r) => ({
+      item: r.item,
+      warehouseId: r.warehouseId,
+      warehouseName: this.warehouseName(r),
+      binId: r.binId,
+      binName: this.binName(r),
+      qty: Number(r.qty),
+    }));
+
+    const invoicedQty = new Map(picked.map((r) => [r.item.orderDetailId, Number(r.qty)]));
+    const isLastInvoice = this.items().every(
+      (it) => (it.deliveredQty ?? 0) + (invoicedQty.get(it.orderDetailId) ?? 0) >= it.orderQty,
+    );
+
     this.generating.set(true);
-    this.service
-      .generateInvoice(this.orderId(), allocations, {
-        mode: this.mode,
-        status: this.status,
-        note: this.note,
-        isLastInvoice: this.isLastInvoice,
-      })
-      .subscribe({
-        next: () => {
-          this.generating.set(false);
-          this.toast.success('Invoice generated.');
-          this.done.emit();
-        },
-        error: () => this.generating.set(false),
-      });
+    this.service.generateInvoice(this.orderId(), allocations, isLastInvoice).subscribe({
+      next: () => {
+        this.generating.set(false);
+        this.toast.success('Invoice generated.');
+        this.done.emit();
+      },
+      error: (e: { message?: string }) => {
+        this.generating.set(false);
+        this.toast.error(e?.message || 'Could not generate the invoice.');
+      },
+    });
   }
 }

@@ -1,6 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DecimalPipe, DatePipe } from '@angular/common';
+import { Modal } from '../../shared/ui/modal/modal';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { debounceTime, skip } from 'rxjs/operators';
 
@@ -11,11 +14,12 @@ import { ConfirmService } from '../../shared/ui/confirm/confirm.service';
 import { DateRangePicker } from '../../shared/ui/date-range-picker/date-range-picker';
 import { OrdersService } from './orders.service';
 import { OrderListItem, RefundItem, ReturnItem } from './order.models';
+import { InvoicePrint } from './invoice-print';
 import { TooltipService } from '../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-orders-list-page',
-  imports: [Tabs, DataTable, DateRangePicker, FormsModule],
+  imports: [Tabs, DataTable, DateRangePicker, FormsModule, InvoicePrint, DecimalPipe, DatePipe, Modal],
   templateUrl: './orders-list.page.html',
 })
 export class OrdersListPage {
@@ -36,6 +40,15 @@ export class OrdersListPage {
   readonly refundRows = signal<RefundItem[]>([]);
   readonly returnRows = signal<ReturnItem[]>([]);
   readonly loading = signal(false);
+  /** Return tab status filter: 15 requested (default), 17 returned, 18 rejected. */
+  readonly returnStatus = signal<15 | 17 | 18>(15);
+  /** Expected pickup date typed per return row (required to accept). */
+  readonly pickupDates = signal<Record<string, string>>({});
+  /** Cancel-request approval popup. */
+  readonly cancelFor = signal<OrderListItem | null>(null);
+  cancelExplanation = '';
+  readonly savingCancel = signal(false);
+  readonly exporting = signal(false);
   readonly loadingMore = signal(false);
   readonly pageNo = signal(1);
   readonly totalPages = signal(1);
@@ -179,7 +192,7 @@ export class OrdersListPage {
         error: () => this.loading.set(false),
       });
     } else if (this.isReturn()) {
-      this.service.listReturns(filters).subscribe({
+      this.service.listReturns(filters, this.returnStatus()).subscribe({
         next: (rows) => {
           const list = rows ?? [];
           this.returnRows.set(list);
@@ -192,9 +205,6 @@ export class OrdersListPage {
       this.service.list({ custOrdStatus: this.active(), ...filters }).subscribe({
         next: (res) => {
           const list = res?.orderListV2 ?? [];
-          if (list.length > 0) {
-            console.log('API Order Row Keys:', Object.keys(list[0]), list[0]);
-          }
           this.rows.set(list);
           this.totalPages.set(res?.totalPageNumber ?? 1);
           this.totalRecords.set(res?.totalRecord ?? 0);
@@ -250,7 +260,7 @@ export class OrdersListPage {
         error: () => this.loadingMore.set(false),
       });
     } else if (this.isReturn()) {
-      this.service.listReturns(filters).subscribe({
+      this.service.listReturns(filters, this.returnStatus()).subscribe({
         next: (rows) => {
           const list = rows ?? [];
           this.returnRows.update((existing) => [...existing, ...list]);
@@ -302,35 +312,165 @@ export class OrdersListPage {
     });
   }
 
-  async approveReturn(r: ReturnItem): Promise<void> {
-    const ok = await this.confirm.ask(`Approve return of "${r.itemName}"?`, { confirmLabel: 'Approve' });
+  setReturnStatus(id: 15 | 17 | 18): void {
+    if (this.returnStatus() === id) return;
+    this.returnStatus.set(id);
+    this.pageNo.set(1);
+    this.load();
+  }
+
+  setPickupDate(r: ReturnItem, value: string): void {
+    this.pickupDates.update((m) => ({ ...m, [r.returnItemId]: value }));
+  }
+
+  /** Accept (17) needs an expected pickup date, as in the .NET page; reject (18) does not. */
+  async decideReturn(r: ReturnItem, statusId: 17 | 18): Promise<void> {
+    const pickup = this.pickupDates()[r.returnItemId] || '';
+    if (statusId === 17 && !pickup) {
+      this.toast.error('Please provide the expected pickup date.');
+      return;
+    }
+    const ok = await this.confirm.ask(
+      statusId === 17 ? `Accept return of "${r.itemName}"?` : `Reject return of "${r.itemName}"?`,
+      { confirmLabel: statusId === 17 ? 'Accept' : 'Reject', danger: statusId === 18 },
+    );
     if (!ok) return;
-    this.service.updateReturnStatus(r, 1).subscribe({
+    this.service.updateReturnStatus(r, statusId, pickup).subscribe({
       next: () => {
-        this.toast.success('Return updated.');
+        this.toast.success(statusId === 17 ? 'Return request accepted.' : 'Return request rejected.');
         this.load();
+      },
+      error: (e: { message?: string }) => this.toast.error(e?.message || 'Could not update the return.'),
+    });
+  }
+
+  // --- Cancel requests ---
+  openCancelApproval(o: OrderListItem): void {
+    this.cancelExplanation = '';
+    this.cancelFor.set(o);
+  }
+
+  /** Approves every line of the order that carries a cancel request (the .NET popup does the same for the ticked lines). */
+  saveCancelApproval(): void {
+    const o = this.cancelFor();
+    if (!o) return;
+    const explanation = this.cancelExplanation.trim();
+    if (!explanation) {
+      this.toast.error('Please enter the cancel explanation.');
+      return;
+    }
+    const lines = (o.orderDetails ?? []).filter((d) => d.orderDetailId);
+    if (!lines.length) {
+      this.toast.error('No order lines found for this request.');
+      return;
+    }
+    this.savingCancel.set(true);
+    forkJoin(
+      lines.map((d) =>
+        this.service.approveCancel(
+          { orderId: d.orderId || o.orderId, orderDetailId: d.orderDetailId!, invoiceId: d.invoiceId ?? 0, invoiceDetailId: d.invoiceDetailId ?? 0 },
+          explanation,
+        ),
+      ),
+    ).subscribe({
+      next: () => {
+        this.savingCancel.set(false);
+        this.cancelFor.set(null);
+        this.toast.success('Cancellation approved.');
+        this.load();
+      },
+      error: (e: { message?: string }) => {
+        this.savingCancel.set(false);
+        this.toast.error(e?.message || 'Could not approve the cancellation.');
       },
     });
   }
 
+  // --- Export (the .NET "Export to Excel" button) ---
+  /** Downloads every order matching the current filters as a CSV that opens in Excel. */
+  exportOrders(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    const filters = {
+      custOrdStatus: this.isOrder() ? this.active() : '',
+      cName: this.cName(), orderno: this.orderno(), custphone: this.custphone(),
+      pinCode: this.pinCode(), fromDate: this.fromDate(), toDate: this.toDate(),
+    };
+    const all: OrderListItem[] = [];
+    const fetchPage = (page: number) => {
+      this.service.list({ ...filters, pageNo: page }).subscribe({
+        next: (res) => {
+          all.push(...(res?.orderListV2 ?? []));
+          const pages = res?.totalPageNumber ?? 1;
+          if (page < pages && page < 100) fetchPage(page + 1);
+          else this.downloadCsv(all);
+        },
+        error: () => {
+          this.exporting.set(false);
+          this.toast.error('Export failed.');
+        },
+      });
+    };
+    fetchPage(1);
+  }
+
+  private downloadCsv(rows: OrderListItem[]): void {
+    const esc = (v: unknown) => {
+      const s = v === null || v === undefined ? '' : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = ['Order No', 'Date', 'Status', 'Customer', 'Phone', 'Address', 'Items', 'Invoices', 'Item Total', 'Tax', 'Delivery', 'Discount', 'Grand Total', 'Paid'];
+    const lines = rows.map((o) => [
+      o.custOrdNo, o.orderDateStr, o.statusName, this.customerName(o), o.phone, this.addressLine(o),
+      this.itemLines(o).join(' | '), this.invoices(o).map((i) => i.invoiceNumber).join(' | '),
+      o.subTotal, o.tax, o.delvCharge, o.discount, o.total, o.paidAmount,
+    ].map(esc).join(','));
+    const blob = new Blob(['\ufeff' + [header.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this.exporting.set(false);
+    this.toast.success(`Exported ${rows.length} orders.`);
+  }
+
+
+  /** Invoice number whose print-format chooser is open. */
+  readonly printChoiceFor = signal<string | null>(null);
+
   viewInvoice(invoiceNo: string): void {
-    if (!invoiceNo) return;
-    this.service.getStatement(invoiceNo).subscribe({
-      next: (stmt) => {
-        const w = window.open('', '_blank');
-        if (w) {
-          w.document.write(`<!DOCTYPE html><html><head><title>Invoice ${invoiceNo}</title>
-            <style>body{margin:0;padding:0;} @media print{.no-print{display:none}}</style>
-            </head><body>
-            <div class="no-print" style="padding:12px;background:#f1f5f9;display:flex;gap:8px;align-items:center">
-              <button onclick="window.print()" style="padding:6px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Print / Save PDF</button>
-              <button onclick="window.close()" style="padding:6px 16px;background:#e2e8f0;border:none;border-radius:6px;cursor:pointer;font-size:13px">Close</button>
-            </div>
-            \${stmt.html}\${stmt.htmlc ? \`<hr style="margin:20px 0">\${stmt.htmlc}\` : ''}
-            </body></html>`);
-          w.document.close();
-        }
-      },
-    });
+    if (invoiceNo) this.printChoiceFor.set(invoiceNo);
+  }
+
+  customerName(o: OrderListItem): string {
+    return [o.firstName, o.middleName, o.lastName].filter((x) => x && x.trim()).join(' ');
+  }
+
+  addressLine(o: OrderListItem): string {
+    return [o.billAddress1, o.billAddress2, o.city, o.pin].filter((x) => x && String(x).trim()).join(', ');
+  }
+
+  /** Real invoices only (the API pads the list with InvoiceId 0 rows). */
+  invoices(o: OrderListItem) {
+    return (o.invoiceList ?? []).filter((i) => i.invoiceId && i.invoiceNumber);
+  }
+
+  itemLines(o: OrderListItem): string[] {
+    return (o.orderDetails ?? [])
+      .map((d) => (d.items ?? '').trim() + (d.serialNumber ? ` · SN ${d.serialNumber}` : ''))
+      .filter(Boolean);
+  }
+
+  balance(o: OrderListItem): number {
+    return Number(o.total ?? 0) - Number(o.paidAmount ?? 0);
+  }
+
+  statusClass(status: string): string {
+    const s = (status ?? '').toLowerCase();
+    if (s.includes('deliver') || s.includes('complet') || s.includes('success')) return 'success';
+    if (s.includes('cancel') || s.includes('refund') || s.includes('return') || s.includes('fail')) return 'danger';
+    if (s.includes('partial') || s.includes('invoic') || s.includes('pending') || s.includes('placed') || s.includes('process') || s.includes('dispatch') || s.includes('ready')) return 'warning';
+    return 'neutral';
   }
 }

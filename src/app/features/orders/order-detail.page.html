@@ -1,7 +1,32 @@
 <div class="flex flex-col h-full xl:h-[calc(100vh-104px)] xl:max-h-[calc(100vh-104px)] xl:overflow-hidden gap-4 pb-4">
-  <div class="flex flex-col gap-0.5 shrink-0">
-    <a routerLink="/orders" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700">← Back to orders</a>
-    <h1 class="page-title">Order {{ detail()?.order?.orderNo || '' }}</h1>
+  <div class="flex items-end justify-between gap-3 flex-wrap shrink-0">
+    <div class="flex flex-col gap-0.5 min-w-0">
+      <a routerLink="/orders" class="text-[12px] font-semibold text-brand-600 hover:text-brand-700 w-fit">← Back to orders</a>
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <h1 class="page-title">Order {{ detail()?.order?.orderNo || '' }}</h1>
+        @if (detail(); as hd) {
+          @let hStatus = hd.order?.data?.[0]?.itemstatus || 'Placed';
+          <span class="status-chip {{ statusClass(hStatus) }}"><span class="dot"></span>{{ hStatus }}</span>
+          <span class="text-[12px] text-slate-400">{{ hd.order?.orderDateString }}</span>
+        }
+      </div>
+    </div>
+    @if (detail(); as hd) {
+      <div class="flex items-center gap-2">
+        @for (invNo of invoiceNumbers(hd.orderDtl); track invNo) {
+          <button (click)="viewInvoice(invNo)" [disabled]="viewingInvoice()" class="btn-secondary h-8 px-3 text-[12px] font-semibold rounded-lg gap-1.5 disabled:opacity-60">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            <span class="font-mono">{{ invNo }}</span>
+          </button>
+        }
+        @if (!hd.invoiceNo && invoiceNumbers(hd.orderDtl).length === 0) {
+          <button (click)="startInvoice()" [disabled]="preparingInvoice()" class="btn-primary h-8 px-3.5 text-[12px] font-semibold rounded-lg gap-1.5 disabled:opacity-60">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+            {{ preparingInvoice() ? 'Generating…' : 'Generate Invoice' }}
+          </button>
+        }
+      </div>
+    }
   </div>
 
   <!-- ── Loading State (Skeleton) ────────────────────────────────────────────── -->
@@ -272,20 +297,6 @@
         <div class="shrink-0 flex items-center justify-between gap-4">
           <app-tabs [tabs]="tabs" [active]="activeTab()" (activeChange)="activeTab.set($event)" />
           
-          @let activeInvoiceNo = getInvoiceNo();
-          @if (activeInvoiceNo) {
-            <button
-              (click)="viewInvoice(activeInvoiceNo)"
-              (mouseenter)="tooltip.show($event, 'View Invoice', { info: 'Click to view or print the generated invoice ' + activeInvoiceNo + '.', placement: 'left' })"
-              (mouseleave)="tooltip.hide()"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-brand-200/60 bg-brand-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800 transition-all cursor-pointer shadow-2xs text-[12px] font-bold animate-fadeIn"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Invoice: {{ activeInvoiceNo }}</span>
-            </button>
-          }
         </div>
 
         <!-- Tab contents wrapper -->
@@ -294,81 +305,81 @@
           <!-- TAB 1: Items List -->
           @if (activeTab() === 'items') {
             <div class="flex-1 flex flex-col min-h-0 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-              <div class="border-b border-slate-100 bg-slate-50/50 px-5 py-3.5 shrink-0 flex items-center justify-between">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Ordered Items</h3>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 shrink-0 font-sans">
-                  {{ d.orderDtl?.length || 0 }} Items
-                </span>
-              </div>
               <div class="overflow-auto flex-1 min-h-0 custom-scrollbar">
-                <table class="min-w-full divide-y divide-slate-100 text-[13px]">
-                  <thead class="bg-slate-50/60 sticky top-0 z-10 border-b border-slate-100 shadow-2xs">
-                    <tr class="text-[10.5px] uppercase font-bold tracking-wider text-slate-400">
-                      <th class="px-5 py-3 text-left w-12 min-w-[48px] bg-slate-50/95 backdrop-blur-xs"></th>
-                      <th class="px-5 py-3 text-left bg-slate-50/95 backdrop-blur-xs">Item</th>
-                      <th class="px-5 py-3 text-left bg-slate-50/95 backdrop-blur-xs">Code</th>
-                      <th class="px-5 py-3 text-center bg-slate-50/95 backdrop-blur-xs">Qty</th>
-                      <th class="px-5 py-3 text-center bg-slate-50/95 backdrop-blur-xs">Delivered</th>
-                      <th class="px-5 py-3 text-left bg-slate-50/95 backdrop-blur-xs">Status</th>
+                <table class="min-w-full text-[12.5px]">
+                  <thead class="sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
+                    <tr class="text-[10.5px] uppercase font-bold tracking-wider text-slate-500">
+                      <th class="px-4 py-2.5 text-left">Item ({{ d.orderDtl?.length || 0 }})</th>
+                      <th class="px-3 py-2.5 text-left whitespace-nowrap">Code</th>
+                      <th class="px-3 py-2.5 text-right whitespace-nowrap">Rate</th>
+                      <th class="px-3 py-2.5 text-center whitespace-nowrap">Qty</th>
+                      <th class="px-3 py-2.5 text-center whitespace-nowrap">Delivered</th>
+                      <th class="px-3 py-2.5 text-right whitespace-nowrap">Amount</th>
+                      <th class="px-4 py-2.5 text-left whitespace-nowrap">Status</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 bg-white">
+                  <tbody class="divide-y divide-slate-100">
                     @for (it of d.orderDtl; track it.orderDetailId) {
-                      <tr class="hover:bg-slate-50/40 transition-colors">
-                        <td class="px-5 py-3 w-12 min-w-[48px]">
-                          @if (it.imagePath) {
-                            <img [src]="it.imagePath" alt="" class="h-10 w-10 min-w-10 min-h-10 rounded-lg object-cover border border-slate-200/65 shadow-2xs cursor-zoom-in hover:opacity-90 transition-all duration-200" (click)="previewImageUrl.set(it.imagePath)"
-                              (mouseenter)="tooltip.show($event, 'Click to zoom', { info: 'Enlarge image in a high-resolution preview lightbox.', placement: 'right' })"
-                              (mouseleave)="tooltip.hide()" />
-                          } @else {
-                            <div class="h-10 w-10 min-w-10 min-h-10 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-100">
-                              <svg class="h-5 w-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                      @let rate = rateFor(it, d.order?.data);
+                      @let variant = variantLabel(it);
+                      <tr class="hover:bg-slate-50/60 transition-colors align-middle">
+                        <td class="px-4 py-2.5">
+                          <div class="flex items-center gap-3 min-w-[220px]">
+                            @if (it.imagePath) {
+                              <img [src]="it.imagePath" alt="" (click)="previewImageUrl.set(it.imagePath)"
+                                class="h-10 w-10 shrink-0 rounded-md object-cover border border-slate-200 cursor-zoom-in hover:opacity-90" title="Click to enlarge" />
+                            } @else {
+                              <div class="h-10 w-10 shrink-0 rounded-md bg-slate-100 border border-slate-200"></div>
+                            }
+                            <div class="min-w-0">
+                              <p class="font-semibold text-slate-800 leading-snug">{{ displayName(it) }}</p>
+                              <p class="text-[11px] text-slate-500 mt-0.5">
+                                @if (variant) { <span>{{ variant }}</span> }
+                                @if (variant && it.unitName) { <span class="text-slate-300"> · </span> }
+                                @if (it.unitName) { <span>{{ it.unitName }}</span> }
+                                @if (it.invoiceNumber) {
+                                  <span class="text-slate-300"> · </span><span class="font-mono text-brand-700">Inv {{ it.invoiceNumber }}</span>
+                                }
+                              </p>
+                              @if (it.cancelReason) {
+                                <p class="text-[11px] text-rose-600 font-medium mt-0.5">Cancelled: {{ it.cancelReason }}</p>
+                              }
                             </div>
-                          }
-                        </td>
-                        <td class="px-5 py-3">
-                          <p class="font-bold text-slate-800 leading-snug">{{ it.itemName }}</p>
-                          @if (it.itemVariantName) {
-                            <span class="bg-slate-100 text-slate-650 border border-slate-200/50 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none inline-block mt-1">{{ it.itemVariantName }}</span>
-                          }
-                          
-                          <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
-                            @if (it.unitName) {
-                              <span class="bg-slate-50 border border-slate-200/60 text-[9.5px] text-slate-500 px-1.5 py-0.5 rounded font-mono font-medium">{{ it.unitName }}</span>
-                            }
-                            @if (it.invoiceNumber) {
-                              <span class="bg-brand-50/80 border border-brand-100 text-[9.5px] text-brand-700 px-1.5 py-0.5 rounded font-mono font-bold shadow-2xs">Inv: {{ it.invoiceNumber }}</span>
-                            }
                           </div>
-                          
-                          @if (it.cancelReason) {
-                            <p class="text-[10px] text-rose-500 font-semibold mt-1.5 flex items-center gap-1">
-                              <svg class="h-3 w-3 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                              Cancel: {{ it.cancelReason }}
-                            </p>
-                          }
                         </td>
-                        <td class="px-5 py-3 text-slate-500 font-mono text-[11.5px]">{{ it.itemCode }}</td>
-                        <td class="px-5 py-3 text-center text-slate-650 font-semibold">{{ it.orderQty }}</td>
-                        <td class="px-5 py-3 text-center font-bold" [class.text-emerald-650]="(it.deliveredQty || 0) > 0" [class.text-slate-400]="!(it.deliveredQty || 0)">
+                        <td class="px-3 py-2.5 font-mono text-[11.5px] text-slate-500 whitespace-nowrap">{{ it.itemCode }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-slate-700">{{ rate?.rate != null ? (rate.rate | number:'1.2-2') : '—' }}</td>
+                        <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ it.orderQty }}</td>
+                        <td class="px-3 py-2.5 text-center font-semibold"
+                          [class]="(it.deliveredQty || 0) >= it.orderQty ? 'text-emerald-600' : ((it.deliveredQty || 0) > 0 ? 'text-amber-600' : 'text-slate-400')">
                           {{ it.deliveredQty ?? 0 }}
                         </td>
-                        <td class="px-5 py-3">
-                          @let itClass = statusClass(it.orderStatus);
-                          <span class="status-chip {{ itClass }}">
-                            <span class="dot"></span>
-                            {{ it.orderStatus }}
-                          </span>
+                        <td class="px-3 py-2.5 text-right font-mono font-semibold whitespace-nowrap text-slate-800">
+                          {{ rate?.itemtotalamount != null ? (rate.itemtotalamount | number:'1.2-2') : (rate?.itemamt != null ? (rate.itemamt | number:'1.2-2') : '—') }}
+                        </td>
+                        <td class="px-4 py-2.5">
+                          <span class="status-chip {{ statusClass(it.orderStatus) }} whitespace-nowrap"><span class="dot"></span>{{ it.orderStatus }}</span>
                           @if (it.invoiceLineItemStatus && it.invoiceLineItemStatus !== it.orderStatus) {
-                            <p class="mt-1 text-[10px] text-slate-400">{{ it.invoiceLineItemStatus }}</p>
+                            <p class="mt-1 text-[10.5px] text-slate-400">{{ it.invoiceLineItemStatus }}</p>
                           }
                         </td>
                       </tr>
                     } @empty {
-                      <tr><td colspan="8" class="px-5 py-14 text-center text-slate-400 font-medium">No items in this order.</td></tr>
+                      <tr><td colspan="7" class="px-5 py-14 text-center text-slate-400 font-medium">No items in this order.</td></tr>
                     }
                   </tbody>
                 </table>
+              </div>
+              <!-- Footer: totals + next step (the .NET page puts Generate Invoice under the items) -->
+              <div class="shrink-0 flex items-center justify-between gap-3 border-t border-slate-200 bg-slate-50/60 px-4 py-2.5 flex-wrap">
+                <div class="flex items-center gap-4 text-[12px] text-slate-500">
+                  <span>Net payable <span class="font-mono font-bold text-slate-800">{{ d.order?.netPayableAmt | number:'1.2-2' }}</span></span>
+                  @let due = (d.order?.netPayableAmt || 0) - (d.customerPaidAmount || 0);
+                  <span>Balance <span class="font-mono font-bold" [class]="due > 0 ? 'text-rose-600' : 'text-emerald-600'">{{ due | number:'1.2-2' }}</span></span>
+                </div>
+                @if (!d.invoiceNo && invoiceNumbers(d.orderDtl).length === 0) {
+                  <button (click)="startInvoice()" [disabled]="preparingInvoice()" class="btn-primary h-8 px-3.5 text-[12px] font-semibold rounded-lg disabled:opacity-60">{{ preparingInvoice() ? 'Generating…' : 'Generate Invoice' }}</button>
+                }
               </div>
             </div>
           }
@@ -377,11 +388,12 @@
           @if (activeTab() === 'manage') {
             <div class="flex-1 flex flex-col min-h-0 gap-4 overflow-y-auto custom-scrollbar pr-1">
               <!-- Quick Action buttons row -->
+              @if (showNonLegacyActions) { <!-- Quick Actions: invoice buttons now live at the top right of the page -->
               <div class="fluent-card p-3.5 flex flex-col gap-2.5 shrink-0 bg-white">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Quick Actions</span>
                 <div class="flex flex-wrap gap-2.5">
                   @if (!d.invoiceNo && invoiceNumbers(d.orderDtl).length === 0) {
-                    <button (click)="invoiceModalOpen.set(true)" class="btn-primary h-10 rounded-xl text-[12.5px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 border-0 whitespace-nowrap px-4.5">
+                    <button (click)="startInvoice()" [disabled]="preparingInvoice()" class="btn-primary h-10 rounded-xl text-[12.5px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 border-0 whitespace-nowrap px-4.5">
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                       Generate Invoice
                     </button>
@@ -397,6 +409,7 @@
                       }
                     </button>
                   }
+                  @if (showNonLegacyActions) { <!-- Send Tracking / Send Invoice Email: not in the .NET order page -->
                   <button (click)="sendTrackingEmail()" [disabled]="sendingTracking()" class="btn-secondary h-10 rounded-xl text-[12.5px] font-bold flex items-center justify-center gap-2 cursor-pointer border border-slate-200 whitespace-nowrap px-4">
                     <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM20 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1"/></svg>
                     {{ sendingTracking() ? 'Sending…' : 'Send Tracking' }}
@@ -405,9 +418,12 @@
                     <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     {{ sendingEmail() ? 'Sending…' : 'Send Invoice Email' }}
                   </button>
+                  }
                 </div>
               </div>
+              }
 
+              @if (showNonLegacyActions) { <!-- Hidden: not in the .NET order page. Set showNonLegacyActions = true to restore. -->
               <!-- Update Status Card Form -->
               <div class="fluent-card p-4 flex flex-col gap-4 shrink-0">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Update Status Details</span>
@@ -474,6 +490,7 @@
                   </button>
                 </div>
               </div>
+              }
 
               <!-- Delivery Person Assignment Card -->
               @if (d.invoiceTrackingDetail?.length) {
@@ -655,3 +672,8 @@
     <p class="py-10 text-center text-sm text-slate-400">Order not found.</p>
   }
 </div>
+
+<!-- Print format chooser (same two formats as the .NET "Print Invoice" popup) -->
+@if (printChoiceFor(); as invNo) {
+  <app-invoice-print [invoiceNo]="invNo" (close)="printChoiceFor.set(null)" />
+}

@@ -1,7 +1,15 @@
 <div class="flex flex-col h-full lg:h-[calc(100vh-80px)] sm:lg:h-[calc(100vh-90px)] lg:h-[calc(100vh-96px)] overflow-y-auto lg:overflow-hidden gap-4 pb-4">
-  <div class="flex flex-col gap-0.5 shrink-0">
-    <h1 class="page-title">Orders</h1>
-    <p class="page-subtitle">Review and manage customer orders.</p>
+  <div class="flex items-end justify-between gap-3 shrink-0">
+    <div class="flex flex-col gap-0.5">
+      <h1 class="page-title">Orders</h1>
+      <p class="page-subtitle">Review and manage customer orders.</p>
+    </div>
+    @if (isOrder()) {
+      <button type="button" (click)="exportOrders()" [disabled]="exporting()" class="btn-secondary h-8 px-3.5 text-[12px] font-semibold rounded-lg gap-1.5 disabled:opacity-60">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+        {{ exporting() ? 'Exporting…' : 'Export to Excel' }}
+      </button>
+    }
   </div>
 
   <div class="shrink-0">
@@ -136,44 +144,114 @@
 
   <!-- Order-level tabs -->
   @if (isOrder()) {
-    <div class="flex-1 flex flex-col min-h-0 gap-4 animate-fadeIn">
-      <app-data-table
-        [columns]="columns"
-        [rows]="rows()"
-        [loading]="loading()"
-        [searchable]="false"
-        emptyText="No orders found."
-        [actions]="orderActions"
-        [fillHeight]="true"
-        (tableScroll)="onTableScroll($event)"
-        [loadingMore]="loadingMore()"
-      />
-      <ng-template #orderActions let-row>
-        <div class="flex items-center gap-2">
-          @let invNo = row.invoiceNo || row.invoiceNumber;
-          @if (invNo) {
-            <button (click)="viewInvoice(invNo)"
-                    (mouseenter)="tooltip.show($event, 'View Invoice', { info: 'Click to view or print invoice ' + invNo + '.', placement: 'left' })"
-                    (mouseleave)="tooltip.hide()"
-                    class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 border border-slate-200/40 hover:border-emerald-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </button>
-          }
-          <button (click)="open(row)"
-                  (mouseenter)="tooltip.show($event, 'View Details', { info: 'View full invoice details and workflow history.', placement: 'left' })"
-                  (mouseleave)="tooltip.hide()"
-                  class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-brand-600 hover:bg-brand-50 border border-slate-200/40 hover:border-brand-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-          >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </button>
+    <div class="flex-1 flex flex-col min-h-0 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden animate-fadeIn">
+      <div class="flex-1 min-h-0 overflow-auto custom-scrollbar" (scroll)="onTableScroll($event)">
+        <table class="min-w-full text-[12.5px]">
+          <thead class="sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
+            <tr class="text-[10.5px] uppercase font-bold tracking-wider text-slate-500">
+              <th class="px-4 py-2.5 text-left whitespace-nowrap">Order</th>
+              <th class="px-3 py-2.5 text-left">Customer</th>
+              <th class="px-3 py-2.5 text-left">Items</th>
+              <th class="px-3 py-2.5 text-left whitespace-nowrap">Status / Invoices</th>
+              <th class="px-3 py-2.5 text-right whitespace-nowrap">Amount</th>
+              <th class="px-3 py-2.5 text-right whitespace-nowrap">Paid</th>
+              <th class="w-12 px-3 py-2.5"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @if (loading() && !rows().length) {
+              @for (x of [1,2,3,4,5,6]; track x) {
+                <tr class="animate-pulse">
+                  <td class="px-4 py-3"><div class="h-3 w-28 rounded bg-slate-200"></div><div class="mt-2 h-2.5 w-20 rounded bg-slate-100"></div></td>
+                  <td class="px-3 py-3"><div class="h-3 w-24 rounded bg-slate-200"></div><div class="mt-2 h-2.5 w-36 rounded bg-slate-100"></div></td>
+                  <td class="px-3 py-3"><div class="h-3 w-40 rounded bg-slate-100"></div></td>
+                  <td class="px-3 py-3"><div class="h-5 w-28 rounded-full bg-slate-100"></div></td>
+                  <td class="px-3 py-3"><div class="ml-auto h-3 w-14 rounded bg-slate-200"></div></td>
+                  <td class="px-3 py-3"><div class="ml-auto h-3 w-12 rounded bg-slate-100"></div></td>
+                  <td></td>
+                </tr>
+              }
+            } @else {
+              @for (o of rows(); track o.orderId) {
+                @let lines = itemLines(o);
+                @let invs = invoices(o);
+                @let due = balance(o);
+                <tr class="hover:bg-slate-50/70 align-top cursor-pointer transition-colors" (click)="open(o)">
+                  <!-- Order -->
+                  <td class="px-4 py-2.5 whitespace-nowrap">
+                    <p class="font-mono font-semibold text-slate-800">{{ o.custOrdNo }}</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">{{ o.orderDateStr }}</p>
+                    @if (o.cancelReason) {
+                      <span class="mt-1 inline-block rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600" [title]="o.cancelReason">Cancel requested</span>
+                    }
+                  </td>
+                  <!-- Customer -->
+                  <td class="px-3 py-2.5 min-w-[170px] max-w-[230px]">
+                    <p class="font-semibold text-slate-800 truncate">{{ customerName(o) || '—' }}</p>
+                    @if (o.phone) { <p class="text-[11.5px] text-slate-500 font-mono">{{ o.phone }}</p> }
+                    @if (addressLine(o)) { <p class="text-[11px] text-slate-400 leading-snug line-clamp-2" [title]="addressLine(o)">{{ addressLine(o) }}</p> }
+                  </td>
+                  <!-- Items -->
+                  <td class="px-3 py-2.5 min-w-[200px] max-w-[300px]">
+                    @for (l of lines.slice(0, 2); track $index) {
+                      <p class="text-[11.5px] text-slate-600 leading-snug truncate" [title]="l">{{ l }}</p>
+                    } @empty {
+                      <span class="text-slate-300">—</span>
+                    }
+                    @if (lines.length > 2) {
+                      <p class="text-[11px] font-semibold text-brand-600 mt-0.5" [title]="lines.slice(2).join('\n')">+{{ lines.length - 2 }} more</p>
+                    }
+                  </td>
+                  <!-- Status / invoices -->
+                  <td class="px-3 py-2.5">
+                    <span class="status-chip {{ statusClass(o.statusName) }} whitespace-nowrap"><span class="dot"></span>{{ o.statusName }}</span>
+                    @for (inv of invs; track inv.invoiceId) {
+                      <div class="mt-1.5 flex items-center gap-1.5 text-[11px] whitespace-nowrap">
+                        <button type="button" (click)="$event.stopPropagation(); viewInvoice(inv.invoiceNumber)"
+                          class="font-mono font-semibold text-brand-600 hover:underline cursor-pointer" title="Print invoice">{{ inv.invoiceNumber }}</button>
+                        <span class="text-slate-400">{{ inv.invoiceStatus }}</span>
+                        @if (inv.cancelRequestExist) { <span class="font-bold text-rose-600">· cancel req.</span> }
+                      </div>
+                    }
+                  </td>
+                  <!-- Amount with breakdown on hover -->
+                  <td class="px-3 py-2.5 text-right whitespace-nowrap"
+                    [title]="'Items ' + (o.subTotal | number:'1.2-2') + '\nTax ' + (o.tax | number:'1.2-2') + '\nDelivery ' + (o.delvCharge | number:'1.2-2') + '\nDiscount ' + (o.discount | number:'1.2-2')">
+                    <p class="font-mono font-bold text-slate-800">{{ o.total | number:'1.2-2' }}</p>
+                    <p class="text-[10.5px] text-slate-400">
+                      Tax {{ o.tax | number:'1.2-2' }}@if (o.delvCharge) { · Del {{ o.delvCharge | number:'1.2-2' }} }@if (o.discount) { · −{{ o.discount | number:'1.2-2' }} }
+                    </p>
+                  </td>
+                  <!-- Paid -->
+                  <td class="px-3 py-2.5 text-right whitespace-nowrap">
+                    <p class="font-mono font-semibold" [class]="due <= 0 ? 'text-emerald-600' : 'text-slate-700'">{{ o.paidAmount | number:'1.2-2' }}</p>
+                    @if (due > 0) { <p class="text-[10.5px] font-semibold text-rose-600">Due {{ due | number:'1.2-2' }}</p> }
+                    @else { <p class="text-[10.5px] text-emerald-600">Paid</p> }
+                  </td>
+                  <td class="px-3 py-2.5 text-right">
+                    @if (active() === 'cancelrequested') {
+                      <button type="button" (click)="$event.stopPropagation(); openCancelApproval(o)"
+                        class="btn-secondary h-7 px-2.5 text-[11.5px] font-semibold rounded-lg whitespace-nowrap">Approve cancel</button>
+                    } @else {
+                      <svg class="ml-auto h-4 w-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="px-5 py-16 text-center text-slate-400 font-medium">No orders found.</td></tr>
+              }
+              @if (loadingMore()) {
+                <tr><td colspan="7" class="px-5 py-3 text-center text-[12px] text-slate-400">Loading more…</td></tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (rows().length) {
+        <div class="shrink-0 border-t border-slate-100 bg-slate-50/60 px-4 py-2 text-[11.5px] text-slate-500">
+          Showing {{ rows().length }} of {{ totalRecords() }} orders
         </div>
-      </ng-template>
+      }
     </div>
   }
 
@@ -218,7 +296,14 @@
 
   <!-- Return tab -->
   @if (isReturn()) {
-    <div class="flex-1 flex flex-col min-h-0 gap-4 animate-fadeIn">
+    <div class="flex-1 flex flex-col min-h-0 gap-3 animate-fadeIn">
+      <div class="inline-flex w-fit rounded-lg bg-slate-100 p-1 gap-1 shrink-0">
+        @for (s of [{ id: 15, label: 'Requested' }, { id: 17, label: 'Returned' }, { id: 18, label: 'Rejected' }]; track s.id) {
+          <button type="button" (click)="setReturnStatus($any(s.id))"
+            class="rounded-md px-3 py-1 text-[12px] font-semibold transition-colors cursor-pointer"
+            [class]="returnStatus() === s.id ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-700'">{{ s.label }}</button>
+        }
+      </div>
       <app-data-table
         [columns]="returnColumns"
         [rows]="returnRows()"
@@ -231,16 +316,44 @@
         [loadingMore]="loadingMore()"
       />
       <ng-template #returnActions let-row>
-        <button (click)="approveReturn(row)"
-                (mouseenter)="tooltip.show($event, 'Approve Return', { info: 'Approve item returns and schedule return pickup.', placement: 'left' })"
-                (mouseleave)="tooltip.hide()"
-                class="flex h-7.5 w-7.5 items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 border border-slate-200/40 hover:border-emerald-200/50 bg-white shadow-2xs hover:shadow-xs transition-all cursor-pointer"
-        >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </button>
+        @if (returnStatus() === 15) {
+          <div class="flex items-center gap-1.5 justify-end">
+            <input type="date" [value]="pickupDates()[row.returnItemId] || ''" (change)="setPickupDate(row, $any($event.target).value)"
+              title="Expected pickup date (required to accept)"
+              class="h-7.5 rounded-lg border border-slate-200 px-2 text-[11.5px] bg-white" />
+            <button type="button" (click)="decideReturn(row, 17)" title="Accept return"
+              class="h-7.5 px-2.5 rounded-lg text-[11.5px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 cursor-pointer">Accept</button>
+            <button type="button" (click)="decideReturn(row, 18)" title="Reject return"
+              class="h-7.5 px-2.5 rounded-lg text-[11.5px] font-semibold text-red-600 border border-red-200 hover:bg-red-50 cursor-pointer">Reject</button>
+          </div>
+        } @else if (row.pickupDate) {
+          <span class="text-[11px] text-slate-500 whitespace-nowrap">Pickup {{ row.pickupDate | date:'d MMM yyyy' }}</span>
+        }
       </ng-template>
     </div>
   }
 </div>
+
+<!-- Print format chooser (A4 / 3-inch slip) -->
+@if (printChoiceFor(); as invNo) {
+  <app-invoice-print [invoiceNo]="invNo" (close)="printChoiceFor.set(null)" />
+}
+
+<!-- Cancel request approval (the .NET "Add CancelExplanation" popup) -->
+@if (cancelFor(); as co) {
+  <app-modal title="Approve cancellation" widthClass="max-w-md" (close)="cancelFor.set(null)">
+    <p class="text-[12.5px] text-slate-500 mb-3">
+      Order <span class="font-mono font-semibold text-slate-700">{{ co.custOrdNo }}</span>
+      @if (co.cancelReason) { — customer's reason: <span class="italic text-slate-700">“{{ co.cancelReason }}”</span> }
+    </p>
+    <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Explanation <span class="text-red-500">*</span></label>
+    <textarea [(ngModel)]="cancelExplanation" rows="3" placeholder="Note for the cancellation…"
+      class="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-2 text-[12.5px] bg-slate-50/50 focus:bg-white"></textarea>
+    <div footer class="flex justify-end gap-2">
+      <button type="button" (click)="cancelFor.set(null)" class="btn-secondary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">Close</button>
+      <button type="button" (click)="saveCancelApproval()" [disabled]="savingCancel()" class="btn-primary h-8 px-4 text-[12.5px] font-semibold rounded-lg disabled:opacity-60">
+        {{ savingCancel() ? 'Approving…' : 'Approve' }}
+      </button>
+    </div>
+  </app-modal>
+}
