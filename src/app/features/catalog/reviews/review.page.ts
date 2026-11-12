@@ -48,6 +48,8 @@ export class ReviewPage {
 
   // Selection states
   readonly selectedReview = signal<CustomerRating | null>(null);
+  /** Image shown full-size in the lightbox (null = closed). */
+  readonly zoomImage = signal<string | null>(null);
   readonly selectedIds = signal<Set<number>>(new Set());
   readonly allSelected = computed(() => {
     const rows = this.reviews();

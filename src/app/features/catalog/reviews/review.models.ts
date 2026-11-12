@@ -13,6 +13,8 @@ export interface CustomerRating {
   rating: number;
   customerName: string;
   createdDate: string;
+  /** Photo URLs the customer attached to the review. */
+  images: string[];
 }
 
 /** id/name option for the category filter. */

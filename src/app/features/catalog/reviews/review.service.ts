@@ -38,7 +38,15 @@ export class ReviewService {
         CategoryId: categoryId,
         ReviewStatus: reviewStatus,
       })
-      .pipe(map((res) => res?.data ?? []));
+      .pipe(
+        map((res) =>
+          (res?.data ?? []).map((r) => {
+            const raw = r as unknown as Record<string, unknown>;
+            const imgs = (raw['images'] ?? raw['Images'] ?? []) as unknown;
+            return { ...r, images: Array.isArray(imgs) ? imgs.map(String).filter(Boolean) : [] };
+          }),
+        ),
+      );
   }
 
   /** Approve (1) or reject (2) a single review. */
