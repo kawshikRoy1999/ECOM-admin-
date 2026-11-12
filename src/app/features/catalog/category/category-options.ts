@@ -2,7 +2,6 @@ import { Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { Modal } from '../../../shared/ui/modal/modal';
-import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { CategoryService } from './category.service';
@@ -11,7 +10,7 @@ import { TooltipService } from '../../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-category-options',
-  imports: [FormsModule, Modal, Checkbox],
+  imports: [FormsModule, Modal],
   templateUrl: './category-options.html',
 })
 export class CategoryOptions {
@@ -33,15 +32,16 @@ export class CategoryOptions {
   readonly editingId = signal(0);
   optionName = '';
   isItemLevelAttribute = false;
-  readonly values = signal<OptionValue[]>([this.blankValue()]);
+  readonly values = signal<OptionValue[]>([]);
+  /** Text in the "add value" box. */
+  valueDraft = '';
+  /** Index of the value chip being renamed (-1 = adding a new one). */
+  readonly editingValueIndex = signal(-1);
 
   constructor() {
     queueMicrotask(() => this.load());
   }
 
-  private blankValue(): OptionValue {
-    return { optionValueId: 0, value: '', displayOrder: 0 };
-  }
 
   load(): void {
     this.loading.set(true);
@@ -58,34 +58,86 @@ export class CategoryOptions {
     this.editingId.set(0);
     this.optionName = '';
     this.isItemLevelAttribute = false;
-    this.values.set([this.blankValue()]);
+    this.values.set([]);
+    this.valueDraft = '';
+    this.editingValueIndex.set(-1);
   }
 
   editOption(o: CategoryOption): void {
     this.editingId.set(o.variantOptionId);
     this.optionName = o.optionName;
     this.isItemLevelAttribute = o.isItemLevelAttribute;
-    this.values.set([this.blankValue()]);
+    this.values.set([]);
+    this.valueDraft = '';
+    this.editingValueIndex.set(-1);
     this.service.optionValues(o.variantOptionId).subscribe({
-      next: (vals) => this.values.set(vals.length ? vals : [this.blankValue()]),
+      next: (vals) => this.values.set(vals.filter((v) => v.value.trim())),
     });
   }
 
-  addValueRow(): void {
-    this.values.update((list) => [...list, this.blankValue()]);
+  /** Adds the typed value(s). Comma-separated text adds several at once; duplicates are skipped. */
+  commitDraft(): void {
+    const parts = this.valueDraft.split(',').map((t) => t.trim()).filter(Boolean);
+    if (!parts.length) return;
+    const editIdx = this.editingValueIndex();
+    const list = [...this.values()];
+    const exists = (t: string, skip = -1) => list.some((v, i) => i !== skip && v.value.trim().toLowerCase() === t.toLowerCase());
+
+    if (editIdx >= 0) {
+      const text = parts[0];
+      if (exists(text, editIdx)) {
+        this.toast.error(`"${text}" is already in the list.`);
+        return;
+      }
+      list[editIdx] = { ...list[editIdx], value: text };
+    } else {
+      const skipped: string[] = [];
+      for (const t of parts) {
+        if (exists(t)) skipped.push(t);
+        else list.push({ optionValueId: 0, value: t, displayOrder: 0 });
+      }
+      if (skipped.length) this.toast.error(`Already added: ${skipped.join(', ')}`);
+    }
+    this.values.set(list);
+    this.valueDraft = '';
+    this.editingValueIndex.set(-1);
   }
 
-  removeValueRow(index: number): void {
-    this.values.update((list) => (list.length > 1 ? list.filter((_, i) => i !== index) : list));
+  onDraftKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      this.commitDraft();
+    } else if (e.key === 'Escape' && this.editingValueIndex() >= 0) {
+      this.valueDraft = '';
+      this.editingValueIndex.set(-1);
+    } else if (e.key === 'Backspace' && !this.valueDraft && this.editingValueIndex() < 0 && this.values().length) {
+      const last = this.values()[this.values().length - 1];
+      if (!last.optionValueId) this.removeValue(this.values().length - 1);
+    }
   }
 
-  updateValue(index: number, text: string): void {
-    this.values.update((list) => list.map((v, i) => (i === index ? { ...v, value: text } : v)));
+  /** Load a value into the box so it can be renamed (keeps its id). */
+  startEditValue(index: number): void {
+    this.editingValueIndex.set(index);
+    this.valueDraft = this.values()[index].value;
+  }
+
+  removeValue(index: number): void {
+    this.values.update((list) => list.filter((_, i) => i !== index));
+    if (this.editingValueIndex() === index) {
+      this.editingValueIndex.set(-1);
+      this.valueDraft = '';
+    }
   }
 
   saveOption(): void {
     if (!this.optionName.trim()) {
       this.toast.error('Option name is required.');
+      return;
+    }
+    if (this.valueDraft.trim()) this.commitDraft(); // don't lose a value typed but not yet added
+    if (!this.values().length) {
+      this.toast.error('Add at least one value.');
       return;
     }
     this.saving.set(true);
