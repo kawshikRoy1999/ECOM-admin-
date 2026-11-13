@@ -138,11 +138,15 @@ export const routes: Routes = [
         path: 'catalog/items/new',
         loadComponent: () =>
           import('./features/catalog/item/item-edit.page').then((m) => m.ItemEditPage),
+        // Ask before leaving with unsaved changes (pricing, options, photos… not just the Details form).
+        canDeactivate: [(c: { canLeave: () => Promise<boolean> | boolean }) => c.canLeave()],
       },
       {
         path: 'catalog/items/:id',
         loadComponent: () =>
           import('./features/catalog/item/item-edit.page').then((m) => m.ItemEditPage),
+        // Ask before leaving with unsaved changes (pricing, options, photos… not just the Details form).
+        canDeactivate: [(c: { canLeave: () => Promise<boolean> | boolean }) => c.canLeave()],
       },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],

@@ -20,12 +20,17 @@ export class ItemsListPage {
   private readonly router = inject(Router);
   public readonly tooltip = inject(TooltipService);
 
+  // No image column: GetItemList never returns list images (imageFullPath is always null).
   readonly columns: Column<ItemListRow>[] = [
-    { key: 'imageUrl', header: '' },
-    { key: 'itemCode', header: 'Code' },
-    { key: 'name', header: 'Item' },
+    { key: 'itemCode', header: 'Code', nowrap: true },
+    {
+      key: 'name',
+      header: 'Item',
+      // category under the name; variant only when it differs from the item name
+      sub: (row) => [row.category, row.variantName && row.variantName !== row.name ? row.variantName : ''].filter(Boolean).join(' · '),
+    },
     { key: 'brand', header: 'Brand' },
-    { key: 'price', header: 'Price', align: 'right', format: (row) => Number(row.price ?? 0).toFixed(2) },
+    { key: 'price', header: 'Price', align: 'right', nowrap: true, format: (row) => Number(row.price ?? 0).toFixed(2) },
     { key: 'isActive', header: 'Status', align: 'center', format: (row) => (row.isActive ? 'Active' : 'Inactive') },
   ];
 

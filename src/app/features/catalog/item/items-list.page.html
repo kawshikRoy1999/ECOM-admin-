@@ -5,8 +5,9 @@
       <p class="page-subtitle uppercase tracking-wider text-[10px] font-bold text-slate-400">Catalog</p>
       <div class="flex items-center gap-2.5">
         <h1 class="page-title">Items & Inventory</h1>
-        @if (itemCount()) {
-          <span class="text-[11px] font-bold text-slate-400 bg-slate-100 border border-slate-200/50 px-2.5 py-0.5 rounded-full mt-1.5">{{ itemCount() }} total</span>
+        <!-- Count from the list itself (GetALLItemDdlList's itemCount is the item-code counter, incl. deleted items). -->
+        @if (totalRecord()) {
+          <span class="text-[11px] font-bold text-slate-400 bg-slate-100 border border-slate-200/50 px-2.5 py-0.5 rounded-full mt-1.5">{{ totalRecord() }} {{ hasActiveFilters() ? 'found' : 'items' }}</span>
         }
       </div>
     </div>

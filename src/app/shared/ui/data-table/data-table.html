@@ -84,7 +84,7 @@
               [class.cursor-pointer]="clickableRows()"
               (click)="clickableRows() && rowClick.emit(row)">
               @for (col of columns(); track col.key) {
-                <td [class]="'px-5 py-3 text-slate-700 font-medium ' + alignClass(col)">
+                <td [class]="'px-5 py-3 text-slate-700 font-medium ' + alignClass(col) + (col.nowrap ? ' whitespace-nowrap' : '')">
                   @if (isReturnImageList(col, row[col.key])) {
                     <div class="flex items-center gap-1.5 justify-center sm:justify-start">
                       @for (img of $any(row[col.key]); track img.imageId) {
@@ -123,6 +123,9 @@
                     </span>
                   } @else {
                     {{ cell(row, col) }}
+                    @if (col.sub && col.sub(row)) {
+                      <span class="block text-[11px] font-normal text-slate-400 mt-0.5">{{ col.sub(row) }}</span>
+                    }
                   }
                 </td>
               }

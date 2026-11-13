@@ -97,9 +97,11 @@ export class ItemService {
       price: Number(pick('price', 'Price') ?? 0),
       rol: Number(pick('rol', 'ROL') ?? 0),
       quantity: Number(pick('quantity', 'Quantity') ?? 0),
-      imageUrl: String(pick('imageUrl', 'image', 'ImageUrl', 'Image') ?? ''),
+      imageUrl: String(pick('imageFullPath', 'imageUrl', 'image', 'ImageUrl', 'Image') ?? ''),
       itemCode: String(pick('itemCode', 'itemcode', 'ItemCode') ?? ''),
-      isActive: i['isActive'] !== false && i['IsActive'] !== false,
+      category: String(pick('category', 'Category', 'categoryName') ?? ''),
+      // GetItemList sends the active flag as `status` (isActive is not in the payload)
+      isActive: pick('status', 'Status', 'isActive', 'IsActive') !== false,
     };
   }
 

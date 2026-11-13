@@ -6,8 +6,16 @@
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
       </a>
       <div class="flex flex-col gap-0.5 min-w-0">
-        <span class="text-[11px] text-slate-400 font-medium">Catalog / <span class="text-slate-600 font-semibold">Items & Inventory</span></span>
-        <h1 class="page-title truncate">{{ itemId() ? 'Edit Item' : 'New Item' }}</h1>
+        <span class="text-[11px] text-slate-400 font-medium">Catalog / <span class="text-slate-600 font-semibold">Items & Inventory</span> / {{ itemId() ? 'Edit' : 'New' }}</span>
+        <div class="flex items-center gap-2 min-w-0">
+          <h1 class="page-title truncate">{{ form.controls.itemName.value || (itemId() ? 'Edit Item' : 'New Item') }}</h1>
+          @if (form.controls.itemCode.value) {
+            <span class="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-slate-500">{{ form.controls.itemCode.value }}</span>
+          }
+          @if (isDirty()) {
+            <span class="shrink-0 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10.5px] font-bold text-amber-700" title="You have changes that are not saved yet">Unsaved changes</span>
+          }
+        </div>
       </div>
     </div>
     <div class="flex items-center gap-2 shrink-0">
@@ -96,7 +104,7 @@
     <div class="flex flex-col gap-4" (change)="onFieldChange($event)">
       <!-- Step indicator -->
       <div class="fluent-card px-3 py-2.5 sm:px-4">
-        <div class="flex items-center gap-1 overflow-x-auto">
+        <div class="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           @for (s of steps; track s.n) {
             <button type="button" (click)="goToStep(s.n)"
               class="group flex shrink-0 items-center gap-2.5 rounded-xl px-2.5 py-1.5 transition-all cursor-pointer"
@@ -109,12 +117,12 @@
                   {{ s.n }}
                 }
               </span>
-              <span class="hidden sm:flex flex-col items-start leading-tight pr-1">
+              <span class="hidden sm:flex flex-col items-start leading-tight pr-1 whitespace-nowrap">
                 <span class="text-[12.5px] font-bold" [class]="step() === s.n ? 'text-brand-700' : 'text-slate-600'">{{ s.label }}</span>
                 @if (s.requiresSave && !itemId()) {
                   <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wide">After save</span>
                 } @else {
-                  <span class="text-[9.5px] font-medium text-slate-400">{{ s.hint }}</span>
+                  <span class="hidden xl:inline text-[9.5px] font-medium text-slate-400">{{ s.hint }}</span>
                 }
               </span>
             </button>
@@ -143,12 +151,12 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-3 gap-y-2.5">
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item Name <span class="text-red-500">*</span></label>
-              <input formControlName="itemName" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50"
+              <input formControlName="itemName" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-white text-slate-800"
                 [class.!border-red-500]="form.controls.itemName.touched && form.controls.itemName.invalid" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Item code</label>
-              <input formControlName="itemCode" [placeholder]="itemCodeFormat() ? ('Format: ' + itemCodeFormat()) : ''" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
+              <input formControlName="itemCode" [placeholder]="itemCodeFormat() ? ('Format: ' + itemCodeFormat()) : ''" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-white text-slate-800" />
             </div>
             <div class="flex flex-col gap-1">
               <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Brand <span class="text-red-500">*</span></label>
@@ -179,12 +187,12 @@
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">HSN Code</label>
-                <input formControlName="hsn" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
+                <input formControlName="hsn" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-white text-slate-800" />
               </div>
               <!-- Sort Order and Currency hidden for now. Remove this comment wrapper to restore.
               <div class="flex flex-col gap-1">
                 <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Sort Order</label>
-                <input type="number" formControlName="itemSortOrderInCategory" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
+                <input type="number" formControlName="itemSortOrderInCategory" class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-white text-slate-800" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Currency</label>
@@ -677,6 +685,17 @@
             }
           </div>
 
+          @if (localPreviews().length && !uploading()) {
+            <div class="mt-3 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+              <span class="text-[12px] font-medium text-amber-800">
+                {{ localPreviews().length }} {{ localPreviews().length === 1 ? 'photo is' : 'photos are' }} not uploaded yet — they upload when you click <b>Save Item</b>.
+              </span>
+              @if (itemId()) {
+                <button type="button" (click)="uploadAllPending()" class="shrink-0 h-7 px-3 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-[11.5px] font-semibold cursor-pointer">Upload now</button>
+              }
+            </div>
+          }
+
           <!-- Progress Bar -->
           @if (uploading()) {
             <div class="flex flex-col gap-1.5 mt-4 p-3 bg-brand-50/10 border border-brand-100/30 rounded-xl">
@@ -895,7 +914,7 @@
         <label class="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">Name <span class="text-red-500">*</span></label>
         <input [ngModel]="quickAddName()" (ngModelChange)="quickAddName.set($event)" (keyup.enter)="saveQuickAdd()"
           placeholder="Enter name" autofocus
-          class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50 focus:border-brand-600 focus:ring-4 focus:ring-brand-500/10 focus:outline-none" />
+          class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-white text-slate-800 focus:border-brand-600 focus:ring-4 focus:ring-brand-500/10 focus:outline-none" />
         <small class="text-[11px] text-slate-400">Creates the record instantly and selects it here. You can add images &amp; details later in its own section.</small>
       </div>
       <div footer class="flex justify-end gap-2">

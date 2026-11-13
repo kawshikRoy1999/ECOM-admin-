@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, of, Observable, map, filter, take, catchError } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -51,6 +51,15 @@ interface OptionRow {
   templateUrl: './item-edit.page.html',
 })
 export class ItemEditPage {
+  /** Saved-state snapshot used to detect unsaved work across every step. */
+  private baseline = '';
+  private optionsBaseline = '';
+  /** Background loads still running after opening an item; the saved snapshot is taken when they finish. */
+  private initPending = 0;
+  private initDone(): void {
+    if (this.initPending > 0 && --this.initPending === 0) this.markClean();
+  }
+
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -248,6 +257,7 @@ export class ItemEditPage {
       this.loadItem();
     } else {
       this.pricing.set([this.blankPricing()]);
+      queueMicrotask(() => this.markClean());
       this.priceRanges.set([this.blankPriceRange()]);
       this.service.customFieldList(0).subscribe({ next: (cf) => this.customFields.set(cf) });
     }
@@ -281,9 +291,10 @@ export class ItemEditPage {
           isSerialized: item.isSerialized,
         });
         this.pricing.set(item.pricing.length ? item.pricing : [this.blankPricing()]);
+        this.initPending = item.categoryId ? 3 : 1; // photos (+ sub-categories, options)
         this.service.getItemWiseImageList(this.itemId()).subscribe({
-          next: (images) => this.media.set(images),
-          error: () => this.media.set(item.media),
+          next: (images) => { this.media.set(images); this.initDone(); },
+          error: () => { this.media.set(item.media); this.initDone(); },
         });
         this.itemSavedOptions = item.variantOptions ?? [];
         this.isPriceRange.set(item.isPriceRange ?? false);
@@ -457,7 +468,9 @@ export class ItemEditPage {
           this.selectedFamilyId.set(0);
         }
         this.generateItemCode();
+        this.initDone();
       },
+      error: () => this.initDone(),
     });
   }
 
@@ -546,8 +559,9 @@ export class ItemEditPage {
         });
         this.optionRows.set(rows);
         this.loadingOptions.set(false);
+        this.initDone();
       },
-      error: () => this.loadingOptions.set(false),
+      error: () => { this.loadingOptions.set(false); this.initDone(); },
     });
   }
 
@@ -565,10 +579,60 @@ export class ItemEditPage {
     });
   }
 
+  /** Everything the user can change on this page, minus the variant-option rows (tracked separately). */
+  private snapshot(): string {
+    return JSON.stringify({
+      form: this.form.getRawValue(),
+      pricing: this.pricing(),
+      sub: this.selectedSubCategoryId(),
+      fam: this.selectedFamilyId(),
+      media: this.media().map((m) => m.imageFullPath),
+    });
+  }
+
+  private optionsSnapshot(): string {
+    return JSON.stringify(this.optionRows().map((r) => [r.variantOptionId, r.values.filter((v) => v.selected).map((v) => v.optionValueId)]));
+  }
+
+  /** Mark the current state as saved. */
+  markClean(): void {
+    this.baseline = this.snapshot();
+    this.optionsBaseline = this.optionsSnapshot();
+  }
+
+  /** True when anything differs from the last loaded/saved state, or photos are waiting to upload. */
+  isDirty(): boolean {
+    if (!this.baseline || this.loading()) return false;
+    return (
+      this.localPreviews().length > 0 ||
+      this.snapshot() !== this.baseline ||
+      (!!this.optionsBaseline && this.optionsSnapshot() !== this.optionsBaseline)
+    );
+  }
+
+  /** Route guard hook: confirm before leaving with unsaved work. */
+  async canLeave(): Promise<boolean> {
+    if (!this.isDirty() || this.saving()) return true;
+    return this.confirm.ask('You have unsaved changes on this item. Leave without saving?', { confirmLabel: 'Leave', danger: true });
+  }
+
+  /** Browser refresh / tab close with unsaved work. */
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(e: BeforeUnloadEvent): void {
+    if (this.isDirty()) e.preventDefault();
+  }
+
+  /** Upload every pending photo now (saved items only). */
+  uploadAllPending(): void {
+    for (const p of [...this.localPreviews()]) this.uploadPendingImage(p.id);
+  }
+
   async discard(): Promise<void> {
-    if (this.form.dirty) {
+    if (this.isDirty()) {
       if (!(await this.confirm.ask('Discard unsaved changes?', { confirmLabel: 'Discard', danger: true }))) return;
     }
+    this.markClean(); // already confirmed — don't ask again in the route guard
+    this.localPreviews.set([]);
     this.router.navigate(['/catalog/items']);
   }
 
@@ -1114,6 +1178,7 @@ export class ItemEditPage {
         const savedId = Number(data?.['itemId'] ?? data?.['ItemId'] ?? data?.['Itemid'] ?? data?.['itemid'] ?? 0);
 
         if (savedId > 0) {
+          this.markClean(); // saved — nothing pending any more (also lets the post-create navigation pass the guard)
           if (!this.itemId() && this.newImagesToLink.length > 0) {
             this.linkNewImages(savedId);
           } else {

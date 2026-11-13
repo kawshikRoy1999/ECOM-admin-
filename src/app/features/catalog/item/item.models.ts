@@ -10,6 +10,7 @@ export interface ItemListRow {
   quantity: number;
   imageUrl: string;
   itemCode: string;
+  category: string;
   isActive: boolean;
 }
 

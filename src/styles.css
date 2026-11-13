@@ -110,6 +110,11 @@
     @apply inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm;
   }
 
+  /* Destructive confirm (used by the shared confirm dialog for Delete / Leave). */
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-1.5 text-[13px] font-semibold text-white hover:bg-red-700 active:scale-[0.98] transition-all shadow-sm;
+  }
+
   .btn-secondary {
     @apply inline-flex items-center justify-center rounded-md border px-4 py-1.5 text-[13px] font-semibold transition-all active:scale-[0.98];
     border-color: var(--border-color);

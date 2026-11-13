@@ -8,6 +8,10 @@ export interface Column<T> {
   align?: 'left' | 'center' | 'right';
   /** Optional cell formatter; defaults to the raw value. */
   format?: (row: T) => string;
+  /** Keep the cell on one line (e.g. codes). */
+  nowrap?: boolean;
+  /** Optional muted second line under the value (e.g. category under the item name). */
+  sub?: (row: T) => string;
 }
 
 /**
