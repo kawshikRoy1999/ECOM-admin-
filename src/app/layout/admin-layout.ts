@@ -155,7 +155,7 @@ export class AdminLayout {
   /** The nav filtered to the current user's role-permitted menus (empty groups dropped). */
   readonly visibleNav = computed(() =>
     this.nav
-      .map((g) => ({ group: g.group, items: g.items.filter((i) => this.auth.canAccess(this.menuTokens[i.path] ?? [])) }))
+      .map((g) => ({ group: g.group, items: g.items.filter((i) => this.auth.canAccessUrl(i.path)) }))
       .filter((g) => g.items.length > 0),
   );
 
@@ -205,7 +205,7 @@ export class AdminLayout {
 
   readonly filteredCommands = computed(() => {
     const q = this.commandQuery().trim().toLowerCase();
-    const allowed = this.commands.filter((c) => this.auth.canAccess(this.menuTokens[c.path] ?? []));
+    const allowed = this.commands.filter((c) => this.auth.canAccessUrl(c.path));
     if (!q) return allowed;
     return allowed.filter((c) =>
       c.name.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)

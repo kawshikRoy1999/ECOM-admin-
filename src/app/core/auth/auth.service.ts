@@ -3,6 +3,7 @@ import { Observable, catchError, of, switchMap, tap } from 'rxjs';
 
 import { ApiService } from '../api/api.service';
 import { CompanyDtl, LoginRequest, MenuActionsResponse, MenuMasterItem, SessionUser } from './auth.models';
+import { ruleFor } from './route-access';
 
 const TOKEN_KEY = 'ecom_admin_token';
 const USER_KEY = 'ecom_admin_user';
@@ -63,6 +64,29 @@ export class AuthService {
     if (!master || master.length === 0) return true; // master unknown → show by default
     if (!master.some(matches)) return true;          // not in the DB menu master → show
     return permitted.some(matches);                  // managed by permissions → require a grant
+  }
+
+  /**
+   * Page access the way the .NET admin decides it (see route-access.ts): the role must hold the
+   * page's MenuActionId, or the menu (Settings area). Super admins pass. Sessions where the
+   * permission call never loaded (undefined) fail open so nobody is locked out by a network blip;
+   * a loaded-but-empty permission list is respected.
+   */
+  canAccessUrl(url: string): boolean {
+    const u = this._user();
+    if (!u) return false;
+    if (u.isSuperAdmin) return true;
+    const rule = ruleFor(url);
+    if (!rule) return true;
+    if (rule.action && u.permittedActions) {
+      const id = rule.action.toLowerCase();
+      if (!u.permittedActions.some((a) => (a.menuActionId ?? '').toLowerCase() === id)) return false;
+    }
+    if (rule.menu && u.permittedMenus) {
+      const id = rule.menu.toLowerCase();
+      if (!u.permittedMenus.some((m) => (m.menuId ?? '').toLowerCase() === id)) return false;
+    }
+    return true;
   }
 
   login(credentials: LoginRequest): Observable<SessionUser> {
