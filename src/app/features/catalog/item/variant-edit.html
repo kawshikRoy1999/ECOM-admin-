@@ -195,7 +195,7 @@
           </table>
         </div>
       } @else {
-        <p class="text-center text-[13px] text-slate-400 py-4">No items found. Enter a search query above.</p>
+        <p class="text-center text-[13px] text-slate-400 py-4">{{ repoSearchQuery().trim() ? 'No unlinked records match your search.' : 'No unlinked repository records.' }}</p>
       }
     </div>
 

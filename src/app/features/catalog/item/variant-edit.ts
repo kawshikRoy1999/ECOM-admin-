@@ -266,6 +266,8 @@ export class VariantEditModal implements OnInit, OnDestroy {
     this.showRepoModal.set(true);
     this.repoSearchQuery.set('');
     this.repoItems.set([]);
+    // An empty search returns every unlinked repository record, so show them straight away.
+    this.searchRepo();
   }
 
   closeRepoModal(): void {
@@ -393,11 +395,13 @@ export class VariantEditModal implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.saving.set(false);
-          // The gateway reports validation problems in data.result (anything but "Saved Successfully").
+          // The outcome is in data.result; only "Saved Successfully" is a success (as in the .NET page).
+          // An empty result means the API swallowed an error while saving the variant or its pricing,
+          // even though the envelope says status: true.
           const r = res as Record<string, unknown> | null;
-          const result = String(r?.['result'] ?? r?.['Result'] ?? '');
-          if (result && result !== 'Saved Successfully') {
-            this.toast.error(result);
+          const result = String(r?.['result'] ?? r?.['Result'] ?? '').trim();
+          if (result !== 'Saved Successfully') {
+            this.toast.error(result || 'The variant could not be saved. Check its pricing rows and try again.');
             return;
           }
           this.toast.success(this.itemVariantId() ? 'Variant updated.' : 'Variant created.');
