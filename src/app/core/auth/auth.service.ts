@@ -89,6 +89,21 @@ export class AuthService {
     return true;
   }
 
+  /** Re-read the role's menus/actions for the signed-in user (keeps the sidebar and page guard current). */
+  refreshPermissions(): void {
+    const u = this._user();
+    if (!u) return;
+    this.api
+      .post<MenuActionsResponse>('UserManagement/MenuActions', { CompanyId: u.companyId, UserId: u.id })
+      .pipe(catchError(() => of(null)))
+      .subscribe((res) => {
+        const cur = this._user();
+        if (!res || !cur) return;
+        const next = { ...cur, permittedMenus: res.permittedMenus ?? [], permittedActions: res.permittedActions ?? [] };
+        this.persistSession(next);
+      });
+  }
+
   login(credentials: LoginRequest): Observable<SessionUser> {
     return this.api.post<SessionUser>('UserManagement/authenticate', credentials).pipe(
       // Persist immediately so the auth interceptor can attach the token to GetCompany.

@@ -53,6 +53,9 @@ export const ROUTE_ACCESS: { prefix: string; rule: RouteAccessRule }[] = [
   { prefix: '/offers', rule: { menu: SETTING_MENU_ID } },
 ];
 
+/** Menu name the .NET admin uses for the Delivery Management link (matched by name; ids differ per company). */
+export const DELIVERY_MENU_NAME = 'delivery management';
+
 export function ruleFor(url: string): RouteAccessRule | null {
   const path = (url.split(/[?#]/)[0] || '/').toLowerCase();
   let best: { prefix: string; rule: RouteAccessRule } | null = null;

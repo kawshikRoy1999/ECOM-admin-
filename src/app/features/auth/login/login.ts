@@ -18,9 +18,11 @@ export class Login {
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly showPassword = signal(false);
+  readonly year = new Date().getFullYear();
+  readonly features = ['Catalogue, variants and stock', 'Orders, invoices and delivery', 'Offers, banners and storefront', 'Users, roles and permissions'];
 
   readonly form = this.fb.nonNullable.group({
-    email: [''],
+    email: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(4)]],
     remember: [true],
   });

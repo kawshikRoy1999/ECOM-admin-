@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
 
 import { AuthService } from '../core/auth/auth.service';
+import { environment } from '../../environments/environment';
 import { TooltipService } from '../shared/ui/tooltip.service';
 
 interface NavItem {
@@ -10,6 +11,8 @@ interface NavItem {
   path: string;
   icon: string;
   info?: string;
+  /** Opens an outside site in a new tab instead of an app route. */
+  external?: boolean;
 }
 
 @Component({
@@ -31,6 +34,8 @@ export class AdminLayout {
   readonly tooltipState = this.tooltip.state;
 
   constructor() {
+    // Pick up role/permission changes made since sign-in (the .NET app only read them at login).
+    this.auth.refreshPermissions();
     if (isPlatformBrowser(this.platformId)) {
       this.checkScreenSize();
     }
@@ -73,6 +78,7 @@ export class AdminLayout {
       group: 'Sales',
       items: [
         { label: 'Orders', path: '/orders', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z', info: 'Review and manage customer orders.' },
+        { label: 'Delivery Management', path: 'external:delivery', external: true, icon: 'M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0', info: 'Open the Delivery Management site (delivery persons, assignments) in a new tab.' },
       ],
     },
     {
@@ -168,10 +174,27 @@ export class AdminLayout {
     return !this.collapsedGroups().includes(group.group) || group.items.some((i) => this.router.url.startsWith(i.path));
   }
 
+  /** Like the .NET layout: shown only when the role has the "Delivery Management" menu. */
+  canSeeDelivery(): boolean {
+    const u = this.auth.user();
+    if (!u) return false;
+    if (u.isSuperAdmin || !u.permittedMenus) return true;
+    // Matched loosely: the menu may be named "Delivery Management", "Delivery Admin", or point at RedirectToDeliverySite.
+    return u.permittedMenus.some((m) => /deliver/i.test(`${m.menuName ?? ''} ${m.url ?? ''}`));
+  }
+
+  /** Same hand-off as .NET SettingController.RedirectToDeliverySite: ?tkn=<token>&cmpId=<base64 company id>. */
+  deliveryUrl(): string {
+    const u = this.auth.user();
+    const base = environment.deliveryManagementUrl;
+    if (!u) return base;
+    return `${base}?tkn=${encodeURIComponent(u.token)}&cmpId=${encodeURIComponent(btoa(String(u.companyId)))}`;
+  }
+
   /** The nav filtered to the current user's role-permitted menus (empty groups dropped). */
   readonly visibleNav = computed(() =>
     this.nav
-      .map((g) => ({ group: g.group, items: g.items.filter((i) => this.auth.canAccessUrl(i.path)) }))
+      .map((g) => ({ group: g.group, items: g.items.filter((i) => (i.external ? this.canSeeDelivery() : this.auth.canAccessUrl(i.path))) }))
       .filter((g) => g.items.length > 0),
   );
 
