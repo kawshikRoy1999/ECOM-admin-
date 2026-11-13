@@ -27,7 +27,9 @@ export class AuthService {
   /** Full URL of the company logo, or '' if none. Built as imageFilePath + logo. */
   readonly logoUrl = computed(() => {
     const u = this._user();
-    return u?.logo ? `${u.imageFilePath ?? ''}${u.logo}` : '';
+    if (!u?.logo) return '';
+    // An uploaded logo may be stored as a full URL rather than a name under imageFilePath.
+    return /^https?:\/\//i.test(u.logo) ? u.logo : `${u.imageFilePath ?? ''}${u.logo}`;
   });
 
   /** Role-permitted menus, or null when unknown (older session / call failed → fail-open). */

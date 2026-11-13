@@ -41,12 +41,13 @@ export class CompanyPage {
     pin: [''],
     districtCode: [''],
     stateCode: [''],
-    adminPhone: ['', [Validators.required]],
+    adminPhone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
     servicePhone: [''],
-    adminEmail: ['', [Validators.required]],
+    adminEmail: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,4}$/)]],
     serviceEmail: [''],
     secondaryEmail: [''],
-    gstNumber: [''],
+    // GSTIN format, checked only when filled (as in the .NET page)
+    gstNumber: ['', [Validators.pattern(/^[0-9]{2}[a-zA-Z]{5}[0-9]{4}[a-zA-Z][0-9][a-zA-Z][0-9]?$/)]],
     panNumber: [''],
     website: [''],
     pinRequired: [false],
@@ -98,7 +99,8 @@ export class CompanyPage {
   /** Build a preview URL for an image filename against the company base path. */
   previewUrl(fileName: string): string {
     const base = this.company()?.imageFilePath ?? '';
-    return fileName ? `${base}${fileName}` : '';
+    if (!fileName) return '';
+    return /^https?:\/\//i.test(fileName) ? fileName : `${base}${fileName}`;
   }
 
   save(): void {
@@ -106,7 +108,15 @@ export class CompanyPage {
     if (!base) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toast.error('Please fill in the required fields.');
+      // Same wording as the .NET page: list what is not correct.
+      const c = this.form.controls;
+      const bad = [
+        c.name.invalid && 'Name',
+        c.adminPhone.invalid && 'Admin Phone (10 digits)',
+        c.adminEmail.invalid && 'Admin Email',
+        c.gstNumber.invalid && 'GST',
+      ].filter(Boolean);
+      this.toast.error(`Not correct: ${bad.join(', ')}`);
       return;
     }
     this.saving.set(true);
@@ -128,9 +138,9 @@ export class CompanyPage {
         gstNumber: v.gstNumber,
         panNumber: v.panNumber,
         website: v.website,
-        logoFileName: this.logoFileName(),
-        favIconFileName: this.favIconFileName(),
-        footerFileName: this.footerFileName(),
+        logoFileName: this.toStoredName(this.logoFileName()),
+        favIconFileName: this.toStoredName(this.favIconFileName()),
+        footerFileName: this.toStoredName(this.footerFileName()),
         pinRequired: v.pinRequired,
         isActive: v.isActive,
         otpRequired: v.otpRequired,
@@ -143,7 +153,21 @@ export class CompanyPage {
           this.toast.success('Company details saved.');
           this.load();
         },
-        error: () => this.saving.set(false),
+        error: (e: { message?: string }) => {
+          this.saving.set(false);
+          this.toast.error(e?.message || 'Company not saved.');
+        },
       });
+  }
+
+  /**
+   * The company stores image *file names* relative to ImageFilePath (the storefront and the
+   * navbar build ImageFilePath + name). The uploader returns a full URL, so strip the company
+   * base when it is there; a URL on another host is kept whole.
+   */
+  private toStoredName(value: string): string {
+    const v = (value ?? '').trim();
+    const base = this.company()?.imageFilePath ?? '';
+    return base && v.startsWith(base) ? v.slice(base.length) : v;
   }
 }
