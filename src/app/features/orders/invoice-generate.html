@@ -7,8 +7,8 @@
             <tr>
               <th class="w-9 px-3 py-2"><input type="checkbox" [checked]="allSelected()" (change)="toggleAll($any($event.target).checked)" class="h-4 w-4 accent-brand-600 cursor-pointer" title="Select all" /></th>
               <th class="px-3 py-2 text-left">Item</th>
-              <th class="px-3 py-2 text-left">Warehouse <span class="normal-case font-normal text-slate-400">(optional)</span></th>
-              <th class="px-3 py-2 text-left">Bin <span class="normal-case font-normal text-slate-400">(optional)</span></th>
+              <th class="px-3 py-2 text-left">Warehouse</th>
+              <th class="px-3 py-2 text-left">Bin <span class="normal-case font-normal text-slate-400">(in stock)</span></th>
               <th class="px-3 py-2 text-center">Qty</th>
             </tr>
           </thead>
@@ -20,24 +20,41 @@
                   {{ row.item.itemName }} <span class="text-slate-400">{{ row.item.itemVariantName }}</span>
                   @if (row.item.isSerialized) { <span class="ml-1 rounded bg-amber-50 px-1.5 text-[10px] font-bold text-amber-600">Serialized</span> }
                 </td>
-                <td class="px-3 py-2">
-                  <select [ngModel]="row.warehouseId" (ngModelChange)="onWarehouse(row, $event)" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12px] bg-slate-50/50">
-                    <option [ngValue]="0">— Select —</option>
-                    @for (w of row.warehouses; track w.storeId) {
-                      <option [ngValue]="w.storeId">{{ w.storeName }}</option>
-                    }
-                  </select>
-                </td>
-                <td class="px-3 py-2">
-                  <select [ngModel]="row.binId" (ngModelChange)="onBin(row, $event)" [disabled]="!row.bins.length" class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12px] bg-slate-50/50 disabled:opacity-50">
-                    <option [ngValue]="0">— Select —</option>
-                    @for (b of row.bins; track b.id) {
-                      <option [ngValue]="b.id">{{ b.name }} ({{ b.qty }})</option>
-                    }
-                  </select>
-                </td>
+                @if (row.loadingWarehouses) {
+                  <td colspan="2" class="px-3 py-2 text-[12px] text-slate-400">Finding stock…</td>
+                } @else if (row.noStock) {
+                  <td colspan="2" class="px-3 py-2 text-[12px] font-medium text-rose-600">
+                    No stock in any warehouse. Add stock for this variant, or untick it.
+                  </td>
+                } @else {
+                  <td class="px-3 py-2">
+                    <select [id]="'inv-wh-' + row.item.orderDetailId" [ngModel]="row.warehouseId" (ngModelChange)="onWarehouse(row, $event)"
+                      [class.border-rose-300]="row.selected && !row.warehouseId"
+                      class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12px] bg-slate-50/50">
+                      <option [ngValue]="0">— Select —</option>
+                      @for (w of row.warehouses; track w.storeId) {
+                        <option [ngValue]="w.storeId">{{ w.storeName }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td class="px-3 py-2">
+                    <select [id]="'inv-bin-' + row.item.orderDetailId" [ngModel]="row.binId" (ngModelChange)="onBin(row, $event)" [disabled]="!row.bins.length"
+                      [class.border-rose-300]="row.selected && !!row.warehouseId && !row.binId && !row.loadingBins"
+                      class="h-8 w-full rounded-lg border border-slate-200 px-2 text-[12px] bg-slate-50/50 disabled:opacity-50">
+                      <option [ngValue]="0">{{ row.loadingBins ? 'Loading…' : '— Select —' }}</option>
+                      @for (b of row.bins; track b.id) {
+                        <option [ngValue]="b.id">{{ b.name }} ({{ b.qty }})</option>
+                      }
+                    </select>
+                  </td>
+                }
                 <td class="px-3 py-2 text-center">
-                  <input type="number" min="0" [max]="row.item.orderQty - (row.item.deliveredQty ?? 0)" [disabled]="!row.selected" [(ngModel)]="row.qty" class="h-8 w-16 rounded-lg border border-slate-200 px-2 text-center text-[12px] bg-slate-50/50" />
+                  <input [id]="'inv-qty-' + row.item.orderDetailId" type="number" min="0" [max]="row.item.orderQty - (row.item.deliveredQty ?? 0)" [disabled]="!row.selected" [(ngModel)]="row.qty"
+                    [class.border-rose-300]="overBin(row)"
+                    class="h-8 w-16 rounded-lg border border-slate-200 px-2 text-center text-[12px] bg-slate-50/50" />
+                  @if (overBin(row)) {
+                    <p class="mt-0.5 text-[10.5px] text-rose-600">Bin has {{ selectedBin(row)?.qty }}</p>
+                  }
                 </td>
               </tr>
             }
@@ -48,7 +65,10 @@
       <p class="py-6 text-center text-[13px] text-slate-400">All items already invoiced / delivered.</p>
     }
 
-    <p class="text-[11.5px] text-slate-400">Untick items to leave them for a later invoice. Warehouse and bin can be skipped.</p>
+    <p class="text-[11.5px] text-slate-400">
+      Stock is taken from the warehouse and bin chosen for each item; where only one holds it, it's chosen for you.
+      Untick items to leave them for a later invoice.
+    </p>
   </div>
 
   <div footer class="flex justify-end gap-2">

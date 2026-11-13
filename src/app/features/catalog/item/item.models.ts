@@ -23,8 +23,17 @@ export interface NamedOption {
 /** Tax slab option (GetAllTax → allTaxes). */
 export interface TaxOption {
   taxDetailsId: number;
+  /** Display label, e.g. "GST 18 (18%)". */
   taxName: string;
   total: number;
+  /** The slab's own name as stored, e.g. "GST 18" (used to match ERP GST group codes). */
+  name: string;
+}
+
+/** Item-level fields to update after a repository link (null = leave as is). */
+export interface RepoTaxChange {
+  hsn: string | null;
+  taxId: number | null;
 }
 
 /** Sub-category option (GetSubCategoryByCategoryId). */
@@ -210,6 +219,13 @@ export interface RepoItem {
   designCode: string;
   designName: string;
   variantName: string;
+  /** ERP GST group, e.g. "GST 18" (item level; mapped to a tax slab when linking). */
+  gstGroupCode: string;
+  /** ERP HSN/SAC code (item level). */
+  hsnSacCode: string;
+  /** Latest ERP document number / date that touched this record. */
+  docNo: string;
+  docDate: string;
 }
 
 /** A batch row from syncing a repository item (GetRepositoryBatchByRepoId). */

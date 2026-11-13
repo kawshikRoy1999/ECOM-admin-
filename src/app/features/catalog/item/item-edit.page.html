@@ -418,10 +418,21 @@
                 </div>
                 <span class="status-chip neutral"><span class="dot"></span>{{ variants().length }} variants</span>
               </div>
-              <button (click)="openAddVariant()" class="btn-primary h-8.5 px-3.5 text-[12px] font-semibold rounded-xl gap-1.5">
-                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
-                Add Variant
-              </button>
+              <div class="flex items-center gap-2">
+                @if (canSyncRepo()) {
+                  <button type="button" (click)="repoSyncOpen.set(true)" title="Create a variant from an ERP repository record and link them"
+                    class="h-8.5 px-3.5 text-[12px] font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 transition-colors">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    Sync with Repository
+                  </button>
+                }
+                <!-- Add Variant hidden for the client demo. Restore by removing this comment.
+                <button (click)="openAddVariant()" class="btn-primary h-8.5 px-3.5 text-[12px] font-semibold rounded-xl gap-1.5">
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  Add Variant
+                </button>
+                -->
+              </div>
             </div>
 
             <!-- Variant Filter Bar -->
@@ -491,7 +502,13 @@
                         </td>
                       </tr>
                     } @empty {
-                      <tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">No variants yet. Select option values above and save to generate variants.</td></tr>
+                      <tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">
+                        @if (canSyncRepo()) {
+                          No variants yet. Use <span class="font-semibold text-slate-600">Sync with Repository</span> to create one from an ERP record.
+                        } @else {
+                          No variants yet. Select option values above and save to generate variants.
+                        }
+                      </td></tr>
                     }
                   }
                 </tbody>
@@ -848,8 +865,24 @@
       [itemName]="form.controls.itemName.value"
       [categoryId]="form.controls.categoryId.value"
       [itemReturnDays]="form.controls.returnWindowInDays.value || 0"
-      (close)="variantModalOpen.set(false)"
-      (saved)="onVariantSaved()"
+      [repoPrefill]="repoPrefill()"
+      [itemTaxId]="form.controls.taxId.value || 0"
+      [itemHsn]="form.controls.hsn.value || ''"
+      (close)="closeVariantModal()"
+      (saved)="onVariantSaved($event)"
+    />
+  }
+
+  @if (repoSyncOpen()) {
+    <app-repo-quick-sync
+      [itemId]="itemId()"
+      [itemReturnDays]="form.controls.returnWindowInDays.value || 0"
+      [createDirectly]="!hasVariantOptions()"
+      [itemTaxId]="form.controls.taxId.value || 0"
+      [itemHsn]="form.controls.hsn.value || ''"
+      (close)="repoSyncOpen.set(false)"
+      (synced)="onRepoSynced($event)"
+      (picked)="onRepoPicked($event)"
     />
   }
 

@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Select } from '../../../shared/ui/select/select';
@@ -6,15 +7,18 @@ import { Tabs, TabItem } from '../../../shared/ui/tabs/tabs';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ItemService } from './item.service';
+import { BatchReportService } from '../../reports/batch-report/batch-report.service';
+import { BatchRow } from '../../reports/batch-report/batch-report.models';
 import { ItemFaq, ItemMeta, ItemTag, NamedOption, SimilarItem, ItemVariantInfo, StockList, Bin, RequestSaveRolMoqDetails } from './item.models';
 
 @Component({
   selector: 'app-item-content',
-  imports: [FormsModule, Select, Tabs],
+  imports: [FormsModule, DecimalPipe, Select, Tabs],
   templateUrl: './item-content.html',
 })
 export class ItemContent implements OnInit {
   private readonly service = inject(ItemService);
+  private readonly batchReport = inject(BatchReportService);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
 
@@ -36,6 +40,23 @@ export class ItemContent implements OnInit {
   readonly selectedStockVariantId = signal<number>(0);
   readonly locationStocks = signal<StockList[]>([]);
   readonly loadingStock = signal(false);
+
+  /**
+   * Batch stock of the selected variant (ProductManagement/GetBatchReport, the Batch Report's
+   * endpoint). This is where pricing and the ERP repository sync keep stock (Batch.PhysicalQty);
+   * the location table below is the warehouse/bin stock (StockMaster) that invoicing uses.
+   */
+  readonly batchStock = signal<BatchRow[]>([]);
+  readonly loadingBatchStock = signal(false);
+  readonly batchTotals = computed(() =>
+    this.batchStock().reduce(
+      (t, b) => ({
+        onHand: t.onHand + (Number(b.physicalQty) || 0),
+        reserved: t.reserved + (Number(b.reservedQty) || 0),
+      }),
+      { onHand: 0, reserved: 0 },
+    ),
+  );
   readonly expandedStoreIds = signal<number[]>([]);
   readonly binLists = signal<Record<number, Bin[]>>({});
   readonly batchLists = signal<any[]>([]);
@@ -196,6 +217,7 @@ export class ItemContent implements OnInit {
         if (vars.length && !this.selectedStockVariantId()) {
           this.selectedStockVariantId.set(vars[0].id);
           this.loadLocationStock(vars[0].id);
+          this.loadBatchStock(vars[0].id);
         }
       }
     });
@@ -205,9 +227,37 @@ export class ItemContent implements OnInit {
     this.selectedStockVariantId.set(Number(variantId));
     if (variantId) {
       this.loadLocationStock(Number(variantId));
+      this.loadBatchStock(Number(variantId));
     } else {
       this.locationStocks.set([]);
+      this.batchStock.set([]);
     }
+  }
+
+  /** Batch stock for one variant, from the Batch Report endpoint. */
+  loadBatchStock(variantId: number): void {
+    this.loadingBatchStock.set(true);
+    this.batchReport
+      .report({
+        categoryId: 0,
+        categoryName: '',
+        itemId: this.itemId(),
+        itemVariantId: variantId,
+        searchCriteria: '',
+        pageNumber: 1,
+        recordPerPage: 200,
+      })
+      .subscribe({
+        next: (page) => {
+          // Keep only this variant's batches, in case the report widens the filter.
+          this.batchStock.set(page.batchReportList.filter((b) => Number(b.variantId) === Number(variantId)));
+          this.loadingBatchStock.set(false);
+        },
+        error: () => {
+          this.batchStock.set([]);
+          this.loadingBatchStock.set(false);
+        },
+      });
   }
 
   loadLocationStock(variantId: number): void {

@@ -1,0 +1,109 @@
+@if (hsnState() !== 'none' || taxState() !== 'none') {
+  <div class="flex flex-col gap-2 rounded-xl border border-slate-200 px-3.5 py-3 text-[12.5px]">
+    <p class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Item tax details from the ERP</p>
+
+    <!-- HSN / SAC -->
+    @switch (hsnState()) {
+      @case ('same') {
+        <p class="text-slate-500">HSN/SAC <span class="font-mono">{{ erpHsn() }}</span> is already on the item.</p>
+      }
+      @case ('fill') {
+        <label class="flex items-center gap-2 text-slate-700">
+          <input id="repo-tax-apply-hsn" type="checkbox" class="h-3.5 w-3.5" [ngModel]="applyHsn()" (ngModelChange)="toggleHsn($event)" />
+          Set the item's HSN/SAC to <span class="font-mono font-semibold">{{ erpHsn() }}</span>
+        </label>
+      }
+      @case ('differs') {
+        <div class="rounded-lg bg-amber-50 px-2.5 py-2 text-amber-800">
+          <p>The ERP sends HSN/SAC <span class="font-mono font-semibold">{{ erpHsn() }}</span>, but the item has <span class="font-mono font-semibold">{{ itemHsn() }}</span>.</p>
+          <label class="mt-1 flex items-center gap-2">
+            <input id="repo-tax-overwrite-hsn" type="checkbox" class="h-3.5 w-3.5" [ngModel]="applyHsn()" (ngModelChange)="toggleHsn($event)" />
+            Replace it with the ERP value
+          </label>
+        </div>
+      }
+    }
+
+    <!-- GST group → tax slab -->
+    @switch (taxState()) {
+      @case ('loading') {
+        <p class="text-slate-400">Matching {{ erpGst() }} to a tax slab…</p>
+      }
+      @case ('same') {
+        <p class="text-slate-500">Tax {{ selectedTax()?.taxName }} is already on the item.</p>
+      }
+      @case ('fill') {
+        <label class="flex items-center gap-2 text-slate-700">
+          <input id="repo-tax-apply-tax" type="checkbox" class="h-3.5 w-3.5" [ngModel]="applyTax()" (ngModelChange)="toggleTax($event)" />
+          Set the item's tax to <span class="font-semibold">{{ selectedTax()?.taxName }}</span>
+          @if (matchedBy() === 'rate') { <span class="text-[11px] text-slate-400">(matched by rate)</span> }
+        </label>
+      }
+      @case ('differs') {
+        <div class="rounded-lg bg-amber-50 px-2.5 py-2 text-amber-800">
+          <p>The ERP sends <span class="font-semibold">{{ erpGst() }}</span>, but the item's tax is <span class="font-semibold">{{ currentTax()?.taxName || 'another slab' }}</span>.</p>
+          <label class="mt-1 flex items-center gap-2">
+            <input id="repo-tax-overwrite-tax" type="checkbox" class="h-3.5 w-3.5" [ngModel]="applyTax()" (ngModelChange)="toggleTax($event)" />
+            Use {{ selectedTax()?.taxName }} instead
+          </label>
+        </div>
+      }
+      @case ('unmatched') {
+        <div class="flex flex-col gap-2 rounded-lg bg-amber-50 px-2.5 py-2 text-amber-800">
+          <p>No tax slab matches <span class="font-semibold">{{ erpGst() }}</span>.</p>
+          @if (!showCreate()) {
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="repo-tax-pick" [ngModel]="selectedTaxId()" (ngModelChange)="pickSlab($event)"
+                class="h-7.5 rounded-md border border-amber-200 bg-white px-2 text-[12px] text-slate-700">
+                <option [value]="0">Leave the item's tax as is</option>
+                @for (t of taxes(); track t.taxDetailsId) {
+                  <option [value]="t.taxDetailsId">Use {{ t.taxName }}</option>
+                }
+              </select>
+              @if (canCreateSlab()) {
+                <button type="button" (click)="openCreate()"
+                  class="h-7.5 rounded-md border border-amber-300 bg-white px-2.5 text-[12px] font-semibold text-amber-800 hover:bg-amber-100">
+                  Create "{{ erpGst() }}" slab
+                </button>
+              } @else {
+                <span class="text-[11.5px]">To add it, ask someone with access to Settings → Taxes.</span>
+              }
+            </div>
+          } @else {
+            <!-- Inline new-slab form -->
+            <div class="flex flex-col gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2.5 text-slate-700">
+              @if (loadingNames()) {
+                <p class="text-slate-400">Loading tax components…</p>
+              } @else {
+                <label class="flex flex-col gap-1">
+                  <span class="text-[11px] font-semibold text-slate-600">Slab name</span>
+                  <input id="repo-tax-slab-name" [ngModel]="slabName()" (ngModelChange)="slabName.set($event)"
+                    class="h-7.5 rounded-md border border-slate-200 px-2 text-[12px]" />
+                </label>
+                <div class="flex flex-wrap gap-3">
+                  @for (c of slabComponents(); track c.slot) {
+                    <label class="flex flex-col gap-1">
+                      <span class="text-[11px] font-semibold text-slate-600">{{ c.label }} %</span>
+                      <input [id]="'repo-tax-slab-pct-' + c.slot" type="number" min="0" step="0.01"
+                        [ngModel]="c.pct" (ngModelChange)="setComponentPct(c.slot, $event)"
+                        class="h-7.5 w-20 rounded-md border border-slate-200 px-2 text-right text-[12px]" />
+                    </label>
+                  }
+                </div>
+                <p class="text-[11.5px]" [class.text-red-600]="!!slabProblem()" [class.text-slate-400]="!slabProblem()">
+                  {{ slabProblem() || 'Total ' + slabTotal() + '%. The slab is added to Settings → Taxes, not as the default.' }}
+                </p>
+                <div class="flex justify-end gap-2">
+                  <button type="button" (click)="showCreate.set(false)" [disabled]="savingSlab()" class="btn-secondary h-7.5 px-3 text-[12px] font-semibold rounded-md">Cancel</button>
+                  <button type="button" (click)="createSlab()" [disabled]="savingSlab() || !!slabProblem()" class="btn-primary h-7.5 px-3 text-[12px] font-semibold rounded-md disabled:opacity-60">
+                    {{ savingSlab() ? 'Creating…' : 'Create slab' }}
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+}

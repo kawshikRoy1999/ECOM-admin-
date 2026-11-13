@@ -13,6 +13,15 @@ import { ItemContent } from './item-content';
 import { WysiwygEditor } from '../../../shared/ui/wysiwyg-editor/wysiwyg-editor';
 import { Modal } from '../../../shared/ui/modal/modal';
 import { VariantEditModal } from './variant-edit';
+import { RepoPick, RepoQuickSync } from './repo-quick-sync';
+
+/**
+ * Image sub-type for item photos linked with ProductManagement/AddImage. The server derives
+ * Image.ImageTypeId from ImageType (ExternalEntityType, ExternalEntitySubType); the .NET admin
+ * uses ('Item', 'Original'). An unknown pair saves ImageTypeId = 0, which drops the photo from
+ * every query that inner-joins ImageType (storefront item images, image library).
+ */
+const ITEM_IMAGE_SUBTYPE = 'Original';
 import { ItemService } from './item.service';
 import {
   ItemDetail,
@@ -27,6 +36,7 @@ import {
   StockTransaction,
   CustomFieldOption,
   ItemImage,
+  RepoTaxChange,
 } from './item.models';
 
 /** Local row for the Variants tab: an option with per-value selection. */
@@ -47,7 +57,7 @@ interface OptionRow {
 
 @Component({
   selector: 'app-item-edit-page',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, NgTemplateOutlet, Select, ItemContent, VariantEditModal, WysiwygEditor, Modal],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, DecimalPipe, NgTemplateOutlet, Select, ItemContent, VariantEditModal, RepoQuickSync, WysiwygEditor, Modal],
   templateUrl: './item-edit.page.html',
 })
 export class ItemEditPage {
@@ -109,6 +119,8 @@ export class ItemEditPage {
   // Variant options (per-value selection merged from category options + item's saved selection)
   readonly optionRows = signal<OptionRow[]>([]);
   readonly loadingOptions = signal(false);
+  /** True once the current category's options loaded successfully (a failed load must not read as "no options"). */
+  readonly optionsLoaded = signal(false);
   /** Options applied on variants (multi-select) vs item-level attributes (single-select). */
   readonly variantLevelOptions = computed(() => this.optionRows().filter((r) => !r.singleSelect));
   readonly itemLevelOptions = computed(() => this.optionRows().filter((r) => r.singleSelect));
@@ -121,6 +133,26 @@ export class ItemEditPage {
   // Variant add/edit modal
   readonly variantModalOpen = signal(false);
   readonly editingVariantId = signal(0);
+
+  // "Sync with Repository": the single entry point for creating a variant from an ERP record.
+  readonly repoSyncOpen = signal(false);
+  /** Record picked in the options flow, handed to the variant editor as a prefill. */
+  readonly repoPrefill = signal<RepoPick | null>(null);
+  /** The category has options that generate variants (Size, Colour…). */
+  readonly hasVariantOptions = computed(() => this.variantLevelOptions().length > 0);
+  /**
+   * Offered on a saved item once its category options have loaded. With variant options every
+   * ERP record becomes another variant, so it always shows. Without them the item has a single
+   * variant, so it shows only until that variant exists (linking an existing variant isn't built).
+   */
+  readonly canSyncRepo = computed(
+    () =>
+      this.itemId() > 0 &&
+      this.optionsLoaded() &&
+      !this.loadingOptions() &&
+      !this.loadingVariants() &&
+      (this.hasVariantOptions() || this.allVariants().length === 0),
+  );
 
   // Variant filtering
   readonly variantFilters = signal<Record<number, number>>({});
@@ -320,6 +352,7 @@ export class ItemEditPage {
     // category change replaces the available variant options; drop saved selection
     this.itemSavedOptions = [];
     this.optionRows.set([]);
+    this.optionsLoaded.set(false);
     if (id) {
       this.loadSubCategories(Number(id));
       this.loadVariantOptions(Number(id));
@@ -558,6 +591,7 @@ export class ItemEditPage {
           };
         });
         this.optionRows.set(rows);
+        this.optionsLoaded.set(true);
         this.loadingOptions.set(false);
         this.initDone();
       },
@@ -637,18 +671,58 @@ export class ItemEditPage {
   }
 
   openAddVariant(): void {
+    this.repoPrefill.set(null);
     this.editingVariantId.set(0);
     this.variantModalOpen.set(true);
   }
 
   openEditVariant(v: ItemVariantRow): void {
+    this.repoPrefill.set(null);
     this.editingVariantId.set(v.itemVariantId);
     this.variantModalOpen.set(true);
   }
 
-  onVariantSaved(): void {
+  closeVariantModal(): void {
     this.variantModalOpen.set(false);
+    this.repoPrefill.set(null);
+  }
+
+  onVariantSaved(taxChange: RepoTaxChange | null = null): void {
+    this.closeVariantModal();
     this.loadVariants();
+    this.applyRepoTaxChange(taxChange);
+  }
+
+  /** No-options flow: the picker created and linked the variant itself. */
+  onRepoSynced(taxChange: RepoTaxChange | null): void {
+    this.repoSyncOpen.set(false);
+    this.loadVariants();
+    this.applyRepoTaxChange(taxChange);
+  }
+
+  /**
+   * After a repository link, put the accepted ERP HSN / tax slab on the item. When the page has
+   * no other unsaved edits the item is saved straight away; otherwise the fields are only filled
+   * in, so the user's other edits are never saved without them pressing Save Item.
+   */
+  private applyRepoTaxChange(change: RepoTaxChange | null): void {
+    if (!change || (change.hsn === null && change.taxId === null)) return;
+    const hadOtherEdits = this.isDirty();
+    if (change.hsn !== null) this.form.controls.hsn.setValue(change.hsn);
+    if (change.taxId !== null) this.form.controls.taxId.setValue(change.taxId);
+    if (hadOtherEdits) {
+      this.toast.info('HSN/tax filled in from the ERP record. Press Save Item to keep them with your other changes.');
+      return;
+    }
+    this.save();
+  }
+
+  /** Options flow: open the new-variant editor filled from the picked ERP record. */
+  onRepoPicked(pick: RepoPick): void {
+    this.repoSyncOpen.set(false);
+    this.repoPrefill.set(pick);
+    this.editingVariantId.set(0);
+    this.variantModalOpen.set(true);
   }
 
   async deleteVariant(v: ItemVariantRow): Promise<void> {
@@ -924,7 +998,7 @@ export class ItemEditPage {
           FilePath: filePath,
           Title: fileName,
           EntityType: 'Item',
-          EntitySubType: 'Image',
+          EntitySubType: ITEM_IMAGE_SUBTYPE,
           Height: 0,
           Width: 0,
           CompanyId: this.service['auth'].companyId(),
@@ -969,7 +1043,7 @@ export class ItemEditPage {
           FilePath: filePath,
           Title: fileName,
           EntityType: 'Item',
-          EntitySubType: 'Image',
+          EntitySubType: ITEM_IMAGE_SUBTYPE,
           Height: 0,
           Width: 0,
           CompanyId: this.service['auth'].companyId(),
@@ -1053,7 +1127,7 @@ export class ItemEditPage {
                 FilePath: filePath,
                 Title: fileName,
                 EntityType: 'Item',
-                EntitySubType: 'Image',
+                EntitySubType: ITEM_IMAGE_SUBTYPE,
                 Height: 0,
                 Width: 0,
                 CompanyId: this.service['auth'].companyId(),
@@ -1219,7 +1293,7 @@ export class ItemEditPage {
         FilePath: filePath,
         Title: fileName,
         EntityType: 'Item',
-        EntitySubType: 'Image',
+        EntitySubType: ITEM_IMAGE_SUBTYPE,
         Height: 0,
         Width: 0,
         CompanyId: this.service['auth'].companyId(),

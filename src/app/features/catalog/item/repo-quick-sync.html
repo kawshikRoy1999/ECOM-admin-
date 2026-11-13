@@ -1,0 +1,163 @@
+<app-modal title="Sync with Repository" widthClass="max-w-2xl" (close)="close.emit()">
+  @if (step() === 'pick') {
+    <div class="flex flex-col gap-3">
+      <p class="text-[12.5px] text-slate-500">
+        @if (createDirectly()) {
+          This item's category has no variant options, so the item gets one variant.
+          Pick the ERP record to create it from; its waiting stock moves onto the new variant.
+        } @else {
+          Pick the ERP record for the new variant. Its name and batches are filled in for you;
+          you then choose the option values and save.
+        }
+      </p>
+
+      <input
+        id="repo-quick-search"
+        [ngModel]="query()"
+        (ngModelChange)="onQueryChange($event)"
+        (keyup.enter)="search()"
+        placeholder="Search by item code, name, design, variant, HSN or doc no…"
+        class="h-8 w-full rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
+
+      @if (searching()) {
+        <p class="py-6 text-center text-[13px] text-slate-400">Loading…</p>
+      } @else if (records().length) {
+        <div class="overflow-x-auto max-h-[50vh]">
+          <table class="min-w-full text-[12.5px]">
+            <thead class="sticky top-0 bg-white text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+              <tr>
+                <th class="px-2 py-1.5 text-left">Item Code</th>
+                <th class="px-2 py-1.5 text-left">Item Name</th>
+                <th class="px-2 py-1.5 text-left">Design</th>
+                <th class="px-2 py-1.5 text-left">Variant</th>
+                <th class="px-2 py-1.5 text-left">GST</th>
+                <th class="px-2 py-1.5 text-left">HSN/SAC</th>
+                <th class="px-2 py-1.5"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of records(); track r.id) {
+                <tr class="border-b border-slate-50 hover:bg-slate-50/50">
+                  <td class="px-2 py-2 font-mono">{{ r.itemCode }}</td>
+                  <td class="px-2 py-2">
+                    {{ r.itemName }}
+                    @if (r.docNo || r.docDate) {
+                      <span class="block text-[11px] text-slate-400">
+                        {{ r.docNo || 'No doc no.' }}@if (r.docDate) { · {{ r.docDate }} }
+                      </span>
+                    }
+                  </td>
+                  <td class="px-2 py-2 text-slate-500">{{ r.designName || r.designCode || '—' }}</td>
+                  <td class="px-2 py-2 text-slate-500">{{ r.variantName || '—' }}</td>
+                  <td class="px-2 py-2 whitespace-nowrap text-slate-600">{{ r.gstGroupCode || '—' }}</td>
+                  <td class="px-2 py-2 font-mono text-slate-600">{{ r.hsnSacCode || '—' }}</td>
+                  <td class="px-2 py-2 text-right">
+                    <button type="button" (click)="pick(r)" [disabled]="loadingBatches()"
+                      class="h-7 px-3 text-[11.5px] font-semibold rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 transition-colors">
+                      Select
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="py-6 text-center text-[13px] text-slate-400">
+          {{ query().trim() ? 'No unlinked records match your search.' : 'No unlinked repository records.' }}
+        </p>
+      }
+    </div>
+  } @else {
+    @let r = chosen();
+    <div class="flex flex-col gap-4">
+      <div class="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-[12.5px]">
+        <p class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Linking to ERP record</p>
+        <p class="mt-0.5 font-semibold text-slate-800">
+          <span class="font-mono">{{ r?.itemCode }}</span> · {{ r?.itemName }}
+          @if (r?.variantName) { <span class="text-slate-500">· {{ r?.variantName }}</span> }
+        </p>
+      </div>
+
+      <app-repo-item-tax
+        [gstCode]="r?.gstGroupCode ?? ''"
+        [hsnCode]="r?.hsnSacCode ?? ''"
+        [itemTaxId]="itemTaxId()"
+        [itemHsn]="itemHsn()"
+        [(change)]="taxChange"
+      />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1">
+          <span class="text-[11.5px] font-semibold text-slate-600">Variant name</span>
+          <input id="repo-quick-name" [ngModel]="variantName()" (ngModelChange)="variantName.set($event)"
+            class="h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px]" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-[11.5px] font-semibold text-slate-600">Warehouse</span>
+          <select id="repo-quick-store" [ngModel]="wareHouseId()" (ngModelChange)="wareHouseId.set(+$event)"
+            class="h-8 rounded-lg border border-slate-200 px-2 text-[12.5px] bg-white">
+            @for (s of stores(); track s.storeId) {
+              <option [value]="s.storeId">{{ s.storeName }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-baseline justify-between gap-2">
+          <span class="text-[11.5px] font-semibold text-slate-600">Batches</span>
+          <span class="text-[11.5px] text-slate-400">{{ rows().length }} batch{{ rows().length === 1 ? '' : 'es' }} · {{ totalUnits() | number }} units</span>
+        </div>
+        @if (!hadHeldBatches()) {
+          <p class="rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
+            This record has no stock waiting yet. Enter the first batch's code and price; quantity can stay 0.
+            Later ERP pushes will add stock to it.
+          </p>
+        }
+        <div class="overflow-x-auto rounded-lg border border-slate-200">
+          <table class="min-w-full text-[12.5px]">
+            <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+              <tr>
+                <th class="px-2.5 py-1.5 text-left">Batch code</th>
+                <th class="px-2.5 py-1.5 text-right">Price</th>
+                <th class="px-2.5 py-1.5 text-right">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track $index; let i = $index) {
+                <tr class="border-t border-slate-100">
+                  <td class="px-2.5 py-1.5">
+                    <input [id]="'repo-quick-batch-' + i" [ngModel]="row.batchCode" (ngModelChange)="patchRow(i, 'batchCode', $event)"
+                      class="h-7.5 w-full min-w-[140px] rounded-md border border-slate-200 px-2 font-mono text-[12px]" />
+                  </td>
+                  <td class="px-2.5 py-1.5 text-right">
+                    <input [id]="'repo-quick-price-' + i" type="number" min="0" step="0.01" [ngModel]="row.price" (ngModelChange)="patchRow(i, 'price', $event)"
+                      class="h-7.5 w-24 rounded-md border border-slate-200 px-2 text-right text-[12px]" />
+                  </td>
+                  <td class="px-2.5 py-1.5 text-right">
+                    <input [id]="'repo-quick-qty-' + i" type="number" min="0" step="1" [ngModel]="row.quantity" (ngModelChange)="patchRow(i, 'quantity', $event)"
+                      class="h-7.5 w-20 rounded-md border border-slate-200 px-2 text-right text-[12px]" />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="text-[11.5px] text-slate-400">The price is used as MRP, selling price and cost, as with every repository batch.</p>
+      </div>
+    </div>
+  }
+
+  <div footer class="flex w-full items-center justify-between gap-2">
+    @if (step() === 'confirm') {
+      <button type="button" (click)="back()" [disabled]="creating()" class="btn-secondary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">Back</button>
+      <button type="button" (click)="create()" [disabled]="creating()" class="btn-primary h-8 px-4 text-[12.5px] font-semibold rounded-lg disabled:opacity-60">
+        {{ creating() ? 'Creating…' : 'Create variant & link' }}
+      </button>
+    } @else {
+      <span></span>
+      <button type="button" (click)="close.emit()" class="btn-secondary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">Close</button>
+    }
+  </div>
+</app-modal>

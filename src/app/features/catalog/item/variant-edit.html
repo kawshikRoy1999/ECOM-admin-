@@ -4,6 +4,24 @@
   } @else if (model(); as m) {
     <div class="flex flex-col gap-3">
 
+      @if (linkedRecord(); as rec) {
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2 text-[12.5px]">
+          <p class="min-w-0 text-indigo-900">
+            Linking to ERP record <span class="font-mono font-semibold">{{ rec.itemCode }}</span>
+            <span class="text-indigo-700">· {{ rec.itemName }}@if (rec.variantName) { · {{ rec.variantName }} }</span>.
+            Choose the option values, check the batches, then save.
+          </p>
+          <button type="button" (click)="unlinkRepo()" class="shrink-0 text-[12px] font-semibold text-indigo-600 hover:underline">Don't link</button>
+        </div>
+        <app-repo-item-tax
+          [gstCode]="rec.gstGroupCode"
+          [hsnCode]="rec.hsnSacCode"
+          [itemTaxId]="itemTaxId()"
+          [itemHsn]="itemHsn()"
+          [(change)]="taxChange"
+        />
+      }
+
       <!-- Variant Option Selectors (only for new variants) -->
       @if (isNew() && variantOptions().length) {
         <div class="flex items-end gap-3 flex-wrap rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
@@ -21,28 +39,6 @@
               </select>
             </div>
           }
-
-          <!-- Sync With Repository button -->
-          <button (click)="openRepoModal()" type="button"
-            class="h-8 px-3 rounded-lg border border-slate-200 bg-transparent text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 self-end ml-auto transition-colors">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Sync With Repository
-          </button>
-        </div>
-      }
-
-      @if (isNew() && !variantOptions().length) {
-        <!-- Sync button when no variant options configured -->
-        <div class="flex items-center">
-          <button (click)="openRepoModal()" type="button"
-            class="h-8 px-3 rounded-lg border border-slate-200 bg-transparent text-[12.5px] font-medium text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 transition-colors">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Sync With Repository
-          </button>
         </div>
       }
 
@@ -143,64 +139,3 @@
     <button (click)="save()" [disabled]="saving() || loading()" class="btn-primary h-8 px-4 text-[12.5px] font-semibold rounded-lg min-w-[90px] disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save Variant' }}</button>
   </div>
 </app-modal>
-
-<!-- Sync with Repository Modal -->
-@if (showRepoModal()) {
-  <app-modal title="Sync with Repository" widthClass="max-w-2xl" (close)="closeRepoModal()">
-    <div class="flex flex-col gap-3">
-      <div class="flex gap-2">
-        <input
-          [ngModel]="repoSearchQuery()"
-          (ngModelChange)="onRepoQueryChange($event)"
-          (keyup.enter)="searchRepo()"
-          placeholder="Search item..."
-          class="flex-1 h-8 rounded-lg border border-slate-200 px-2.5 text-[12.5px] bg-slate-50/50" />
-        <button (click)="searchRepo()" [disabled]="repoSearching()" class="btn-primary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">
-          {{ repoSearching() ? 'Searching…' : 'Search' }}
-        </button>
-      </div>
-
-      @if (repoSearching()) {
-        <p class="text-center text-[13px] text-slate-400 py-4">Loading...</p>
-      } @else if (repoItems().length) {
-        <div class="overflow-x-auto max-h-[50vh]">
-          <table class="min-w-full text-[12.5px]">
-            <thead class="text-[10px] uppercase tracking-wider text-slate-400 font-bold sticky top-0 bg-white">
-              <tr>
-                <th class="px-1 py-1 text-left">Item Code</th>
-                <th class="px-1 py-1 text-left">Item Name</th>
-                <th class="px-1 py-1 text-left">Design Code</th>
-                <th class="px-1 py-1 text-left">Design Name</th>
-                <th class="px-1 py-1 text-left">Variant</th>
-                <th class="px-2 py-1.5"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of repoItems(); track item.id) {
-                <tr class="border-b border-slate-50 hover:bg-slate-50/50">
-                  <td class="px-2 py-2 font-mono">{{ item.itemCode }}</td>
-                  <td class="px-2 py-2">{{ item.itemName }}</td>
-                  <td class="px-2 py-2">{{ item.designCode }}</td>
-                  <td class="px-2 py-2">{{ item.designName }}</td>
-                  <td class="px-2 py-2">{{ item.variantName }}</td>
-                  <td class="px-2 py-2 text-center">
-                    <button (click)="syncRepoItem(item)" [disabled]="repoSyncing()"
-                      class="h-7 px-3 text-[11.5px] font-semibold rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 transition-colors">
-                      Sync
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else {
-        <p class="text-center text-[13px] text-slate-400 py-4">{{ repoSearchQuery().trim() ? 'No unlinked records match your search.' : 'No unlinked repository records.' }}</p>
-      }
-    </div>
-
-    <div footer class="flex justify-end">
-      <button (click)="closeRepoModal()" class="btn-secondary h-8 px-3.5 text-[12.5px] font-semibold rounded-lg">Close</button>
-    </div>
-  </app-modal>
-}

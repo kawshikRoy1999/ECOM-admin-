@@ -146,6 +146,25 @@ export interface OrderItem {
   invoiceLineItemStatus: string;
   cancelReason: string;
   unitName: string;
+  /**
+   * Line price stored at checkout (OrderDetail), returned once the 2026-11-13 migration of
+   * SP_GetOrderInvoiceDetails is deployed. lineAmountExclTax is the WHOLE line excluding tax,
+   * not a unit price.
+   */
+  lineAmountExclTax?: number;
+  lineTaxAmount?: number;
+  lineTaxRate?: number;
+  lineDiscountAmount?: number;
+}
+
+/** Price shown on an order line. */
+export interface LinePrice {
+  /** Unit rate excluding tax. */
+  rate: number | null;
+  /** Line amount including tax (what the customer pays for the line, before order-level discount). */
+  amount: number | null;
+  taxRate: number | null;
+  discount: number;
 }
 
 /** Per-item rate/amount row from order.data (ItemRateQuantity). */

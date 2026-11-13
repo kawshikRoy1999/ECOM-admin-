@@ -140,6 +140,69 @@
         </div>
       </div>
 
+      <!-- Batch stock (same source as Reports → Batch Report) -->
+      <div class="flex flex-col gap-2">
+        <div class="flex items-baseline justify-between gap-3 flex-wrap">
+          <div>
+            <p class="text-[12.5px] font-bold text-slate-800">Batch stock</p>
+            <p class="text-[11.5px] text-slate-400">Stock per batch, as kept by pricing and the ERP sync. Same figures as Reports → Batch Report.</p>
+          </div>
+          @if (batchStock().length) {
+            <p class="text-[12px] text-slate-500">
+              {{ batchStock().length }} batch{{ batchStock().length === 1 ? '' : 'es' }} ·
+              <span class="font-semibold text-slate-800">{{ batchTotals().onHand - batchTotals().reserved }}</span> available
+            </p>
+          }
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="min-w-full divide-y divide-slate-100 text-[13px]">
+            <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+              <tr>
+                <th class="px-4 py-2.5 text-left">Batch Code</th>
+                <th class="px-4 py-2.5 text-right">MRP</th>
+                <th class="px-4 py-2.5 text-right">Price</th>
+                <th class="px-4 py-2.5 text-center">On Hand Qty</th>
+                <th class="px-4 py-2.5 text-center">Reserved Qty</th>
+                <th class="px-4 py-2.5 text-center">Available Qty</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @if (loadingBatchStock()) {
+                <tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Loading batch stock…</td></tr>
+              } @else {
+                @for (b of batchStock(); track b.batchId) {
+                  @let available = (b.physicalQty || 0) - (b.reservedQty || 0);
+                  <tr class="hover:bg-slate-50/30">
+                    <td class="px-4 py-2.5 font-mono text-[12px] text-slate-700">{{ b.batchCode || '—' }}</td>
+                    <td class="px-4 py-2.5 text-right font-mono tabular-nums text-slate-600">{{ b.mrp | number:'1.2-2' }}</td>
+                    <td class="px-4 py-2.5 text-right font-mono tabular-nums text-slate-800">{{ b.price | number:'1.2-2' }}</td>
+                    <td class="px-4 py-2.5 text-center font-medium tabular-nums">{{ b.physicalQty ?? 0 }}</td>
+                    <td class="px-4 py-2.5 text-center text-slate-500 tabular-nums">{{ b.reservedQty ?? 0 }}</td>
+                    <td class="px-4 py-2.5 text-center font-semibold tabular-nums" [class.text-red-500]="available <= 0" [class.text-green-600]="available > 0">{{ available }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">No batches for this variant.</td></tr>
+                }
+                @if (batchStock().length > 1) {
+                  <tr class="bg-slate-50/60 font-semibold">
+                    <td class="px-4 py-2.5 text-slate-600" colspan="3">Total</td>
+                    <td class="px-4 py-2.5 text-center tabular-nums">{{ batchTotals().onHand }}</td>
+                    <td class="px-4 py-2.5 text-center tabular-nums text-slate-500">{{ batchTotals().reserved }}</td>
+                    <td class="px-4 py-2.5 text-center tabular-nums">{{ batchTotals().onHand - batchTotals().reserved }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Warehouse & bin stock (StockMaster), hidden for now (stock is tracked by batch above). Restore by removing this comment.
+      <div class="pt-2">
+        <p class="text-[12.5px] font-bold text-slate-800">Warehouse & bin stock</p>
+        <p class="text-[11.5px] text-slate-400">Stock by location and bin. Invoices take stock from here; set ROL/MOQ and adjust bin stock per location.</p>
+      </div>
+
       @if (loadingStock()) {
         <p class="py-16 text-center text-sm text-slate-400">Loading stock status...</p>
       } @else {
@@ -214,12 +277,18 @@
                   </tr>
                 }
               } @empty {
-                <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">No locations available.</td></tr>
+                <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">
+                  No warehouse holds stock of this variant yet.
+                  @if (batchStock().length) {
+                    <span class="block text-[12px] mt-1">Its batch stock above isn't in a warehouse/bin, so it can't be invoiced until it is.</span>
+                  }
+                </td></tr>
               }
             </tbody>
           </table>
         </div>
       }
+      -->
 
       <!-- Adjust Quantity Modal -->
       @if (showAdjustModal()) {

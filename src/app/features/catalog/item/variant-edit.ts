@@ -1,10 +1,12 @@
-import { Component, OnDestroy, OnInit, inject, input, output, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, input, output, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { Modal } from '../../../shared/ui/modal/modal';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ItemService } from './item.service';
-import { VariantEdit, VariantPricing, RepoItem, StoreOption } from './item.models';
+import { RepoTaxChange, VariantEdit, VariantPricing, StoreOption } from './item.models';
+import { RepoPick } from './repo-quick-sync';
+import { RepoItemTax } from './repo-item-tax';
 
 /** Selection state for a variant option dropdown. */
 interface VariantOptionSelection {
@@ -16,10 +18,10 @@ interface VariantOptionSelection {
 
 @Component({
   selector: 'app-variant-edit',
-  imports: [FormsModule, Modal],
+  imports: [FormsModule, Modal, RepoItemTax],
   templateUrl: './variant-edit.html',
 })
-export class VariantEditModal implements OnInit, OnDestroy {
+export class VariantEditModal implements OnInit {
   private readonly service = inject(ItemService);
   private readonly toast = inject(ToastService);
 
@@ -31,8 +33,19 @@ export class VariantEditModal implements OnInit, OnDestroy {
   readonly categoryId = input<number>(0);
   /** The parent item's return window; new variants inherit it as their Return Days. */
   readonly itemReturnDays = input<number>(0);
+  /**
+   * A repository record chosen from the item page's "Sync with Repository" (categories with
+   * options). Fills the new variant's name and batch rows and links it on save.
+   */
+  readonly repoPrefill = input<RepoPick | null>(null);
+  /** The item's current tax slab and HSN (compared with a linked ERP record's GST group / HSN). */
+  readonly itemTaxId = input<number>(0);
+  readonly itemHsn = input<string>('');
   readonly close = output<void>();
-  readonly saved = output<void>();
+  /** Saved; carries the item tax/HSN update accepted for a linked ERP record (else null). */
+  readonly saved = output<RepoTaxChange | null>();
+  /** Item tax/HSN update chosen in the "Item tax details" panel. */
+  readonly taxChange = signal<RepoTaxChange | null>(null);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -43,14 +56,6 @@ export class VariantEditModal implements OnInit, OnDestroy {
   /** Whether user has manually typed the variant name. */
   isManualName = false;
 
-  /** Sync with Repository state. */
-  readonly showRepoModal = signal(false);
-  readonly repoSearchQuery = signal('');
-  readonly repoSearching = signal(false);
-  readonly repoItems = signal<RepoItem[]>([]);
-  readonly repoSyncing = signal(false);
-  private repoTimer: ReturnType<typeof setTimeout> | null = null;
-
   /** Warehouses for the batch rows. */
   readonly stores = signal<StoreOption[]>([]);
 
@@ -58,12 +63,23 @@ export class VariantEditModal implements OnInit, OnDestroy {
   readonly isNew = computed(() => this.itemVariantId() === 0);
 
   ngOnInit(): void {
-    this.service.stores().subscribe({ next: (s) => this.stores.set(s), error: () => this.stores.set([]) });
+    this.service.stores().subscribe({
+      next: (s) => {
+        this.stores.set(s);
+        this.fillMissingWarehouse();
+      },
+      error: () => this.stores.set([]),
+    });
     this.load();
   }
 
-  ngOnDestroy(): void {
-    if (this.repoTimer) clearTimeout(this.repoTimer);
+  /** Repository batch rows default to the first warehouse; stores may arrive after the prefill. */
+  private fillMissingWarehouse(): void {
+    const m = this.model();
+    const first = this.stores()[0]?.storeId;
+    if (!m?.repoId || !first) return;
+    if (!m.pricing.some((p) => !p.wareHouseId)) return;
+    this.model.set({ ...m, pricing: m.pricing.map((p) => (p.wareHouseId ? p : { ...p, wareHouseId: first })) });
   }
 
   private today(): string {
@@ -94,6 +110,8 @@ export class VariantEditModal implements OnInit, OnDestroy {
           v.returnDays = this.itemReturnDays();
         }
         this.model.set(v);
+        const prefill = this.repoPrefill();
+        if (this.isNew() && prefill) this.applyRepoPrefill(prefill);
         this.loading.set(false);
 
         // For new variants, load the variant option dropdowns. Like the .NET view, only options
@@ -261,77 +279,42 @@ export class VariantEditModal implements OnInit, OnDestroy {
     return ids.join(',');
   }
 
-  // ── Sync with Repository ───────────────────────────────────
-  openRepoModal(): void {
-    this.showRepoModal.set(true);
-    this.repoSearchQuery.set('');
-    this.repoItems.set([]);
-    // An empty search returns every unlinked repository record, so show them straight away.
-    this.searchRepo();
-  }
+  // ── Repository prefill ─────────────────────────────────────
+  /** The ERP record this new variant will be linked to on save (shown in the banner). */
+  readonly linkedRecord = computed(() => (this.model()?.repoId ? this.repoPrefill()?.record ?? null : null));
 
-  closeRepoModal(): void {
-    this.showRepoModal.set(false);
-  }
-
-  /** Debounced search-as-you-type (the .NET modal searches 300ms after each keystroke). */
-  onRepoQueryChange(value: string): void {
-    this.repoSearchQuery.set(value);
-    if (this.repoTimer) clearTimeout(this.repoTimer);
-    this.repoTimer = setTimeout(() => this.searchRepo(), 300);
-  }
-
-  searchRepo(): void {
-    const q = this.repoSearchQuery().trim();
-    this.repoSearching.set(true);
-    this.service.searchRepository(q).subscribe({
-      next: (items) => {
-        this.repoItems.set(items);
-        this.repoSearching.set(false);
-      },
-      error: () => this.repoSearching.set(false),
-    });
-  }
-
-  syncRepoItem(item: RepoItem): void {
+  /** Fill the new variant from a repository record: its name, and one batch row per held batch. */
+  private applyRepoPrefill({ record, batches }: RepoPick): void {
     const m = this.model();
     if (!m) return;
-
-    this.repoSyncing.set(true);
-    this.service.getRepositoryBatch(item.id).subscribe({
-      next: (batches) => {
-        // Set variant name from repo item
-        this.model.set({
-          ...m,
-          itemVariantName: item.itemName,
-          repoId: item.id,
-          // Replace pricing rows with batch data
-          pricing: batches.length
-            ? batches.map((b) => ({
-                itemPricingId: 0,
-                mrp: b.price,
-                discount: 0,
-                price: b.price,
-                cost: b.price,
-                startDate: this.today(),
-                endDate: this.today(),
-                batchCode: b.barcode,
-                wareHouseId: this.stores()[0]?.storeId ?? null,
-                physicalQty: b.quantity,
-                batchId: null,
-              }))
-            : [this.blankPricing()],
-        });
-        this.isManualName = true; // Don't override repo-synced name
-        this.repoSyncing.set(false);
-        this.showRepoModal.set(false);
-        this.toast.success('Synced with repository.');
-      },
-      error: () => {
-        this.repoSyncing.set(false);
-        this.toast.error('Failed to sync with repository.');
-      },
+    const store = this.stores()[0]?.storeId ?? null;
+    this.model.set({
+      ...m,
+      itemVariantName: record.itemName,
+      repoId: record.id,
+      pricing: batches.length
+        ? batches.map((b) => ({
+            itemPricingId: 0,
+            mrp: b.price,
+            discount: 0,
+            price: b.price,
+            cost: b.price,
+            startDate: this.today(),
+            endDate: this.today(),
+            batchCode: b.barcode,
+            wareHouseId: store,
+            physicalQty: b.quantity,
+            batchId: null,
+          }))
+        : [this.blankPricing()],
     });
+    this.isManualName = true; // keep the ERP name when options are picked
+  }
+
+  /** Drop the link; the filled-in name and rows stay so the variant can still be saved by hand. */
+  unlinkRepo(): void {
+    const m = this.model();
+    if (m) this.model.set({ ...m, repoId: 0 });
   }
 
   save(): void {
@@ -342,10 +325,11 @@ export class VariantEditModal implements OnInit, OnDestroy {
       return;
     }
 
-    // For new variants, require at least one option selection
+    // For new variants, require at least one option selection — also when filled from the
+    // repository (categories without options create their variant on the item page instead).
     if (this.isNew() && this.variantOptions().length > 0) {
       const hasSelection = this.variantOptions().some((o) => o.selectedValueId !== 0);
-      if (!hasSelection && !m.repoId) {
+      if (!hasSelection) {
         this.toast.error('Please select at least one variant option.');
         return;
       }
@@ -405,7 +389,8 @@ export class VariantEditModal implements OnInit, OnDestroy {
             return;
           }
           this.toast.success(this.itemVariantId() ? 'Variant updated.' : 'Variant created.');
-          this.saved.emit();
+          // Only a variant that was actually linked carries the ERP's item tax details.
+          this.saved.emit(this.model()?.repoId ? this.taxChange() : null);
         },
         error: (e: { message?: string }) => {
           this.saving.set(false);

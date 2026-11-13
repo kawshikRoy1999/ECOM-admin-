@@ -176,7 +176,8 @@ export class OrdersService {
         SerialNumber: '',
         IsSerialized: a.item.isSerialized ? '1' : '0',
       })),
-      // Warehouse/bin is optional (as in the .NET page): send allocation only where both were picked.
+      // One stock location per invoiced line, matched by Index/ItemId/VariantId (UpdateStock deducts
+      // only from these). Every line has one: the popup and startInvoice() both require it.
       WarehouseData: allocations
         .map((a, i) => ({ a, i }))
         .filter(({ a }) => a.warehouseId && a.binId)

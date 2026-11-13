@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, switchMap } from 'rxjs';
 
 import { ApiService } from '../../../core/api/api.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -142,6 +142,7 @@ export class ItemService {
             taxDetailsId: Number(t['taxDetailsId'] ?? 0),
             taxName: `${t['taxName'] ?? ''} (${t['total'] ?? 0}%)`,
             total: Number(t['total'] ?? 0),
+            name: String(t['taxName'] ?? ''),
           })),
         ),
       );
@@ -1072,14 +1073,28 @@ export class ItemService {
       })
       .pipe(
         map((res) =>
-          (res?.data ?? []).map((r: Record<string, unknown>) => ({
-            id: Number(r['id'] ?? 0),
-            itemCode: String(r['item_Code'] ?? r['itemCode'] ?? r['Item_Code'] ?? ''),
-            itemName: String(r['item_Name'] ?? r['itemName'] ?? r['Item_Name'] ?? ''),
-            designCode: String(r['design_Code'] ?? r['designCode'] ?? r['Design_Code'] ?? ''),
-            designName: String(r['design_Name'] ?? r['designName'] ?? r['Design_Name'] ?? ''),
-            variantName: String(r['variant_Name'] ?? r['variantName'] ?? r['Variant_Name'] ?? ''),
-          })),
+          (res?.data ?? []).map((r: Record<string, unknown>) => {
+            // The gateway's camelCasing of acronym names is irregular (GST_Group_Code arrives as
+            // "gsT_Group_Code"), so read every field by a case-insensitive key match.
+            const keys = new Map(Object.keys(r).map((k) => [k.toLowerCase(), k]));
+            const s = (name: string): string => {
+              const k = keys.get(name.toLowerCase());
+              const v = k ? r[k] : null;
+              return v === null || v === undefined ? '' : String(v);
+            };
+            return {
+              id: Number(s('id') || 0),
+              itemCode: s('item_Code'),
+              itemName: s('item_Name'),
+              designCode: s('design_Code'),
+              designName: s('design_Name'),
+              variantName: s('variant_Name'),
+              gstGroupCode: s('gst_Group_Code'),
+              hsnSacCode: s('hsn_Sac_Code'),
+              docNo: s('doc_No'),
+              docDate: s('doc_Date').slice(0, 10),
+            };
+          }),
         ),
       );
   }
@@ -1100,6 +1115,63 @@ export class ItemService {
           })),
         ),
       );
+  }
+
+  /**
+   * Create the item's default variant from a repository record and link it, in one save.
+   * For items whose category has no variant options: GetAddVariant supplies the new variant's
+   * SKU/barcode, then SaveInventoryVariant with RepoId creates the variant, runs
+   * sp_SyncRepositoryBatch (link + clear held batches) and saves one batch per row.
+   * Resolves to the API's result text; only "Saved Successfully" means it worked.
+   */
+  createVariantFromRepository(req: {
+    itemId: number;
+    repoId: number;
+    variantName: string;
+    returnDays: number;
+    rows: { batchCode: string; price: number; quantity: number; wareHouseId: number }[];
+  }): Observable<string> {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.getAddVariant(req.itemId, 0).pipe(
+      switchMap((blank) => {
+        const sku = blank.sku || this.randomSku();
+        return this.saveVariant({
+          ...blank,
+          itemId: req.itemId,
+          itemVariantId: 0,
+          itemVariantName: req.variantName,
+          sku,
+          returnDays: req.returnDays,
+          variantOptionValueIds: '',
+          repoId: req.repoId,
+          pricing: req.rows.map((r) => ({
+            itemPricingId: 0,
+            mrp: r.price,
+            discount: 0,
+            price: r.price,
+            cost: r.price,
+            startDate: today,
+            endDate: today,
+            batchCode: r.batchCode,
+            wareHouseId: r.wareHouseId,
+            physicalQty: r.quantity,
+            batchId: null,
+          })),
+        });
+      }),
+      map((res) => {
+        const r = res as Record<string, unknown> | null;
+        return String(r?.['result'] ?? r?.['Result'] ?? '').trim();
+      }),
+    );
+  }
+
+  /** 8-char upper-case alphanumeric SKU (mirrors .NET GenerateUniqueAlphaNumeric). */
+  private randomSku(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let out = '';
+    for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
   }
 
   /** Get list of store locations stock (GetStoreListByItemVariantId & GetItemROIMOQDetails). */

@@ -8,7 +8,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 import { InvoiceAllocation, OrdersService } from './orders.service';
 import { InvoiceGenerate } from './invoice-generate';
 import { InvoicePrint } from './invoice-print';
-import { DeliveryPersonOption, InvoiceTracking, ItemRateQty, OrderDetail, OrderItem } from './order.models';
+import { DeliveryPersonOption, InvoiceTracking, ItemRateQty, LinePrice, OrderDetail, OrderItem } from './order.models';
 import { Tabs, TabItem } from '../../shared/ui/tabs/tabs';
 import { Select } from '../../shared/ui/select/select';
 import { TooltipService } from '../../shared/ui/tooltip.service';
@@ -143,6 +143,35 @@ export class OrderDetailPage {
     return nums.length ? nums[0] : null;
   }
 
+  /**
+   * Rate and amount for an order line. Uses the line price the order lines now carry
+   * (OrderDetail.ItemRate = line excl. tax, ItemTaxAmt = line tax); falls back to order.data
+   * for responses from an API that predates it.
+   */
+  linePrice(item: OrderItem, data?: any[]): LinePrice | null {
+    const excl = item.lineAmountExclTax;
+    const tax = item.lineTaxAmount;
+    if (excl != null && (Number(excl) > 0 || Number(tax) > 0)) {
+      const qty = Number(item.orderQty) || 0;
+      return {
+        rate: qty > 0 ? Number(excl) / qty : null,
+        amount: Number(excl) + (Number(tax) || 0),
+        taxRate: item.lineTaxRate != null ? Number(item.lineTaxRate) : null,
+        discount: Number(item.lineDiscountAmount) || 0,
+      };
+    }
+    const r = this.rateFor(item, data);
+    if (!r) return null;
+    const amount = r.itemtotalamount ?? r.itemamt;
+    const taxRate = parseFloat(String(r.taxrate ?? ''));
+    return {
+      rate: r.rate != null ? Number(r.rate) : null,
+      amount: amount != null ? Number(amount) : null,
+      taxRate: Number.isFinite(taxRate) ? taxRate : null,
+      discount: 0,
+    };
+  }
+
   /** Look up the rate/amount row for a given order item from order.data. */
   rateFor(item: OrderItem, data?: any[]): any | undefined {
     if (!data?.length) return undefined;
@@ -267,8 +296,9 @@ export class OrderDetailPage {
           if (whs.length !== 1) return of(null);
           const wh = whs[0];
           return this.service.bins(it.itemId, it.itemVariantId, wh.storeId).pipe(
+            // One bin that holds enough — otherwise let the popup show the shortfall.
             map((bins) =>
-              bins.length === 1
+              bins.length === 1 && Number(bins[0].qty) >= it.orderQty - (it.deliveredQty ?? 0)
                 ? {
                     item: it,
                     warehouseId: wh.storeId,

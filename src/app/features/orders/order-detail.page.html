@@ -311,16 +311,16 @@
                     <tr class="text-[10.5px] uppercase font-bold tracking-wider text-slate-500">
                       <th class="px-4 py-2.5 text-left">Item ({{ d.orderDtl?.length || 0 }})</th>
                       <th class="px-3 py-2.5 text-left whitespace-nowrap">Code</th>
-                      <th class="px-3 py-2.5 text-right whitespace-nowrap">Rate</th>
+                      <th class="px-3 py-2.5 text-right whitespace-nowrap" title="Unit price excluding tax">Rate <span class="normal-case font-medium text-slate-400">(excl. tax)</span></th>
                       <th class="px-3 py-2.5 text-center whitespace-nowrap">Qty</th>
                       <th class="px-3 py-2.5 text-center whitespace-nowrap">Delivered</th>
-                      <th class="px-3 py-2.5 text-right whitespace-nowrap">Amount</th>
+                      <th class="px-3 py-2.5 text-right whitespace-nowrap" title="Line amount including tax">Amount <span class="normal-case font-medium text-slate-400">(incl. tax)</span></th>
                       <th class="px-4 py-2.5 text-left whitespace-nowrap">Status</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
                     @for (it of d.orderDtl; track it.orderDetailId) {
-                      @let rate = rateFor(it, d.order?.data);
+                      @let price = linePrice(it, d.order?.data);
                       @let variant = variantLabel(it);
                       <tr class="hover:bg-slate-50/60 transition-colors align-middle">
                         <td class="px-4 py-2.5">
@@ -348,14 +348,20 @@
                           </div>
                         </td>
                         <td class="px-3 py-2.5 font-mono text-[11.5px] text-slate-500 whitespace-nowrap">{{ it.itemCode }}</td>
-                        <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-slate-700">{{ rate?.rate != null ? (rate.rate | number:'1.2-2') : '—' }}</td>
+                        <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-slate-700">{{ price?.rate != null ? (price!.rate | number:'1.2-2') : '—' }}</td>
                         <td class="px-3 py-2.5 text-center font-semibold text-slate-700">{{ it.orderQty }}</td>
                         <td class="px-3 py-2.5 text-center font-semibold"
                           [class]="(it.deliveredQty || 0) >= it.orderQty ? 'text-emerald-600' : ((it.deliveredQty || 0) > 0 ? 'text-amber-600' : 'text-slate-400')">
                           {{ it.deliveredQty ?? 0 }}
                         </td>
                         <td class="px-3 py-2.5 text-right font-mono font-semibold whitespace-nowrap text-slate-800">
-                          {{ rate?.itemtotalamount != null ? (rate.itemtotalamount | number:'1.2-2') : (rate?.itemamt != null ? (rate.itemamt | number:'1.2-2') : '—') }}
+                          {{ price?.amount != null ? (price!.amount | number:'1.2-2') : '—' }}
+                          @if (price?.taxRate) {
+                            <p class="mt-0.5 font-sans text-[10.5px] font-medium text-slate-400">incl. {{ price!.taxRate | number:'1.0-2' }}% tax</p>
+                          }
+                          @if (price?.discount) {
+                            <p class="mt-0.5 font-sans text-[10.5px] font-medium text-emerald-600">−{{ price!.discount | number:'1.2-2' }} discount</p>
+                          }
                         </td>
                         <td class="px-4 py-2.5">
                           <span class="status-chip {{ statusClass(it.orderStatus) }} whitespace-nowrap"><span class="dot"></span>{{ it.orderStatus }}</span>
