@@ -123,6 +123,8 @@ export class AdminLayout {
     },
   ];
 
+
+
   /**
    * Maps each nav route to the .NET menu name/url tokens used for role-based access.
    * A nav item is shown when any of its tokens matches a permitted menu (see
@@ -151,6 +153,20 @@ export class AdminLayout {
     '/settings/social': ['social'],
     '/settings/statuses': ['status', 'cancellation'],
   };
+
+  /** Collapsed sidebar groups, remembered per browser. The group holding the current page always shows. */
+  readonly collapsedGroups = signal<string[]>(this.readCollapsed());
+  private readCollapsed(): string[] {
+    try { return JSON.parse(localStorage.getItem('ecom_nav_collapsed') ?? '[]'); } catch { return []; }
+  }
+  toggleGroup(group: string): void {
+    const next = this.collapsedGroups().includes(group) ? this.collapsedGroups().filter((g) => g !== group) : [...this.collapsedGroups(), group];
+    this.collapsedGroups.set(next);
+    try { localStorage.setItem('ecom_nav_collapsed', JSON.stringify(next)); } catch { /* storage blocked */ }
+  }
+  isGroupOpen(group: { group: string; items: NavItem[] }): boolean {
+    return !this.collapsedGroups().includes(group.group) || group.items.some((i) => this.router.url.startsWith(i.path));
+  }
 
   /** The nav filtered to the current user's role-permitted menus (empty groups dropped). */
   readonly visibleNav = computed(() =>
