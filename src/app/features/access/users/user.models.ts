@@ -20,6 +20,8 @@ export interface AdminUser {
   state?: string | null;
   country?: string | null;
   postalCode?: string | null;
+  phoneCode?: string | null;
+  userPhoneCountryCode?: string | null;
 }
 
 export interface UserRoleOption {
@@ -61,8 +63,12 @@ export interface SaveUserRequest {
   State: string;
   Country: string;
   Zip: string;
+  PhoneCode: string;
+  UserPhoneCountryCode: string;
   ImagePath: string;
   IsActive: boolean;
+  /** Always false for admin users. Must be sent: SP_AddEditUser casts every JSON value, so a missing value becomes 'null' and fails the bit cast. */
+  IsCustomer: boolean;
   CreatedBy: string;
   ModifiedBy: string;
 }

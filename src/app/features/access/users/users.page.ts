@@ -1,9 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 
 import { DataTable, Column } from '../../../shared/ui/data-table/data-table';
 import { Modal } from '../../../shared/ui/modal/modal';
-import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { ConfirmService } from '../../../shared/ui/confirm/confirm.service';
 import { ToastService } from '../../../shared/ui/toast/toast.service';
 import { ImageUploadService } from '../../../core/api/image-upload.service';
@@ -16,7 +15,7 @@ import { TooltipService } from '../../../shared/ui/tooltip.service';
 
 @Component({
   selector: 'app-users-page',
-  imports: [ReactiveFormsModule, DataTable, Modal, Checkbox],
+  imports: [ReactiveFormsModule, FormsModule, DataTable, Modal],
   templateUrl: './users.page.html',
 })
 export class UsersPage {
@@ -43,6 +42,15 @@ export class UsersPage {
 
   /** Profile image URL (two-way bound to the uploader). */
   readonly imagePath = signal<string>('');
+  /** Phone country code kept from the loaded user (the .NET form sends PhoneCode / UserPhoneCountryCode). */
+  private phoneCode = '';
+  private userPhoneCountryCode = '';
+  /** Change-password panel (edit only), like the .NET "Change Password" popup. */
+  readonly showChangePassword = signal(false);
+  readonly changingPassword = signal(false);
+  pwOld = '';
+  pwNew = '';
+  pwConfirm = '';
 
   readonly columns: Column<AdminUser>[] = [
     { key: 'userName', header: 'Username' },
@@ -54,18 +62,19 @@ export class UsersPage {
 
   readonly form = this.fb.nonNullable.group({
     UserName: ['', [Validators.required]],
-    Email: ['', [Validators.required]],
+    Email: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9_.+-]+@([a-zA-Z0-9-]+\.)+[a-zA-Z0-9]{2,4}$/)]],
     FirstName: ['', [Validators.required]],
     MiddleName: [''],
-    LastName: [''],
-    Phone: [''],
+    LastName: ['', [Validators.required]],
+    Phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
     Password: [''],
+    ConfirmPassword: [''],
     Address1: [''],
     Address2: [''],
     City: [''],
     State: [''],
     Country: [''],
-    Zip: [''],
+    Zip: ['', [Validators.required]],
     IsActive: [true],
   });
 
@@ -97,11 +106,14 @@ export class UsersPage {
     this.selectedFile = null;
     this.uploadProgress.set(0);
     this.form.reset({
-      UserName: '', Email: '', FirstName: '', MiddleName: '', LastName: '', Phone: '', Password: '',
+      UserName: '', Email: '', FirstName: '', MiddleName: '', LastName: '', Phone: '', Password: '', ConfirmPassword: '',
       Address1: '', Address2: '', City: '', State: '', Country: '', Zip: '', IsActive: true,
     });
     this.form.controls.Password.addValidators(Validators.required);
     this.form.controls.Password.updateValueAndValidity();
+    this.phoneCode = '';
+    this.userPhoneCountryCode = '';
+    this.resetChangePassword();
     this.modalOpen.set(true);
   }
 
@@ -120,6 +132,7 @@ export class UsersPage {
       LastName: user.lastName ?? '',
       Phone: user.phone ?? '',
       Password: '',
+      ConfirmPassword: '',
       Address1: user.address ?? '',
       Address2: user.address2 ?? '',
       City: user.city ?? '',
@@ -130,6 +143,9 @@ export class UsersPage {
     });
     this.form.controls.Password.clearValidators();
     this.form.controls.Password.updateValueAndValidity();
+    this.phoneCode = user.phoneCode ?? '';
+    this.userPhoneCountryCode = user.userPhoneCountryCode ?? '';
+    this.resetChangePassword();
     this.modalOpen.set(true);
 
     // Pull the full detail (roles + any address fields not in the list payload).
@@ -139,6 +155,8 @@ export class UsersPage {
         const d = res?.userDtl;
         if (d) {
           this.imagePath.set(d.imagePath ?? this.imagePath());
+          this.phoneCode = d.phoneCode ?? this.phoneCode;
+          this.userPhoneCountryCode = d.userPhoneCountryCode ?? this.userPhoneCountryCode;
           this.form.patchValue({
             MiddleName: d.middleName ?? this.form.controls.MiddleName.value,
             Address1: d.address ?? this.form.controls.Address1.value,
@@ -189,18 +207,30 @@ export class UsersPage {
     this.uploadProgress.set(0);
   }
 
+  /** First failing check, in the order (and wording) of the .NET AddEditUser validation. */
+  private firstError(): string | null {
+    const c = this.form.controls;
+    if (c.FirstName.invalid) return 'First name is required.';
+    if (c.LastName.invalid) return 'Last name is required.';
+    if (c.Email.hasError('required')) return 'Email is required.';
+    if (c.Email.invalid) return 'Invalid email address.';
+    if (c.Zip.invalid) return 'Zip is required.';
+    if (c.Phone.hasError('required')) return 'Phone / Mobile is required.';
+    if (c.Phone.invalid) return 'Phone / Mobile number must be 10 digits.';
+    if (c.UserName.invalid) return 'User name is required.';
+    if (!this.editingId()) {
+      if (!c.Password.value) return 'Password is required.';
+      if (!c.ConfirmPassword.value) return 'Confirm Password is required.';
+      if (c.Password.value !== c.ConfirmPassword.value) return 'Passwords do not match.';
+    }
+    return null;
+  }
+
   save(): void {
-    if (this.form.invalid) {
+    const err = this.firstError();
+    if (err) {
       this.form.markAllAsTouched();
-      const invalidControls: string[] = [];
-      Object.keys(this.form.controls).forEach((key) => {
-        const control = this.form.get(key);
-        if (control?.invalid) {
-          invalidControls.push(key);
-        }
-      });
-      console.warn('Form validation failed. Bypassing save and file upload. Invalid controls:', invalidControls);
-      this.toast.error(`Please fill in all required fields: ${invalidControls.join(', ')}`);
+      this.toast.error(err);
       return;
     }
     this.saving.set(true);
@@ -254,7 +284,10 @@ export class UsersPage {
         country: v.Country,
         postalCode: v.Zip,
         imagePath: this.imagePath(),
-        password: v.Password,
+        phoneCode: this.phoneCode,
+        userPhoneCountryCode: this.userPhoneCountryCode,
+        // the .NET controller blanks the password on edit — changes go through Change Password
+        password: this.editingId() ? '' : v.Password,
         isActive: v.IsActive,
       })
       .pipe(
@@ -289,9 +322,61 @@ export class UsersPage {
     const ok = await this.confirm.ask(`Delete user "${user.userName}"?`, { confirmLabel: 'Delete', danger: true });
     if (!ok) return;
     this.service.delete(user.userId).subscribe({
-      next: () => {
-        this.toast.success('User deleted.');
+      next: (res) => {
+        // DeleteUser answers status:true with the real outcome in data.type / data.msg.
+        const r = res as { type?: string; msg?: string } | null;
+        if (r?.type && r.type.toLowerCase() !== 'success') {
+          this.toast.error(r.msg || 'Could not delete the user.');
+          return;
+        }
+        this.toast.success(r?.msg || 'User deleted.');
         this.load();
+      },
+      error: (e: { message?: string }) => this.toast.error(e?.message || 'Could not delete the user.'),
+    });
+  }
+
+  /** Fill city / state / country from the PIN code (the .NET form does this on change). */
+  onZipChange(): void {
+    const pin = (this.form.controls.Zip.value ?? '').trim();
+    if (!pin) return;
+    this.service.pinDetails(pin).subscribe({
+      next: (d) => {
+        if (!d) return;
+        this.form.patchValue({
+          City: d.region || this.form.controls.City.value,
+          State: d.state || this.form.controls.State.value,
+          Country: d.country || this.form.controls.Country.value,
+        });
+      },
+      error: () => {},
+    });
+  }
+
+  resetChangePassword(): void {
+    this.showChangePassword.set(false);
+    this.pwOld = '';
+    this.pwNew = '';
+    this.pwConfirm = '';
+  }
+
+  changePassword(): void {
+    const id = this.editingId();
+    if (!id) return;
+    if (!this.pwOld) return void this.toast.error('Old Password is required.');
+    if (!this.pwNew) return void this.toast.error('New Password is required.');
+    if (!this.pwConfirm) return void this.toast.error('Confirm Password is required.');
+    if (this.pwNew !== this.pwConfirm) return void this.toast.error('Passwords do not match.');
+    this.changingPassword.set(true);
+    this.service.changePassword(id, this.pwOld, this.pwNew).subscribe({
+      next: () => {
+        this.changingPassword.set(false);
+        this.resetChangePassword();
+        this.toast.success('Password changed.');
+      },
+      error: (e: { message?: string }) => {
+        this.changingPassword.set(false);
+        this.toast.error(e?.message || 'Could not change the password.');
       },
     });
   }

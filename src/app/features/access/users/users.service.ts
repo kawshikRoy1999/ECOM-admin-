@@ -61,6 +61,8 @@ export class UsersService {
       | 'country'
       | 'postalCode'
       | 'imagePath'
+      | 'phoneCode'
+      | 'userPhoneCountryCode'
     > & { isActive: boolean; password: string },
   ): Observable<SaveUserResponse> {
     const body: SaveUserRequest = {
@@ -79,8 +81,11 @@ export class UsersService {
       State: user.state ?? '',
       Country: user.country ?? '',
       Zip: user.postalCode ?? '',
+      PhoneCode: user.phoneCode || '+91',
+      UserPhoneCountryCode: user.userPhoneCountryCode || 'in',
       ImagePath: user.imagePath ?? '',
-      IsActive: user.isActive,
+      IsActive: !!user.isActive,
+      IsCustomer: false, // same as the .NET SettingController.AddEditUser
       CreatedBy: this.auth.userId(),
       ModifiedBy: this.auth.userId(),
     };
@@ -104,6 +109,21 @@ export class UsersService {
       CreatedBy: this.auth.userId(),
       ModifiedBy: this.auth.userId(),
     });
+  }
+
+  /** Change a user's password (the .NET "Change Password" popup on the edit screen). */
+  changePassword(userId: string, oldPassword: string, newPassword: string): Observable<{ email?: string; message?: string } | null> {
+    return this.api.post('UserManagement/ChangePasswordForUser', {
+      UserId: userId,
+      OldPassword: oldPassword,
+      NewPassword: newPassword,
+      CompanyId: this.auth.companyId(),
+    });
+  }
+
+  /** City / state / country for a PIN code (ProductManagement/GetPINDetails), used to auto-fill the address. */
+  pinDetails(pin: string): Observable<{ region?: string; state?: string; country?: string } | null> {
+    return this.api.post('ProductManagement/GetPINDetails', { companyid: this.auth.companyId(), pinCode: pin });
   }
 
   delete(userId: string): Observable<unknown> {
